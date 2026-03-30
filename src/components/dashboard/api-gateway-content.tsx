@@ -48,6 +48,61 @@ const envColors: Record<string, string> = {
   Sandbox: "#3b82f6",
 };
 
+type WebhookStatus = "Active" | "Inactive";
+
+const webhooks: {
+  endpoint: string;
+  events: string;
+  status: WebhookStatus;
+  lastTriggered: string;
+  failures: number;
+}[] = [
+  { endpoint: "https://acme.corp/hooks/payments", events: "payment.success, payment.failed", status: "Active", lastTriggered: "2026-03-30 09:14", failures: 0 },
+  { endpoint: "https://techvault.io/api/webhooks/auth", events: "auth.login, auth.logout, auth.mfa", status: "Active", lastTriggered: "2026-03-30 08:52", failures: 2 },
+  { endpoint: "https://globalfinance.net/ingest/events", events: "document.created, document.signed", status: "Active", lastTriggered: "2026-03-29 23:41", failures: 0 },
+  { endpoint: "https://old-system.internal/legacy/notify", events: "workflow.completed", status: "Inactive", lastTriggered: "2026-02-14 16:30", failures: 17 },
+  { endpoint: "https://datashield.dev/staging/hooks", events: "tenant.created, tenant.suspended", status: "Active", lastTriggered: "2026-03-30 07:05", failures: 1 },
+];
+
+const webhookStatusColors: Record<WebhookStatus, string> = {
+  Active: "#22c55e",
+  Inactive: "#6b7280",
+};
+
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+
+const apiLogs: {
+  time: string;
+  method: HttpMethod;
+  path: string;
+  statusCode: number;
+  latency: string;
+  tenant: string;
+}[] = [
+  { time: "09:14:32", method: "POST", path: "/api/v1/payments/charge", statusCode: 201, latency: "124ms", tenant: "Acme Corp" },
+  { time: "09:14:28", method: "GET", path: "/api/v1/auth/session", statusCode: 200, latency: "18ms", tenant: "TechVault" },
+  { time: "09:14:15", method: "DELETE", path: "/api/v1/documents/doc_8f2a", statusCode: 401, latency: "9ms", tenant: "DataShield" },
+  { time: "09:13:58", method: "PUT", path: "/api/v1/workflows/wf_331/resume", statusCode: 200, latency: "87ms", tenant: "GlobalFinance" },
+  { time: "09:13:42", method: "GET", path: "/api/v1/ai/models", statusCode: 200, latency: "34ms", tenant: "CloudBase" },
+  { time: "09:13:30", method: "POST", path: "/api/v1/notifications/send", statusCode: 500, latency: "1,204ms", tenant: "Acme Corp" },
+  { time: "09:13:11", method: "GET", path: "/api/v1/payments/invoices", statusCode: 404, latency: "22ms", tenant: "TechVault" },
+  { time: "09:12:55", method: "POST", path: "/api/v1/auth/token/refresh", statusCode: 200, latency: "41ms", tenant: "GlobalFinance" },
+];
+
+const methodColors: Record<HttpMethod, string> = {
+  GET: "#3b82f6",
+  POST: "#22c55e",
+  PUT: "#f59e0b",
+  DELETE: "#ef4444",
+};
+
+const statusCodeColor = (code: number): string => {
+  if (code >= 200 && code < 300) return "#22c55e";
+  if (code === 401) return "#f59e0b";
+  if (code === 404) return "#8b5cf6";
+  return "#ef4444";
+};
+
 const routes = [
   { path: "/api/v1/auth/*", target: "identity-service", method: "ALL", rateLimit: "1000/min", status: "Active" },
   { path: "/api/v1/payments/*", target: "payment-service", method: "ALL", rateLimit: "500/min", status: "Active" },
@@ -204,6 +259,112 @@ export function APIGatewayContent() {
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-500/15 text-green-500">
                       {r.status}
                     </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Webhooks */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          Webhooks
+        </h2>
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Endpoint URL", "Events", "Status", "Last Triggered", "Failures"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 font-medium" style={{ color: "var(--gf-text-secondary)" }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {webhooks.map((w, idx) => (
+                <tr key={idx} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                  <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--gf-text-primary)" }}>
+                    {w.endpoint}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {w.events}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: `${webhookStatusColors[w.status]}20`, color: webhookStatusColors[w.status] }}
+                    >
+                      {w.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {w.lastTriggered}
+                  </td>
+                  <td className="px-4 py-3 text-xs font-medium" style={{ color: w.failures > 5 ? "#ef4444" : "var(--gf-text-secondary)" }}>
+                    {w.failures}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* API Logs */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          API Logs
+        </h2>
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Time", "Method", "Path", "Status Code", "Latency", "Tenant"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 font-medium" style={{ color: "var(--gf-text-secondary)" }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {apiLogs.map((log, idx) => (
+                <tr key={idx} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                  <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {log.time}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="text-xs font-mono font-medium px-2 py-0.5 rounded"
+                      style={{ backgroundColor: `${methodColors[log.method]}20`, color: methodColors[log.method] }}
+                    >
+                      {log.method}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--gf-text-primary)" }}>
+                    {log.path}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="text-xs font-mono font-medium px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: `${statusCodeColor(log.statusCode)}20`, color: statusCodeColor(log.statusCode) }}
+                    >
+                      {log.statusCode}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {log.latency}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {log.tenant}
                   </td>
                 </tr>
               ))}

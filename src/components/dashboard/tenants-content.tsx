@@ -11,17 +11,19 @@ interface Tenant {
   plan: "Enterprise" | "Pro" | "Starter";
   users: number;
   region: string;
+  domain: string;
   status: "Active" | "Provisioning" | "Suspended";
+  apiCalls: string;
   created: string;
 }
 
 const tenants: Tenant[] = [
-  { name: "Glimmora HQ", plan: "Enterprise", users: 120, region: "US-East", status: "Active", created: "Jan 2026" },
-  { name: "VerifAI", plan: "Pro", users: 85, region: "US-West", status: "Active", created: "Jan 2026" },
-  { name: "Diamond Corp", plan: "Pro", users: 62, region: "EU-West", status: "Active", created: "Feb 2026" },
-  { name: "Hospitality Co", plan: "Starter", users: 34, region: "AP-South", status: "Active", created: "Feb 2026" },
-  { name: "Tax Solutions", plan: "Pro", users: 48, region: "US-East", status: "Active", created: "Mar 2026" },
-  { name: "Aero Systems", plan: "Enterprise", users: 133, region: "EU-Central", status: "Provisioning", created: "Mar 2026" },
+  { name: "Glimmora HQ", plan: "Enterprise", users: 120, region: "US-East", domain: "app.glimmora.com", status: "Active", apiCalls: "324K", created: "Jan 2026" },
+  { name: "VerifAI", plan: "Pro", users: 85, region: "US-West", domain: "verifai.glimmora.io", status: "Active", apiCalls: "218K", created: "Jan 2026" },
+  { name: "Diamond Corp", plan: "Pro", users: 62, region: "EU-West", domain: "diamond.glimmora.io", status: "Active", apiCalls: "156K", created: "Feb 2026" },
+  { name: "Hospitality Co", plan: "Starter", users: 34, region: "AP-South", domain: "hospitality.glimmora.io", status: "Active", apiCalls: "89K", created: "Feb 2026" },
+  { name: "Tax Solutions", plan: "Pro", users: 48, region: "US-East", domain: "tax.glimmora.io", status: "Active", apiCalls: "67K", created: "Mar 2026" },
+  { name: "Aero Systems", plan: "Enterprise", users: 133, region: "EU-Central", domain: "aero.glimmora.io", status: "Provisioning", apiCalls: "—", created: "Mar 2026" },
 ];
 
 const PLAN_BADGE_STYLES: Record<Tenant["plan"], { bg: string; color: string }> = {
@@ -112,6 +114,8 @@ export function TenantsContent() {
               <th className="px-6 py-3 text-left font-medium">Plan</th>
               <th className="px-6 py-3 text-left font-medium">Users</th>
               <th className="px-6 py-3 text-left font-medium">Region</th>
+              <th className="px-6 py-3 text-left font-medium">Domain</th>
+              <th className="px-6 py-3 text-left font-medium">API Calls</th>
               <th className="px-6 py-3 text-left font-medium">Status</th>
               <th className="px-6 py-3 text-left font-medium">Created</th>
             </tr>
@@ -160,6 +164,16 @@ export function TenantsContent() {
                   {/* Region */}
                   <td className="px-6 py-4 text-sm" style={{ color: "var(--gf-text-secondary)" }}>
                     {tenant.region}
+                  </td>
+
+                  {/* Domain */}
+                  <td className="px-6 py-4 text-xs font-mono" style={{ color: "var(--gf-text-secondary)" }}>
+                    {tenant.domain}
+                  </td>
+
+                  {/* API Calls */}
+                  <td className="px-6 py-4 text-sm" style={{ color: "var(--gf-text-secondary)" }}>
+                    {tenant.apiCalls}
                   </td>
 
                   {/* Status */}

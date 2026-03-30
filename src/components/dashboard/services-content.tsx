@@ -8,73 +8,127 @@ import {
   FileText,
   GitBranch,
   File,
+  Cpu,
+  Globe,
   ArrowUpRight,
 } from "lucide-react";
 
-const services = [
+type ServiceStatus = "Running" | "Degraded" | "Down";
+
+interface Service {
+  name: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  status: ServiceStatus;
+  version: string;
+  endpoints: number;
+  uptime: string;
+  latency: string;
+  href: string;
+}
+
+const STATUS_DOT_COLOR: Record<ServiceStatus, string> = {
+  Running: "#22c55e",
+  Degraded: "#eab308",
+  Down: "#ef4444",
+};
+
+const services: Service[] = [
   {
     name: "Identity & Access",
-    description: "SSO, RBAC, MFA, OAuth2/OIDC, API tokens",
+    description: "SSO, RBAC, MFA, OAuth2/OIDC, API tokens and session management",
     icon: Shield,
-    active: true,
-    href: "/dashboard/identity",
+    status: "Running",
+    version: "2.4.1",
+    endpoints: 18,
     uptime: "99.98%",
-    requests: "12.4K",
     latency: "45ms",
+    href: "/dashboard/identity",
   },
   {
     name: "Notification Hub",
-    description: "Email, SMS, Push, In-app notifications",
+    description: "Email, SMS, Push, In-app and webhook notifications",
     icon: Bell,
-    active: true,
-    href: "/dashboard/notifications",
+    status: "Running",
+    version: "1.7.0",
+    endpoints: 12,
     uptime: "99.95%",
-    requests: "8.2K",
     latency: "120ms",
+    href: "/dashboard/notifications",
   },
   {
-    name: "Payment Orchestration",
-    description: "Multi-gateway: Stripe, Razorpay, Adyen",
+    name: "Payment Service",
+    description: "Multi-gateway payments via Stripe, Razorpay and Adyen",
     icon: CreditCard,
-    active: true,
-    href: "/dashboard/payments",
+    status: "Running",
+    version: "3.1.2",
+    endpoints: 14,
     uptime: "99.99%",
-    requests: "2.8K",
     latency: "230ms",
+    href: "/dashboard/payments",
   },
   {
-    name: "Audit & Compliance",
-    description: "Immutable audit trail & compliance reports",
+    name: "Audit Service",
+    description: "Immutable audit trail, compliance reports and change tracking",
     icon: FileText,
-    active: true,
-    href: "/dashboard/audit",
+    status: "Running",
+    version: "1.3.0",
+    endpoints: 8,
     uptime: "100%",
-    requests: "5.6K",
     latency: "32ms",
+    href: "/dashboard/audit",
   },
   {
     name: "Workflow Engine",
-    description: "Approvals, onboarding, SLA management",
+    description: "Approvals, onboarding flows and SLA management",
     icon: GitBranch,
-    active: true,
+    status: "Degraded",
+    version: "2.0.4",
+    endpoints: 11,
+    uptime: "98.70%",
+    latency: "310ms",
     href: "/dashboard/workflows",
-    uptime: "99.92%",
-    requests: "1.4K",
-    latency: "85ms",
   },
   {
     name: "Document Service",
-    description: "PDF generation, contract templates, e-sign",
+    description: "PDF generation, contract templates and e-signatures",
     icon: File,
-    active: false,
-    href: "#",
-    uptime: "—",
-    requests: "—",
+    status: "Running",
+    version: "1.1.0",
+    endpoints: 9,
+    uptime: "99.90%",
+    latency: "180ms",
+    href: "/dashboard/documents",
+  },
+  {
+    name: "AI Platform",
+    description: "Model hosting, prompt management and inference APIs",
+    icon: Cpu,
+    status: "Running",
+    version: "0.9.3",
+    endpoints: 15,
+    uptime: "99.85%",
+    latency: "290ms",
+    href: "/dashboard/ai-platform",
+  },
+  {
+    name: "API Gateway",
+    description: "Rate limiting, request routing, auth proxy and analytics",
+    icon: Globe,
+    status: "Down",
+    version: "2.2.0",
+    endpoints: 6,
+    uptime: "95.40%",
     latency: "—",
+    href: "/dashboard/api-gateway",
   },
 ];
 
 export function ServicesContent() {
+  const runningCount = services.filter((s) => s.status === "Running").length;
+  const degradedCount = services.filter((s) => s.status === "Degraded").length;
+  const downCount = services.filter((s) => s.status === "Down").length;
+
   return (
     <div className="space-y-6">
       <div>
@@ -92,12 +146,22 @@ export function ServicesContent() {
         style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
       >
         <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-          <span className="text-sm font-medium" style={{ color: "var(--gf-text-primary)" }}>5 Operational</span>
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#22c55e" }} />
+          <span className="text-sm font-medium" style={{ color: "var(--gf-text-primary)" }}>
+            {runningCount} Running
+          </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-gray-500" />
-          <span className="text-sm font-medium" style={{ color: "var(--gf-text-secondary)" }}>1 Coming Soon</span>
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#eab308" }} />
+          <span className="text-sm font-medium" style={{ color: "var(--gf-text-primary)" }}>
+            {degradedCount} Degraded
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#ef4444" }} />
+          <span className="text-sm font-medium" style={{ color: "var(--gf-text-primary)" }}>
+            {downCount} Down
+          </span>
         </div>
         <div className="ml-auto text-xs" style={{ color: "var(--gf-text-muted)" }}>
           Last checked: just now
@@ -106,33 +170,28 @@ export function ServicesContent() {
 
       {/* Service cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {services.map((service) => {
-          const Card = (
+        {services.map((service) => (
+          <Link key={service.name} href={service.href} className="no-underline">
             <div
-              key={service.name}
               className="rounded-xl p-5 transition-all hover:scale-[1.01]"
               style={{
                 backgroundColor: "var(--gf-bg-surface)",
                 border: "1px solid var(--gf-border)",
-                cursor: service.active ? "pointer" : "default",
-                opacity: service.active ? 1 : 0.6,
+                cursor: "pointer",
+                opacity: service.status === "Down" ? 0.7 : 1,
               }}
             >
               <div className="flex items-start justify-between">
                 <service.icon className="h-6 w-6" style={{ color: "var(--gf-accent)" }} />
                 <div className="flex items-center gap-1.5">
-                  {service.active ? (
-                    <>
-                      <span className="h-2 w-2 rounded-full bg-green-500" />
-                      <span className="text-xs" style={{ color: "var(--gf-text-secondary)" }}>Active</span>
-                      <ArrowUpRight className="h-3 w-3 ml-1" style={{ color: "var(--gf-text-muted)" }} />
-                    </>
-                  ) : (
-                    <>
-                      <span className="h-2 w-2 rounded-full bg-gray-500" />
-                      <span className="text-xs" style={{ color: "var(--gf-text-muted)" }}>Coming Soon</span>
-                    </>
-                  )}
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: STATUS_DOT_COLOR[service.status] }}
+                  />
+                  <span className="text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {service.status}
+                  </span>
+                  <ArrowUpRight className="h-3 w-3 ml-1" style={{ color: "var(--gf-text-muted)" }} />
                 </div>
               </div>
 
@@ -143,33 +202,45 @@ export function ServicesContent() {
                 {service.description}
               </p>
 
+              {/* Version & Endpoints */}
+              <div className="mt-3 flex items-center gap-3">
+                <span
+                  className="rounded-md px-2 py-0.5 text-[10px] font-medium"
+                  style={{
+                    backgroundColor: "var(--gf-bg-base)",
+                    color: "var(--gf-text-secondary)",
+                    border: "1px solid var(--gf-border)",
+                  }}
+                >
+                  v{service.version}
+                </span>
+                <span className="text-[11px]" style={{ color: "var(--gf-text-muted)" }}>
+                  {service.endpoints} endpoints
+                </span>
+              </div>
+
               {/* Metrics */}
               <div className="mt-4 flex gap-4 border-t pt-3" style={{ borderColor: "var(--gf-border)" }}>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--gf-text-muted)" }}>Uptime</p>
-                  <p className="text-xs font-semibold" style={{ color: "var(--gf-text-primary)" }}>{service.uptime}</p>
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--gf-text-muted)" }}>
+                    Uptime
+                  </p>
+                  <p className="text-xs font-semibold" style={{ color: "var(--gf-text-primary)" }}>
+                    {service.uptime}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--gf-text-muted)" }}>Requests</p>
-                  <p className="text-xs font-semibold" style={{ color: "var(--gf-text-primary)" }}>{service.requests}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--gf-text-muted)" }}>Latency</p>
-                  <p className="text-xs font-semibold" style={{ color: "var(--gf-text-primary)" }}>{service.latency}</p>
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--gf-text-muted)" }}>
+                    Avg Latency
+                  </p>
+                  <p className="text-xs font-semibold" style={{ color: "var(--gf-text-primary)" }}>
+                    {service.latency}
+                  </p>
                 </div>
               </div>
             </div>
-          );
-
-          if (service.active) {
-            return (
-              <Link key={service.name} href={service.href} className="no-underline">
-                {Card}
-              </Link>
-            );
-          }
-          return <div key={service.name}>{Card}</div>;
-        })}
+          </Link>
+        ))}
       </div>
     </div>
   );

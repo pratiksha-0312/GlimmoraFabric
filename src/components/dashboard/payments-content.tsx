@@ -71,6 +71,91 @@ const statusColors: Record<TxStatus, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Subscriptions data
+// ---------------------------------------------------------------------------
+
+type SubStatus = "Active" | "Trialing" | "Past Due" | "Cancelled";
+
+const subscriptions: {
+  tenant: string;
+  plan: string;
+  amount: string;
+  billingCycle: string;
+  status: SubStatus;
+  nextBilling: string;
+}[] = [
+  { tenant: "Acme Corp", plan: "Enterprise", amount: "$2,400.00", billingCycle: "Annual", status: "Active", nextBilling: "2026-04-15" },
+  { tenant: "Globex Inc", plan: "Pro", amount: "$99.00", billingCycle: "Monthly", status: "Active", nextBilling: "2026-04-01" },
+  { tenant: "Initech", plan: "Enterprise", amount: "$2,400.00", billingCycle: "Annual", status: "Past Due", nextBilling: "2026-03-28" },
+  { tenant: "Wonka Ltd", plan: "Starter", amount: "$29.00", billingCycle: "Monthly", status: "Trialing", nextBilling: "2026-04-10" },
+  { tenant: "Umbrella Co", plan: "Pro", amount: "$99.00", billingCycle: "Monthly", status: "Cancelled", nextBilling: "—" },
+];
+
+const subStatusColors: Record<SubStatus, string> = {
+  Active: "#22c55e",
+  Trialing: "#3b82f6",
+  "Past Due": "#f59e0b",
+  Cancelled: "#ef4444",
+};
+
+// ---------------------------------------------------------------------------
+// Refunds data
+// ---------------------------------------------------------------------------
+
+type RefundStatus = "Processed" | "Pending" | "Rejected";
+
+const refunds: {
+  transactionId: string;
+  amount: string;
+  reason: string;
+  status: RefundStatus;
+  processedDate: string;
+}[] = [
+  { transactionId: "TXN-005", amount: "$175.50", reason: "Customer request", status: "Processed", processedDate: "2026-03-29" },
+  { transactionId: "TXN-098", amount: "$340.00", reason: "Duplicate charge", status: "Processed", processedDate: "2026-03-28" },
+  { transactionId: "TXN-112", amount: "$59.99", reason: "Service not rendered", status: "Pending", processedDate: "—" },
+  { transactionId: "TXN-087", amount: "$1,100.00", reason: "Billing error", status: "Pending", processedDate: "—" },
+  { transactionId: "TXN-045", amount: "$25.00", reason: "Fraudulent charge", status: "Rejected", processedDate: "2026-03-27" },
+];
+
+const refundStatusColors: Record<RefundStatus, string> = {
+  Processed: "#22c55e",
+  Pending: "#f59e0b",
+  Rejected: "#ef4444",
+};
+
+// ---------------------------------------------------------------------------
+// Routing rules data
+// ---------------------------------------------------------------------------
+
+const routingRules = [
+  {
+    name: "India Region",
+    description: "Route all INR transactions to Razorpay for lower fees and faster settlement in the India market.",
+    gateway: "Razorpay",
+    condition: "Currency = INR",
+  },
+  {
+    name: "Europe Region",
+    description: "Route EUR and GBP transactions to Stripe for optimized European payment processing.",
+    gateway: "Stripe",
+    condition: "Currency = EUR, GBP",
+  },
+  {
+    name: "Failover",
+    description: "Automatically route to Adyen when primary gateway returns 5xx errors or timeout exceeds 10s.",
+    gateway: "Adyen",
+    condition: "Primary gateway failure",
+  },
+  {
+    name: "High-Value Transactions",
+    description: "Route transactions over $5,000 to Stripe for enhanced fraud detection and chargeback protection.",
+    gateway: "Stripe",
+    condition: "Amount > $5,000",
+  },
+];
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -108,10 +193,10 @@ export function PaymentsContent() {
         ))}
       </div>
 
-      {/* Gateway Status */}
+      {/* Payment Gateways */}
       <div>
         <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
-          Gateway Status
+          Payment Gateways
         </h2>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           {gateways.map((gw) => (
@@ -149,10 +234,10 @@ export function PaymentsContent() {
         </div>
       </div>
 
-      {/* Recent Transactions */}
+      {/* Transactions */}
       <div>
         <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
-          Recent Transactions
+          Transactions
         </h2>
         <div
           className="rounded-xl overflow-hidden"
@@ -202,6 +287,158 @@ export function PaymentsContent() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Subscriptions */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          Subscriptions
+        </h2>
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Tenant", "Plan", "Amount", "Billing Cycle", "Status", "Next Billing"].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 font-medium"
+                    style={{ color: "var(--gf-text-secondary)" }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {subscriptions.map((sub) => (
+                <tr key={sub.tenant} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                  <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>
+                    {sub.tenant}
+                  </td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>
+                    {sub.plan}
+                  </td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>
+                    {sub.amount}
+                  </td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>
+                    {sub.billingCycle}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: `${subStatusColors[sub.status]}20`,
+                        color: subStatusColors[sub.status],
+                      }}
+                    >
+                      {sub.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>
+                    {sub.nextBilling}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Refunds */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          Recent Refunds
+        </h2>
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Transaction ID", "Amount", "Reason", "Status", "Processed Date"].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 font-medium"
+                    style={{ color: "var(--gf-text-secondary)" }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {refunds.map((r) => (
+                <tr key={r.transactionId} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                  <td className="px-4 py-3 font-mono" style={{ color: "var(--gf-text-primary)" }}>
+                    {r.transactionId}
+                  </td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>
+                    {r.amount}
+                  </td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>
+                    {r.reason}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: `${refundStatusColors[r.status]}20`,
+                        color: refundStatusColors[r.status],
+                      }}
+                    >
+                      {r.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>
+                    {r.processedDate}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Routing Rules */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          Routing Rules
+        </h2>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+          {routingRules.map((rule) => (
+            <div
+              key={rule.name}
+              className="rounded-xl p-5"
+              style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold" style={{ color: "var(--gf-text-primary)" }}>
+                  {rule.name}
+                </span>
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: "rgba(99,102,241,0.15)",
+                    color: "#6366f1",
+                  }}
+                >
+                  {rule.gateway}
+                </span>
+              </div>
+              <p className="text-sm mb-2" style={{ color: "var(--gf-text-secondary)" }}>
+                {rule.description}
+              </p>
+              <p className="text-xs font-mono" style={{ color: "var(--gf-text-secondary)" }}>
+                Condition: {rule.condition}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

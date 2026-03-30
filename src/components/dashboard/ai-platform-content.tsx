@@ -7,6 +7,8 @@ import {
   Shield,
   Zap,
   Database,
+  Workflow,
+  BarChart3,
 } from "lucide-react";
 
 const stats = [
@@ -56,6 +58,56 @@ const guardrails = [
   { name: "Content Filter", status: "Enabled", blocked: 12, desc: "Blocks harmful or inappropriate content" },
   { name: "Cost Limiter", status: "Enabled", blocked: 3, desc: "Per-tenant token budget enforcement" },
   { name: "Output Validation", status: "Enabled", blocked: 8, desc: "Schema validation on structured outputs" },
+];
+
+const agentWorkflows = [
+  {
+    name: "Customer Support Bot",
+    type: "Conversational" as const,
+    status: "Active" as const,
+    executions: 1_284,
+    avgDuration: "3.2s",
+    tools: "KB Search, Ticket API, Escalation",
+  },
+  {
+    name: "Doc Ingestion Pipeline",
+    type: "RAG" as const,
+    status: "Active" as const,
+    executions: 412,
+    avgDuration: "12.8s",
+    tools: "Embedder, Chunker, Vector Store",
+  },
+  {
+    name: "Invoice Processor",
+    type: "Task" as const,
+    status: "Paused" as const,
+    executions: 0,
+    avgDuration: "8.4s",
+    tools: "OCR, Validator, ERP Push",
+  },
+  {
+    name: "Code Review Agent",
+    type: "Task" as const,
+    status: "Active" as const,
+    executions: 97,
+    avgDuration: "18.1s",
+    tools: "Git Diff, Linter, Comment API",
+  },
+  {
+    name: "Knowledge Q&A",
+    type: "RAG" as const,
+    status: "Active" as const,
+    executions: 2_310,
+    avgDuration: "2.6s",
+    tools: "Vector Search, Reranker, LLM",
+  },
+];
+
+const tenantUsage = [
+  { tenant: "Acme Corp", tokensUsed: "1.2M", budget: "$500", usagePct: 72, cost: "$360.00" },
+  { tenant: "Globex Inc", tokensUsed: "480K", budget: "$300", usagePct: 48, cost: "$144.00" },
+  { tenant: "Initech", tokensUsed: "890K", budget: "$400", usagePct: 89, cost: "$356.00" },
+  { tenant: "Umbrella Ltd", tokensUsed: "210K", budget: "$250", usagePct: 25, cost: "$62.50" },
 ];
 
 export function AIPlatformContent() {
@@ -215,6 +267,121 @@ export function AIPlatformContent() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Agent Workflows */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Workflow className="h-5 w-5" style={{ color: "var(--gf-accent)" }} />
+          <h2 className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>
+            Agent Workflows
+          </h2>
+        </div>
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Agent Name", "Type", "Status", "Executions (24h)", "Avg Duration", "Tools Used"].map((h) => (
+                  <th key={h} className="text-left px-5 py-3 text-xs font-medium" style={{ color: "var(--gf-text-secondary)" }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {agentWorkflows.map((a) => (
+                <tr key={a.name} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                  <td className="px-5 py-3 text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>
+                    {a.name}
+                  </td>
+                  <td className="px-5 py-3">
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }}
+                    >
+                      {a.type}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        a.status === "Active"
+                          ? "bg-green-500/15 text-green-500"
+                          : "bg-yellow-500/15 text-yellow-500"
+                      }`}
+                    >
+                      {a.status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {a.executions.toLocaleString()}
+                  </td>
+                  <td className="px-5 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {a.avgDuration}
+                  </td>
+                  <td className="px-5 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {a.tools}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Usage Tracking */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <BarChart3 className="h-5 w-5" style={{ color: "var(--gf-accent)" }} />
+          <h2 className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>
+            Usage Tracking
+          </h2>
+        </div>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {tenantUsage.map((t) => (
+            <div
+              key={t.tenant}
+              className="rounded-xl p-5"
+              style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+            >
+              <p className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>
+                {t.tenant}
+              </p>
+              <div className="mt-3 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span style={{ color: "var(--gf-text-secondary)" }}>Tokens Used (MTD)</span>
+                  <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{t.tokensUsed}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span style={{ color: "var(--gf-text-secondary)" }}>Budget</span>
+                  <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{t.budget}</span>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span style={{ color: "var(--gf-text-secondary)" }}>Usage</span>
+                    <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{t.usagePct}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full" style={{ backgroundColor: "var(--gf-border)" }}>
+                    <div
+                      className="h-2 rounded-full transition-all"
+                      style={{
+                        width: `${t.usagePct}%`,
+                        backgroundColor: t.usagePct >= 80 ? "#ef4444" : "var(--gf-accent)",
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between text-xs pt-1 border-t" style={{ borderColor: "var(--gf-border)" }}>
+                  <span style={{ color: "var(--gf-text-secondary)" }}>Cost</span>
+                  <span className="font-semibold" style={{ color: "var(--gf-text-primary)" }}>{t.cost}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

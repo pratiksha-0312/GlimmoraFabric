@@ -65,6 +65,33 @@ const levelColors: Record<string, string> = {
   DEBUG: "#8b5cf6",
 };
 
+type KafkaEventStatus = "Processed" | "Pending" | "Failed";
+
+const kafkaEvents: {
+  timestamp: string;
+  topic: string;
+  eventType: string;
+  partition: number;
+  offset: number;
+  tenant: string;
+  status: KafkaEventStatus;
+}[] = [
+  { timestamp: "2026-03-30 14:31:58", topic: "tenant.onboarding", eventType: "TenantProvisioned", partition: 2, offset: 108432, tenant: "Acme Corp", status: "Processed" },
+  { timestamp: "2026-03-30 14:30:11", topic: "billing.invoices", eventType: "InvoiceGenerated", partition: 0, offset: 94201, tenant: "GlobalFinance", status: "Processed" },
+  { timestamp: "2026-03-30 14:28:45", topic: "payments.webhooks", eventType: "PaymentReceived", partition: 1, offset: 77614, tenant: "TechVault", status: "Processed" },
+  { timestamp: "2026-03-30 14:25:02", topic: "ai.inference", eventType: "ModelRoutingFailed", partition: 3, offset: 65239, tenant: "GlobalFinance", status: "Failed" },
+  { timestamp: "2026-03-30 14:22:17", topic: "notifications.email", eventType: "BatchDispatched", partition: 0, offset: 53180, tenant: "Acme Corp", status: "Processed" },
+  { timestamp: "2026-03-30 14:18:44", topic: "audit.trail", eventType: "PermissionChanged", partition: 1, offset: 42877, tenant: "TechVault", status: "Pending" },
+  { timestamp: "2026-03-30 14:15:30", topic: "workflow.events", eventType: "StepCompleted", partition: 2, offset: 31504, tenant: "NovaBuild", status: "Processed" },
+  { timestamp: "2026-03-30 14:12:09", topic: "ai.inference", eventType: "TokenQuotaExceeded", partition: 3, offset: 20891, tenant: "GlobalFinance", status: "Failed" },
+];
+
+const kafkaStatusColors: Record<KafkaEventStatus, string> = {
+  Processed: "#22c55e",
+  Pending: "#f59e0b",
+  Failed: "#ef4444",
+};
+
 const alerts = [
   {
     severity: "Warning",
@@ -236,6 +263,62 @@ export function MonitoringContent() {
               <span style={{ color: "var(--gf-text-secondary)" }}>{log.message}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Event Logs (Kafka) */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          Event Logs (Kafka)
+        </h2>
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Timestamp", "Topic", "Event Type", "Partition", "Offset", "Tenant", "Status"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 font-medium" style={{ color: "var(--gf-text-secondary)" }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {kafkaEvents.map((evt, idx) => (
+                <tr key={idx} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                  <td className="px-4 py-3 text-xs font-mono" style={{ color: "var(--gf-text-muted)" }}>
+                    {evt.timestamp}
+                  </td>
+                  <td className="px-4 py-3 text-xs font-mono font-medium" style={{ color: "var(--gf-accent)" }}>
+                    {evt.topic}
+                  </td>
+                  <td className="px-4 py-3 text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>
+                    {evt.eventType}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {evt.partition}
+                  </td>
+                  <td className="px-4 py-3 text-xs font-mono" style={{ color: "var(--gf-text-secondary)" }}>
+                    {evt.offset.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>
+                    {evt.tenant}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: `${kafkaStatusColors[evt.status]}20`, color: kafkaStatusColors[evt.status] }}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: kafkaStatusColors[evt.status] }} />
+                      {evt.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

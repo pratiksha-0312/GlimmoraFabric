@@ -47,6 +47,26 @@ const apiEndpoints = [
   { method: "POST", path: "/api/v1/workflows/trigger", service: "Workflow", description: "Trigger a workflow execution" },
 ];
 
+const domainEvents = [
+  { name: "UserCreated", source: "Identity", schemaVersion: "v2.1", subscribers: 5, lastEmitted: "2 min ago" },
+  { name: "PaymentSucceeded", source: "Payment", schemaVersion: "v3.0", subscribers: 8, lastEmitted: "30 sec ago" },
+  { name: "OrderPlaced", source: "Commerce", schemaVersion: "v1.4", subscribers: 6, lastEmitted: "1 min ago" },
+  { name: "NotificationSent", source: "Notification", schemaVersion: "v2.0", subscribers: 3, lastEmitted: "5 min ago" },
+  { name: "WorkflowCompleted", source: "Workflow", schemaVersion: "v1.2", subscribers: 4, lastEmitted: "12 min ago" },
+  { name: "DocumentGenerated", source: "Document", schemaVersion: "v1.0", subscribers: 2, lastEmitted: "8 min ago" },
+  { name: "SubscriptionRenewed", source: "Payment", schemaVersion: "v2.3", subscribers: 7, lastEmitted: "45 sec ago" },
+  { name: "AICompletionFinished", source: "AI Platform", schemaVersion: "v1.1", subscribers: 3, lastEmitted: "15 sec ago" },
+];
+
+const sandboxEnvironments = [
+  { name: "dev-sandbox-01", status: "Running", services: ["Identity", "Payment", "Notification"], url: "https://sandbox-01.dev.glimmora.io", createdBy: "Alice Chen" },
+  { name: "staging-integration", status: "Running", services: ["All Services"], url: "https://staging.dev.glimmora.io", createdBy: "DevOps Team" },
+  { name: "feature-auth-v3", status: "Stopped", services: ["Identity", "AI Platform"], url: "https://auth-v3.dev.glimmora.io", createdBy: "Bob Martinez" },
+  { name: "perf-testing", status: "Running", services: ["Payment", "Commerce", "Workflow"], url: "https://perf.dev.glimmora.io", createdBy: "QA Team" },
+  { name: "demo-env", status: "Stopped", services: ["Identity", "Payment", "Document"], url: "https://demo.dev.glimmora.io", createdBy: "Sales Engineering" },
+  { name: "hotfix-payments", status: "Running", services: ["Payment", "Notification"], url: "https://hotfix-pay.dev.glimmora.io", createdBy: "Carol Singh" },
+];
+
 const methodColors: Record<string, string> = {
   GET: "#22c55e",
   POST: "#3b82f6",
@@ -206,6 +226,110 @@ export function DeveloperToolsContent() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Event Catalog */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          Event Catalog
+        </h2>
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Event Name", "Source Service", "Schema Version", "Subscribers", "Last Emitted"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 font-medium" style={{ color: "var(--gf-text-secondary)" }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {domainEvents.map((event, idx) => (
+                <tr key={idx} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                  <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color: "var(--gf-accent)" }}>
+                    {event.name}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {event.source}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }}
+                    >
+                      {event.schemaVersion}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs font-semibold" style={{ color: "var(--gf-text-primary)" }}>
+                    {event.subscribers}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: "var(--gf-text-muted)" }}>
+                    {event.lastEmitted}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Sandbox Environments */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          Sandbox Environments
+        </h2>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {sandboxEnvironments.map((env) => (
+            <div
+              key={env.name}
+              className="rounded-xl p-5"
+              style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+            >
+              <div className="flex items-start justify-between">
+                <h3 className="text-sm font-semibold font-mono" style={{ color: "var(--gf-text-primary)" }}>
+                  {env.name}
+                </h3>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    env.status === "Running"
+                      ? "bg-green-500/15 text-green-500"
+                      : "bg-gray-500/15 text-gray-400"
+                  }`}
+                >
+                  {env.status}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1">
+                {env.services.map((service) => (
+                  <span
+                    key={service}
+                    className="text-xs px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }}
+                  >
+                    {service}
+                  </span>
+                ))}
+              </div>
+              <a
+                href={env.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-mono"
+                style={{ color: "var(--gf-accent)" }}
+              >
+                {env.url}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+              <p className="mt-2 text-xs" style={{ color: "var(--gf-text-muted)" }}>
+                Created by {env.createdBy}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

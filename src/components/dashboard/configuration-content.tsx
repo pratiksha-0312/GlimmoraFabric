@@ -51,6 +51,22 @@ const platformConfig = [
   { key: "FILE_UPLOAD_MAX_MB", value: "50", category: "Storage" },
 ];
 
+const regionSettings = [
+  { name: "US-East", status: "Active", tenants: 142, primaryProvider: "AWS", dataResidency: "Compliant" },
+  { name: "US-West", status: "Active", tenants: 98, primaryProvider: "AWS", dataResidency: "Compliant" },
+  { name: "EU-West", status: "Active", tenants: 76, primaryProvider: "AWS", dataResidency: "GDPR Compliant" },
+  { name: "AP-South", status: "Inactive", tenants: 31, primaryProvider: "Azure", dataResidency: "Pending Review" },
+  { name: "EU-Central", status: "Active", tenants: 53, primaryProvider: "Azure", dataResidency: "GDPR Compliant" },
+];
+
+const providerConfigs = [
+  { channel: "SMS", primary: "Twilio", fallback: "Vonage", status: "Active", region: "US-East" },
+  { channel: "Email", primary: "SendGrid", fallback: "AWS SES", status: "Active", region: "US-East" },
+  { channel: "Payment", primary: "Stripe", fallback: "Razorpay", status: "Active", region: "US-West" },
+  { channel: "Push", primary: "Firebase FCM", fallback: "OneSignal", status: "Active", region: "EU-West" },
+  { channel: "Storage", primary: "AWS S3", fallback: "Azure Blob", status: "Active", region: "EU-Central" },
+];
+
 export function ConfigurationContent() {
   return (
     <div className="space-y-6">
@@ -226,6 +242,116 @@ export function ConfigurationContent() {
                       style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }}
                     >
                       {cfg.category}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Region Settings */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          Region Settings
+        </h2>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {regionSettings.map((region) => (
+            <div
+              key={region.name}
+              className="rounded-xl p-5"
+              style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" style={{ color: "var(--gf-accent)" }} />
+                  <span className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>
+                    {region.name}
+                  </span>
+                </div>
+                <span
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    region.status === "Active"
+                      ? "bg-green-500/15 text-green-500"
+                      : "bg-gray-500/15 text-gray-500"
+                  }`}
+                >
+                  {region.status}
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span style={{ color: "var(--gf-text-secondary)" }}>Tenants</span>
+                  <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{region.tenants}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span style={{ color: "var(--gf-text-secondary)" }}>Primary Provider</span>
+                  <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{region.primaryProvider}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span style={{ color: "var(--gf-text-secondary)" }}>Data Residency</span>
+                  <span
+                    className="font-medium px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }}
+                  >
+                    {region.dataResidency}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Provider Configs */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+          Provider Configs
+        </h2>
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Channel", "Primary Provider", "Fallback Provider", "Status", "Region"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 font-medium" style={{ color: "var(--gf-text-secondary)" }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {providerConfigs.map((pc) => (
+                <tr key={pc.channel} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                  <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>
+                    {pc.channel}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: "var(--gf-text-primary)" }}>
+                    {pc.primary}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                    {pc.fallback}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        pc.status === "Active"
+                          ? "bg-green-500/15 text-green-500"
+                          : "bg-gray-500/15 text-gray-500"
+                      }`}
+                    >
+                      {pc.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }}
+                    >
+                      {pc.region}
                     </span>
                   </td>
                 </tr>
