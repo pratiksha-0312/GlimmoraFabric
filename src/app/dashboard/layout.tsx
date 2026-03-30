@@ -59,13 +59,13 @@ const navItems: NavItem[] = [
     label: "Tenants",
     href: "/dashboard/tenants",
     icon: Building2,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "finance_manager", "auditor", "support_agent"],
+    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "product_manager", "governance_admin"],
   },
   {
     label: "Users & Access",
     href: "/dashboard/identity",
     icon: Users,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor", "support_agent"],
+    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "governance_admin"],
   },
 
   // ── PLATFORM ──
@@ -74,13 +74,13 @@ const navItems: NavItem[] = [
     href: "/dashboard/services",
     icon: Activity,
     section: "Platform",
-    visibleTo: ["super_admin", "platform_admin", "developer"],
+    visibleTo: ["super_admin", "developer", "platform_engineer", "qa_engineer", "product_manager"],
   },
   {
     label: "API Gateway & Keys",
     href: "/dashboard/api-gateway",
     icon: Key,
-    visibleTo: ["super_admin", "platform_admin", "developer"],
+    visibleTo: ["super_admin", "developer", "platform_engineer"],
   },
 
   // ── OPERATIONS ──
@@ -89,25 +89,23 @@ const navItems: NavItem[] = [
     href: "/dashboard/workflows",
     icon: GitBranch,
     section: "Operations",
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor", "support_agent", "viewer"],
+    visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineer", "qa_engineer", "product_manager", "governance_admin"],
   },
   {
     label: "Notifications",
     href: "/dashboard/notifications",
     icon: Bell,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor", "support_agent", "viewer"],
   },
   {
     label: "Payments",
     href: "/dashboard/payments",
     icon: CreditCard,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "finance_manager", "auditor", "support_agent"],
+    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "product_manager", "governance_admin"],
   },
   {
     label: "Documents",
     href: "/dashboard/documents",
     icon: File,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "finance_manager", "auditor", "support_agent", "viewer"],
   },
 
   // ── INTELLIGENCE ──
@@ -116,7 +114,7 @@ const navItems: NavItem[] = [
     href: "/dashboard/ai-platform",
     icon: Brain,
     section: "Intelligence",
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor"],
+    visibleTo: ["super_admin", "developer", "platform_engineer", "ai_prompt_owner"],
   },
 
   // ── COMPLIANCE ──
@@ -125,13 +123,13 @@ const navItems: NavItem[] = [
     href: "/dashboard/audit",
     icon: FileText,
     section: "Compliance",
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "auditor", "support_agent", "viewer"],
+    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "qa_engineer", "governance_admin"],
   },
   {
     label: "Monitoring & Logs",
     href: "/dashboard/monitoring",
     icon: MonitorDot,
-    visibleTo: ["super_admin", "platform_admin", "auditor"],
+    visibleTo: ["super_admin", "platform_engineer", "qa_engineer", "governance_admin"],
   },
 
   // ── SYSTEM ──
@@ -140,19 +138,19 @@ const navItems: NavItem[] = [
     href: "/dashboard/configuration",
     icon: Settings,
     section: "System",
-    visibleTo: ["super_admin", "platform_admin"],
+    visibleTo: ["super_admin", "platform_engineer"],
   },
   {
     label: "Developer Tools",
     href: "/dashboard/developer-tools",
     icon: Code2,
-    visibleTo: ["super_admin", "platform_admin", "developer"],
+    visibleTo: ["super_admin", "developer", "platform_engineer", "qa_engineer", "ai_prompt_owner"],
   },
   {
     label: "Reports & Analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "finance_manager", "viewer"],
+    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "qa_engineer", "product_manager", "governance_admin"],
   },
 ];
 
@@ -209,7 +207,7 @@ export default function DashboardLayout({
     };
   }, [handleKeyDown, handleClickOutside]);
 
-  const userRole = user?.role ?? "viewer";
+  const userRole = user?.role ?? "developer";
   const roleLabel = ROLE_LABELS[userRole];
   const roleColor = ROLE_COLORS[userRole];
   const userInitial = user?.fullName?.charAt(0).toUpperCase() ?? "U";

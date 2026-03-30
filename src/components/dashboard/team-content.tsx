@@ -30,7 +30,7 @@ const teamMembers: TeamMember[] = [
   {
     name: "Priya Sharma",
     email: "priya@glimmora.com",
-    role: "platform_admin",
+    role: "platform_engineer",
     status: "active",
   },
   {
@@ -42,20 +42,32 @@ const teamMembers: TeamMember[] = [
   {
     name: "Anita Desai",
     email: "anita@glimmora.com",
-    role: "developer",
+    role: "qa_engineer",
     status: "active",
   },
   {
     name: "Vikram Singh",
     email: "vikram@glimmora.com",
-    role: "auditor",
+    role: "governance_admin",
+    status: "active",
+  },
+  {
+    name: "Neha Gupta",
+    email: "neha@glimmora.com",
+    role: "product_manager",
+    status: "active",
+  },
+  {
+    name: "Arjun Mehta",
+    email: "arjun@glimmora.com",
+    role: "ai_prompt_owner",
     status: "active",
   },
   {
     name: "Dev Patel",
     email: "dev@glimmora.com",
-    role: "viewer",
-    status: "inactive",
+    role: "tenant_admin",
+    status: "active",
   },
 ];
 
@@ -65,11 +77,11 @@ const teamMembers: TeamMember[] = [
 
 export function TeamContent() {
   const { user } = useAuth();
-  const currentRole = user?.role ?? "viewer";
+  const currentRole = user?.role ?? "developer";
   const isManager = canManageTeam(currentRole);
 
-  // Viewers cannot access team management
-  if (currentRole === "viewer") {
+  // Restricted roles cannot access team management
+  if (!isManager && currentRole !== "super_admin") {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Team Members</h1>

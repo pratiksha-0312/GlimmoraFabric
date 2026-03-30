@@ -25,7 +25,7 @@ const stats: StatCard[] = [
     value: "8",
     change: "+1 this week",
     icon: Users,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin"],
+    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "governance_admin"],
   },
   {
     label: "API Requests",
@@ -38,7 +38,7 @@ const stats: StatCard[] = [
     value: "94%",
     change: "No issues detected",
     icon: Shield,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin"],
+    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "governance_admin"],
   },
 ];
 
@@ -79,7 +79,7 @@ const quickLinks = [
 
 export function DashboardContent() {
   const { user } = useAuth();
-  const userRole = user?.role ?? "viewer";
+  const userRole = user?.role ?? "developer";
   const roleLabel = ROLE_LABELS[userRole];
   const roleColor = ROLE_COLORS[userRole];
 
@@ -109,11 +109,7 @@ export function DashboardContent() {
       </div>
 
       {/* Read-only banner for Viewer role */}
-      {userRole === "viewer" && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-[#141927] px-4 py-3 text-sm text-gray-400 dark:text-gray-500 dark:text-gray-400">
-          You have read-only access
-        </div>
-      )}
+      {/* Read-only banner can be shown for roles with limited access */}
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

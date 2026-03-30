@@ -1,26 +1,26 @@
 // ---------------------------------------------------------------------------
-// Role definitions for Glimmora Fabric
+// Role definitions for Glimmora Fabric (Internal System Roles)
 // ---------------------------------------------------------------------------
 
 export type UserRole =
   | "super_admin"
-  | "platform_admin"
   | "tenant_admin"
   | "developer"
-  | "finance_manager"
-  | "auditor"
-  | "support_agent"
-  | "viewer";
+  | "platform_engineer"
+  | "qa_engineer"
+  | "product_manager"
+  | "governance_admin"
+  | "ai_prompt_owner";
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: "Super Admin",
-  platform_admin: "Platform Admin",
   tenant_admin: "Tenant Admin",
   developer: "Developer",
-  finance_manager: "Finance Manager",
-  auditor: "Auditor",
-  support_agent: "Support Agent",
-  viewer: "Viewer",
+  platform_engineer: "Platform Engineer",
+  qa_engineer: "QA Engineer",
+  product_manager: "Product Manager",
+  governance_admin: "Governance Admin",
+  ai_prompt_owner: "AI Prompt Owner",
 };
 
 export const ROLE_COLORS: Record<
@@ -32,11 +32,6 @@ export const ROLE_COLORS: Record<
     text: "text-teal-400",
     dot: "bg-teal-500",
   },
-  platform_admin: {
-    bg: "bg-blue-500/10",
-    text: "text-blue-400",
-    dot: "bg-blue-500",
-  },
   tenant_admin: {
     bg: "bg-cyan-500/10",
     text: "text-cyan-400",
@@ -47,25 +42,30 @@ export const ROLE_COLORS: Record<
     text: "text-amber-400",
     dot: "bg-amber-500",
   },
-  finance_manager: {
+  platform_engineer: {
+    bg: "bg-blue-500/10",
+    text: "text-blue-400",
+    dot: "bg-blue-500",
+  },
+  qa_engineer: {
     bg: "bg-emerald-500/10",
     text: "text-emerald-400",
     dot: "bg-emerald-500",
   },
-  auditor: {
+  product_manager: {
+    bg: "bg-violet-500/10",
+    text: "text-violet-400",
+    dot: "bg-violet-500",
+  },
+  governance_admin: {
+    bg: "bg-rose-500/10",
+    text: "text-rose-400",
+    dot: "bg-rose-500",
+  },
+  ai_prompt_owner: {
     bg: "bg-purple-500/10",
     text: "text-purple-400",
     dot: "bg-purple-500",
-  },
-  support_agent: {
-    bg: "bg-orange-500/10",
-    text: "text-orange-400",
-    dot: "bg-orange-500",
-  },
-  viewer: {
-    bg: "bg-gray-500/10",
-    text: "text-gray-400",
-    dot: "bg-gray-500",
   },
 };
 
@@ -75,27 +75,27 @@ export const ROLE_COLORS: Record<
 
 export const ROLES: Record<UserRole, { label: string; color: string }> = {
   super_admin: { label: "Super Admin", color: "teal" },
-  platform_admin: { label: "Platform Admin", color: "blue" },
   tenant_admin: { label: "Tenant Admin", color: "cyan" },
   developer: { label: "Developer", color: "amber" },
-  finance_manager: { label: "Finance Manager", color: "emerald" },
-  auditor: { label: "Auditor", color: "purple" },
-  support_agent: { label: "Support Agent", color: "orange" },
-  viewer: { label: "Viewer", color: "gray" },
+  platform_engineer: { label: "Platform Engineer", color: "blue" },
+  qa_engineer: { label: "QA Engineer", color: "emerald" },
+  product_manager: { label: "Product Manager", color: "violet" },
+  governance_admin: { label: "Governance Admin", color: "rose" },
+  ai_prompt_owner: { label: "AI Prompt Owner", color: "purple" },
 };
 
 export const ROLE_BADGE_CLASSES: Record<UserRole, string> = {
   super_admin: "bg-teal-500/10 text-teal-400",
-  platform_admin: "bg-blue-500/10 text-blue-400",
   tenant_admin: "bg-cyan-500/10 text-cyan-400",
   developer: "bg-amber-500/10 text-amber-400",
-  finance_manager: "bg-emerald-500/10 text-emerald-400",
-  auditor: "bg-purple-500/10 text-purple-400",
-  support_agent: "bg-orange-500/10 text-orange-400",
-  viewer: "bg-gray-500/10 text-gray-400",
+  platform_engineer: "bg-blue-500/10 text-blue-400",
+  qa_engineer: "bg-emerald-500/10 text-emerald-400",
+  product_manager: "bg-violet-500/10 text-violet-400",
+  governance_admin: "bg-rose-500/10 text-rose-400",
+  ai_prompt_owner: "bg-purple-500/10 text-purple-400",
 };
 
 /** Returns true if the role can manage team members (add, edit, remove). */
 export function canManageTeam(role: UserRole): boolean {
-  return role === "super_admin" || role === "platform_admin" || role === "tenant_admin";
+  return role === "super_admin" || role === "tenant_admin" || role === "governance_admin";
 }

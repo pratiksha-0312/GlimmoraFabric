@@ -8,14 +8,14 @@ import { useAuth } from "@/context/auth-context";
 import type { UserRole } from "@/lib/roles";
 
 const testCredentials: Record<string, { fullName: string; email: string; role: UserRole }> = {
-  superadmin:      { fullName: "Super Admin",      email: "superadmin@glimmora.com",      role: "super_admin" },
-  platformadmin:   { fullName: "Platform Admin",   email: "platformadmin@glimmora.com",   role: "platform_admin" },
-  tenantadmin:     { fullName: "Tenant Admin",     email: "tenantadmin@glimmora.com",     role: "tenant_admin" },
-  developer:       { fullName: "Dev User",         email: "developer@glimmora.com",       role: "developer" },
-  finance:         { fullName: "Finance Manager",  email: "finance@glimmora.com",         role: "finance_manager" },
-  auditor:         { fullName: "Audit User",       email: "auditor@glimmora.com",         role: "auditor" },
-  support:         { fullName: "Support Agent",    email: "support@glimmora.com",         role: "support_agent" },
-  viewer:          { fullName: "Viewer User",      email: "viewer@glimmora.com",          role: "viewer" },
+  superadmin:   { fullName: "Super Admin",       email: "superadmin@glimmora.com",   role: "super_admin" },
+  tenantadmin:  { fullName: "Tenant Admin",      email: "tenantadmin@glimmora.com",  role: "tenant_admin" },
+  developer:    { fullName: "Dev User",          email: "developer@glimmora.com",    role: "developer" },
+  platform:     { fullName: "Platform Engineer", email: "platform@glimmora.com",     role: "platform_engineer" },
+  qa:           { fullName: "QA Engineer",       email: "qa@glimmora.com",           role: "qa_engineer" },
+  pm:           { fullName: "Product Manager",   email: "pm@glimmora.com",           role: "product_manager" },
+  governance:   { fullName: "Governance Admin",  email: "governance@glimmora.com",   role: "governance_admin" },
+  aiprompt:     { fullName: "AI Prompt Owner",   email: "aiprompt@glimmora.com",     role: "ai_prompt_owner" },
 };
 
 export function LoginForm() {
@@ -49,7 +49,7 @@ export function LoginForm() {
         router.push("/dashboard");
         return;
       } else {
-        setError("Invalid username or password. Try: superadmin / platformadmin / tenantadmin / developer / finance / auditor / support / viewer (password: 1)");
+        setError("Invalid username or password. Try: superadmin / tenantadmin / developer / platform / qa / pm / governance / aiprompt (password: 1)");
       }
     } catch {
       setError("Invalid email or password. Please try again.");
