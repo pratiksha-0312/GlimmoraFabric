@@ -10,7 +10,7 @@ export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("member");
+  const [role, setRole] = useState<UserRole>("developer");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,18 +29,46 @@ export function SignupForm() {
       selectedBg: "bg-teal-500/10",
     },
     {
-      value: "admin",
-      label: "Admin",
-      description: "Service & infrastructure management",
+      value: "platform_admin",
+      label: "Platform Admin",
+      description: "Manage shared Fabric services",
       borderColor: "border-blue-500",
       selectedBg: "bg-blue-500/10",
     },
     {
-      value: "member",
-      label: "Member",
-      description: "Workflows, reports & features",
+      value: "tenant_admin",
+      label: "Tenant Admin",
+      description: "Manage your organization",
+      borderColor: "border-cyan-500",
+      selectedBg: "bg-cyan-500/10",
+    },
+    {
+      value: "developer",
+      label: "Developer",
+      description: "Consume APIs, SDKs & prompts",
       borderColor: "border-amber-500",
       selectedBg: "bg-amber-500/10",
+    },
+    {
+      value: "finance_manager",
+      label: "Finance Manager",
+      description: "Payments, billing & invoices",
+      borderColor: "border-emerald-500",
+      selectedBg: "bg-emerald-500/10",
+    },
+    {
+      value: "auditor",
+      label: "Auditor",
+      description: "Audit logs & compliance reports",
+      borderColor: "border-purple-500",
+      selectedBg: "bg-purple-500/10",
+    },
+    {
+      value: "support_agent",
+      label: "Support Agent",
+      description: "Tenant support & troubleshooting",
+      borderColor: "border-orange-500",
+      selectedBg: "bg-orange-500/10",
     },
     {
       value: "viewer",
@@ -222,13 +250,7 @@ export function SignupForm() {
                       {isSelected && (
                         <span
                           className={`block h-2 w-2 rounded-full ${
-                            opt.value === "super_admin"
-                              ? "bg-teal-500"
-                              : opt.value === "admin"
-                                ? "bg-blue-500"
-                                : opt.value === "member"
-                                  ? "bg-amber-500"
-                                  : "bg-gray-400"
+                            opt.borderColor.replace("border-", "bg-")
                           }`}
                         />
                       )}

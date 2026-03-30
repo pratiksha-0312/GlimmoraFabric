@@ -16,6 +16,9 @@ import {
   ArrowRight,
   LayoutDashboard,
   Activity,
+  Brain,
+  BarChart3,
+  Building2,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -43,6 +46,8 @@ const SEARCHABLE_ITEMS: SearchItem[] = [
   { name: "Services", category: "Pages", icon: Activity },
   { name: "Team", category: "Pages", icon: Users },
   { name: "Settings", category: "Pages", icon: Settings },
+  { name: "Tenants", category: "Pages", icon: Building2 },
+  { name: "Analytics", category: "Pages", icon: BarChart3 },
 
   // Services
   { name: "Identity & Access", category: "Services", icon: Shield },
@@ -51,6 +56,7 @@ const SEARCHABLE_ITEMS: SearchItem[] = [
   { name: "Audit & Compliance", category: "Services", icon: FileText },
   { name: "Workflow Engine", category: "Services", icon: GitBranch },
   { name: "Document Service", category: "Services", icon: File },
+  { name: "AI Platform", category: "Services", icon: Brain },
 
   // Actions
   { name: "Create User", category: "Actions", icon: Users },

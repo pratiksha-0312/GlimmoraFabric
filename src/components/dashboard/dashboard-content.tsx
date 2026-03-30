@@ -25,7 +25,7 @@ const stats: StatCard[] = [
     value: "8",
     change: "+1 this week",
     icon: Users,
-    visibleTo: ["super_admin", "admin"],
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin"],
   },
   {
     label: "API Requests",
@@ -38,7 +38,7 @@ const stats: StatCard[] = [
     value: "94%",
     change: "No issues detected",
     icon: Shield,
-    visibleTo: ["super_admin", "admin"],
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin"],
   },
 ];
 

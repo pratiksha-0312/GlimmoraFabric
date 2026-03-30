@@ -5,6 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import type { UserRole } from "@/lib/roles";
+
+const testCredentials: Record<string, { fullName: string; email: string; role: UserRole }> = {
+  superadmin:      { fullName: "Super Admin",      email: "superadmin@glimmora.com",      role: "super_admin" },
+  platformadmin:   { fullName: "Platform Admin",   email: "platformadmin@glimmora.com",   role: "platform_admin" },
+  tenantadmin:     { fullName: "Tenant Admin",     email: "tenantadmin@glimmora.com",     role: "tenant_admin" },
+  developer:       { fullName: "Dev User",         email: "developer@glimmora.com",       role: "developer" },
+  finance:         { fullName: "Finance Manager",  email: "finance@glimmora.com",         role: "finance_manager" },
+  auditor:         { fullName: "Audit User",       email: "auditor@glimmora.com",         role: "auditor" },
+  support:         { fullName: "Support Agent",    email: "support@glimmora.com",         role: "support_agent" },
+  viewer:          { fullName: "Viewer User",      email: "viewer@glimmora.com",          role: "viewer" },
+};
 
 export function LoginForm() {
   const router = useRouter();
@@ -29,18 +41,15 @@ export function LoginForm() {
         return;
       }
 
-      // Hardcoded credentials — replace with actual API call
-      if (email === "superadmin" && password === "1") {
-        login({
-          fullName: "Super Admin",
-          email: "superadmin@glimmora.com",
-          role: "super_admin",
-        });
+      // Test credentials — replace with actual API call
+      const cred = testCredentials[email.toLowerCase()];
+      if (cred && password === "1") {
+        login(cred);
         setIsLoading(false);
         router.push("/dashboard");
         return;
       } else {
-        setError("Invalid username or password.");
+        setError("Invalid username or password. Try: superadmin / platformadmin / tenantadmin / developer / finance / auditor / support / viewer (password: 1)");
       }
     } catch {
       setError("Invalid email or password. Please try again.");

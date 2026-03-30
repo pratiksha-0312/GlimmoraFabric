@@ -23,6 +23,11 @@ import {
   FileText,
   Building2,
   GitBranch,
+  File,
+  Brain,
+  BarChart3,
+  ChevronDown,
+  Headphones,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -39,63 +44,96 @@ interface NavItem {
   icon: typeof LayoutDashboard;
   /** Roles that can see this nav item. If omitted, visible to all. */
   visibleTo?: UserRole[];
+  /** Optional section label displayed above this item */
+  section?: string;
 }
 
 const navItems: NavItem[] = [
-  { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+  // ── MAIN ──
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+
+  // ── PLATFORM SERVICES ──
   {
     label: "Identity & Access",
     href: "/dashboard/identity",
     icon: Shield,
-    visibleTo: ["super_admin", "admin"],
+    section: "Platform Services",
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor", "support_agent"],
   },
   {
     label: "Services",
     href: "/dashboard/services",
     icon: Activity,
-    visibleTo: ["super_admin", "admin"],
+    visibleTo: ["super_admin", "platform_admin", "developer"],
   },
   {
     label: "Notifications",
     href: "/dashboard/notifications",
     icon: Bell,
-    visibleTo: ["super_admin", "admin"],
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor", "support_agent", "viewer"],
   },
   {
     label: "Payments",
     href: "/dashboard/payments",
     icon: CreditCard,
-    visibleTo: ["super_admin"],
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "finance_manager", "auditor", "support_agent"],
   },
+
+  // ── OPERATIONS ──
   {
     label: "Workflows",
     href: "/dashboard/workflows",
     icon: GitBranch,
-    visibleTo: ["super_admin", "admin"],
+    section: "Operations",
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor", "support_agent", "viewer"],
   },
   {
-    label: "Audit Logs",
+    label: "Documents",
+    href: "/dashboard/documents",
+    icon: File,
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "finance_manager", "auditor", "support_agent", "viewer"],
+  },
+  {
+    label: "Audit & Compliance",
     href: "/dashboard/audit",
     icon: FileText,
-    visibleTo: ["super_admin", "admin", "auditor"],
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "auditor", "support_agent", "viewer"],
+  },
+
+  // ── INTELLIGENCE ──
+  {
+    label: "AI Platform",
+    href: "/dashboard/ai-platform",
+    icon: Brain,
+    section: "Intelligence",
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor"],
+  },
+  {
+    label: "Analytics",
+    href: "/dashboard/analytics",
+    icon: BarChart3,
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "finance_manager", "viewer"],
+  },
+
+  // ── MANAGEMENT ──
+  {
+    label: "Tenants",
+    href: "/dashboard/tenants",
+    icon: Building2,
+    section: "Management",
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "finance_manager", "auditor", "support_agent"],
   },
   {
     label: "Team",
     href: "/dashboard/team",
     icon: Users,
-    visibleTo: ["super_admin", "admin"],
-  },
-  {
-    label: "Tenants",
-    href: "/dashboard/tenants",
-    icon: Building2,
-    visibleTo: ["super_admin"],
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin"],
   },
   {
     label: "Settings",
     href: "/dashboard/settings",
     icon: Settings,
-    visibleTo: ["super_admin"],
+    visibleTo: ["super_admin", "platform_admin"],
   },
 ];
 
@@ -225,28 +263,40 @@ export default function DashboardLayout({
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 space-y-1 px-3 py-4">
-            {filteredNavItems.map((item) => {
+          <nav className="flex-1 overflow-y-auto px-3 py-4">
+            {filteredNavItems.map((item, idx) => {
               const isActive = pathname === item.href;
+              const showSection =
+                item.section &&
+                filteredNavItems.findIndex((n) => n.section === item.section) === idx;
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? ""
-                      : "hover:bg-black/5 dark:hover:bg-white/5"
-                  }`}
-                  style={
-                    isActive
-                      ? { backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }
-                      : { color: "var(--gf-text-secondary)" }
-                  }
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </Link>
+                <div key={item.href}>
+                  {showSection && (
+                    <p
+                      className="mt-4 mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ color: "var(--gf-text-muted)" }}
+                    >
+                      {item.section}
+                    </p>
+                  )}
+                  <Link
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? ""
+                        : "hover:bg-black/5 dark:hover:bg-white/5"
+                    }`}
+                    style={
+                      isActive
+                        ? { backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }
+                        : { color: "var(--gf-text-secondary)" }
+                    }
+                  >
+                    <item.icon className="h-4.5 w-4.5" />
+                    {item.label}
+                  </Link>
+                </div>
               );
             })}
           </nav>

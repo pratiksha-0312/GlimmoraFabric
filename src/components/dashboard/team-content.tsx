@@ -30,7 +30,7 @@ const teamMembers: TeamMember[] = [
   {
     name: "Priya Sharma",
     email: "priya@glimmora.com",
-    role: "admin",
+    role: "platform_admin",
     status: "active",
   },
   {
