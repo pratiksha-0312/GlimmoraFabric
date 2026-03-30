@@ -57,7 +57,7 @@ export function IdentityContent() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>
-          Identity &amp; Access
+          Users &amp; Access
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--gf-text-secondary)" }}>
           SSO, RBAC, MFA, OAuth2/OIDC, API tokens, tenant identity

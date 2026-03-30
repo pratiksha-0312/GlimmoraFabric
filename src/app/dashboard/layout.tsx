@@ -28,6 +28,10 @@ import {
   BarChart3,
   ChevronDown,
   Headphones,
+  Key,
+  MonitorDot,
+  Wrench,
+  Code2,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -49,22 +53,43 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // ── MAIN ──
+  // ── CORE ──
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-
-  // ── PLATFORM SERVICES ──
   {
-    label: "Identity & Access",
+    label: "Tenants",
+    href: "/dashboard/tenants",
+    icon: Building2,
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "finance_manager", "auditor", "support_agent"],
+  },
+  {
+    label: "Users & Access",
     href: "/dashboard/identity",
-    icon: Shield,
-    section: "Platform Services",
+    icon: Users,
     visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor", "support_agent"],
   },
+
+  // ── PLATFORM ──
   {
     label: "Services",
     href: "/dashboard/services",
     icon: Activity,
+    section: "Platform",
     visibleTo: ["super_admin", "platform_admin", "developer"],
+  },
+  {
+    label: "API Gateway & Keys",
+    href: "/dashboard/api-gateway",
+    icon: Key,
+    visibleTo: ["super_admin", "platform_admin", "developer"],
+  },
+
+  // ── OPERATIONS ──
+  {
+    label: "Workflows",
+    href: "/dashboard/workflows",
+    icon: GitBranch,
+    section: "Operations",
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor", "support_agent", "viewer"],
   },
   {
     label: "Notifications",
@@ -78,62 +103,56 @@ const navItems: NavItem[] = [
     icon: CreditCard,
     visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "finance_manager", "auditor", "support_agent"],
   },
-
-  // ── OPERATIONS ──
-  {
-    label: "Workflows",
-    href: "/dashboard/workflows",
-    icon: GitBranch,
-    section: "Operations",
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor", "support_agent", "viewer"],
-  },
   {
     label: "Documents",
     href: "/dashboard/documents",
     icon: File,
     visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "finance_manager", "auditor", "support_agent", "viewer"],
   },
-  {
-    label: "Audit & Compliance",
-    href: "/dashboard/audit",
-    icon: FileText,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "auditor", "support_agent", "viewer"],
-  },
 
   // ── INTELLIGENCE ──
   {
-    label: "AI Platform",
+    label: "AI & Prompt Platform",
     href: "/dashboard/ai-platform",
     icon: Brain,
     section: "Intelligence",
     visibleTo: ["super_admin", "platform_admin", "tenant_admin", "developer", "auditor"],
   },
+
+  // ── COMPLIANCE ──
   {
-    label: "Analytics",
+    label: "Audit & Compliance",
+    href: "/dashboard/audit",
+    icon: FileText,
+    section: "Compliance",
+    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "auditor", "support_agent", "viewer"],
+  },
+  {
+    label: "Monitoring & Logs",
+    href: "/dashboard/monitoring",
+    icon: MonitorDot,
+    visibleTo: ["super_admin", "platform_admin", "auditor"],
+  },
+
+  // ── SYSTEM ──
+  {
+    label: "Configuration",
+    href: "/dashboard/configuration",
+    icon: Settings,
+    section: "System",
+    visibleTo: ["super_admin", "platform_admin"],
+  },
+  {
+    label: "Developer Tools",
+    href: "/dashboard/developer-tools",
+    icon: Code2,
+    visibleTo: ["super_admin", "platform_admin", "developer"],
+  },
+  {
+    label: "Reports & Analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
     visibleTo: ["super_admin", "platform_admin", "tenant_admin", "finance_manager", "viewer"],
-  },
-
-  // ── MANAGEMENT ──
-  {
-    label: "Tenants",
-    href: "/dashboard/tenants",
-    icon: Building2,
-    section: "Management",
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin", "finance_manager", "auditor", "support_agent"],
-  },
-  {
-    label: "Team",
-    href: "/dashboard/team",
-    icon: Users,
-    visibleTo: ["super_admin", "platform_admin", "tenant_admin"],
-  },
-  {
-    label: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-    visibleTo: ["super_admin", "platform_admin"],
   },
 ];
 

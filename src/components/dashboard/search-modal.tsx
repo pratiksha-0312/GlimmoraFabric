@@ -19,6 +19,9 @@ import {
   Brain,
   BarChart3,
   Building2,
+  Key,
+  MonitorDot,
+  Code2,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -43,20 +46,22 @@ interface SearchModalProps {
 const SEARCHABLE_ITEMS: SearchItem[] = [
   // Pages
   { name: "Dashboard", category: "Pages", icon: LayoutDashboard },
-  { name: "Services", category: "Pages", icon: Activity },
-  { name: "Team", category: "Pages", icon: Users },
-  { name: "Settings", category: "Pages", icon: Settings },
   { name: "Tenants", category: "Pages", icon: Building2 },
-  { name: "Analytics", category: "Pages", icon: BarChart3 },
+  { name: "Users & Access", category: "Pages", icon: Users },
+  { name: "Services", category: "Pages", icon: Activity },
+  { name: "API Gateway & Keys", category: "Pages", icon: Key },
+  { name: "Configuration", category: "Pages", icon: Settings },
+  { name: "Developer Tools", category: "Pages", icon: Code2 },
+  { name: "Reports & Analytics", category: "Pages", icon: BarChart3 },
 
   // Services
-  { name: "Identity & Access", category: "Services", icon: Shield },
   { name: "Notification Hub", category: "Services", icon: Bell },
   { name: "Payment Orchestration", category: "Services", icon: CreditCard },
   { name: "Audit & Compliance", category: "Services", icon: FileText },
   { name: "Workflow Engine", category: "Services", icon: GitBranch },
   { name: "Document Service", category: "Services", icon: File },
-  { name: "AI Platform", category: "Services", icon: Brain },
+  { name: "AI & Prompt Platform", category: "Services", icon: Brain },
+  { name: "Monitoring & Logs", category: "Services", icon: MonitorDot },
 
   // Actions
   { name: "Create User", category: "Actions", icon: Users },
