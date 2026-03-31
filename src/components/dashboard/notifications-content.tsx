@@ -14,6 +14,9 @@ import {
   Eye,
   Trash2,
   X,
+  Plus,
+  Search,
+  FilterX,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -421,6 +424,8 @@ function Toast({ toast, onDone }: { toast: ToastState | null; onDone: () => void
 // Component
 // ---------------------------------------------------------------------------
 
+const emptyTemplate: Template = { name: "", channel: "Email", subject: "", body: "", status: "Draft", lastModified: "" };
+
 export function NotificationsContent() {
   const [templates, setTemplates] = useState(initialTemplates);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -428,6 +433,34 @@ export function NotificationsContent() {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createDraft, setCreateDraft] = useState<Template>({ ...emptyTemplate });
+  const [createErrors, setCreateErrors] = useState<Record<string, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [channelFilter, setChannelFilter] = useState<"All" | Template["channel"]>("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Draft">("All");
+
+  // --- Filtering ---
+  const filtersActive = searchQuery !== "" || channelFilter !== "All" || statusFilter !== "All";
+  const clearFilters = () => { setSearchQuery(""); setChannelFilter("All"); setStatusFilter("All"); };
+  const filteredTemplates = templates.filter((t) => {
+    const q = searchQuery.toLowerCase();
+    if (q && !t.name.toLowerCase().includes(q) && !t.subject.toLowerCase().includes(q)) return false;
+    if (channelFilter !== "All" && t.channel !== channelFilter) return false;
+    if (statusFilter !== "All" && t.status !== statusFilter) return false;
+    return true;
+  });
+
+  // --- Scroll lock when any drawer/modal is open ---
+  const anyOverlayOpen = editingIndex !== null || previewIndex !== null || deleteIndex !== null || createOpen;
+  useEffect(() => {
+    if (anyOverlayOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [anyOverlayOpen]);
 
   // --- Edit ---
   const openDrawer = (index: number) => {
@@ -450,6 +483,35 @@ export function NotificationsContent() {
     setTemplates((prev) => prev.filter((_, i) => i !== deleteIndex));
     setToast({ message: "Template deleted \u2713", type: "error" });
     setDeleteIndex(null);
+  };
+
+  // --- Create ---
+  const openCreate = () => {
+    setCreateDraft({ ...emptyTemplate });
+    setCreateErrors({});
+    setCreateOpen(true);
+  };
+  const closeCreate = () => {
+    setCreateOpen(false);
+    setCreateDraft({ ...emptyTemplate });
+    setCreateErrors({});
+  };
+  const needsSubject = createDraft.channel === "Email" || createDraft.channel === "Push";
+  const saveNewTemplate = () => {
+    const errors: Record<string, boolean> = {};
+    if (!createDraft.name.trim()) errors.name = true;
+    if (!createDraft.body.trim()) errors.body = true;
+    if (needsSubject && !createDraft.subject.trim()) errors.subject = true;
+    if (Object.keys(errors).length > 0) { setCreateErrors(errors); return; }
+    const today = new Date();
+    const newT: Template = {
+      ...createDraft,
+      subject: needsSubject ? createDraft.subject : createDraft.subject || createDraft.name,
+      lastModified: today.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    };
+    setTemplates((prev) => [newT, ...prev]);
+    closeCreate();
+    setToast({ message: "Template created successfully \u2713", type: "success" });
   };
 
   return (
@@ -605,6 +667,110 @@ export function NotificationsContent() {
         document.body
       )}
 
+      {/* ================================================================= */}
+      {/* CREATE DRAWER                                                      */}
+      {/* ================================================================= */}
+      {createOpen && createPortal(
+        <>
+          <div onClick={closeCreate} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, animation: "gf-fade-in 0.2s ease-out" }} />
+          <div style={{
+            position: "fixed", top: 0, right: 0, bottom: 0, width: "30rem", zIndex: 1001,
+            background: "#1a1d2e", borderLeft: "1px solid #2a2d3e",
+            boxShadow: "-4px 0 24px rgba(0,0,0,0.3)",
+            display: "flex", flexDirection: "column", overflow: "hidden",
+            animation: "gf-slide-right 0.3s ease-out",
+          }}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid #2a2d3e" }}>
+              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#f3f4f6" }}>Create New Template</h2>
+              <button onClick={closeCreate} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
+                <X style={{ width: "1.25rem", height: "1.25rem" }} />
+              </button>
+            </div>
+            {/* Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {/* Template Name */}
+              <FieldGroup label="Template Name *">
+                <input
+                  type="text" value={createDraft.name} placeholder="e.g. Welcome Email"
+                  onChange={(e) => { setCreateDraft({ ...createDraft, name: e.target.value }); setCreateErrors((p) => ({ ...p, name: false })); }}
+                  style={{ ...inputStyle, ...(createErrors.name ? { border: "1px solid #ef4444" } : {}) }}
+                />
+                {createErrors.name && <span style={{ fontSize: "0.6875rem", color: "#ef4444" }}>Template name is required</span>}
+              </FieldGroup>
+              {/* Channel */}
+              <FieldGroup label="Channel *">
+                <select
+                  value={createDraft.channel}
+                  onChange={(e) => setCreateDraft({ ...createDraft, channel: e.target.value as Template["channel"] })}
+                  style={{ ...inputStyle, cursor: "pointer" }}
+                >
+                  <option value="Email">Email</option>
+                  <option value="SMS">SMS</option>
+                  <option value="WhatsApp">WhatsApp</option>
+                  <option value="Push">Push</option>
+                </select>
+              </FieldGroup>
+              {/* Subject (conditional) */}
+              {needsSubject && (
+                <FieldGroup label="Subject *">
+                  <input
+                    type="text" value={createDraft.subject} placeholder="e.g. Welcome to GlimmoraFabric!"
+                    onChange={(e) => { setCreateDraft({ ...createDraft, subject: e.target.value }); setCreateErrors((p) => ({ ...p, subject: false })); }}
+                    style={{ ...inputStyle, ...(createErrors.subject ? { border: "1px solid #ef4444" } : {}) }}
+                  />
+                  {createErrors.subject && <span style={{ fontSize: "0.6875rem", color: "#ef4444" }}>Subject is required for {createDraft.channel}</span>}
+                </FieldGroup>
+              )}
+              {/* Body */}
+              <FieldGroup label="Message Body *">
+                <textarea
+                  value={createDraft.body} rows={5} placeholder="Hi {{userName}}, ..."
+                  onChange={(e) => { setCreateDraft({ ...createDraft, body: e.target.value }); setCreateErrors((p) => ({ ...p, body: false })); }}
+                  style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit", ...(createErrors.body ? { border: "1px solid #ef4444" } : {}) }}
+                />
+                {createErrors.body && <span style={{ fontSize: "0.6875rem", color: "#ef4444" }}>Message body is required</span>}
+                <span style={{ fontSize: "0.6875rem", color: "#6b7280" }}>
+                  Supports placeholders: {"{{userName}}"}, {"{{orderId}}"}, etc.
+                </span>
+              </FieldGroup>
+              {/* Status */}
+              <FieldGroup label="Status">
+                <div onClick={() => setCreateDraft({ ...createDraft, status: createDraft.status === "Active" ? "Draft" : "Active" })} style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer", userSelect: "none" }}>
+                  <div style={{ width: "2.75rem", height: "1.5rem", borderRadius: "9999px", background: createDraft.status === "Active" ? "#22c55e" : "rgba(127,127,127,0.35)", position: "relative", transition: "background 0.2s" }}>
+                    <div style={{ position: "absolute", top: "0.125rem", left: createDraft.status === "Active" ? "1.375rem" : "0.125rem", width: "1.25rem", height: "1.25rem", borderRadius: "9999px", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                  </div>
+                  <span style={{ fontSize: "0.875rem", fontWeight: 500, color: createDraft.status === "Active" ? "#22c55e" : "#6b7280" }}>{createDraft.status}</span>
+                </div>
+              </FieldGroup>
+
+              {/* Live Preview */}
+              {createDraft.body.trim() && (
+                <div style={{ borderTop: "1px solid #2a2d3e", paddingTop: "1.25rem" }}>
+                  <h3 style={{ fontSize: "0.75rem", fontWeight: 500, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>Live Preview</h3>
+                  <div style={{ transform: "scale(0.85)", transformOrigin: "top left", width: "117.6%" }}>
+                    {createDraft.channel === "Email" && <EmailPreview template={createDraft} />}
+                    {createDraft.channel === "SMS" && <SMSPreview template={createDraft} />}
+                    {createDraft.channel === "WhatsApp" && <WhatsAppPreview template={createDraft} />}
+                    {createDraft.channel === "Push" && <PushPreview template={createDraft} />}
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Footer */}
+            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid #2a2d3e", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+              <button onClick={saveNewTemplate} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "none", background: "#f97316", color: "#fff", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+                Save Template
+              </button>
+              <button onClick={closeCreate} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #2a2d3e", background: "rgba(127,127,127,0.12)", color: "#9ca3af", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
       {/* Header */}
       <div>
         <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--gf-text-primary)" }}>
@@ -632,56 +798,138 @@ export function NotificationsContent() {
 
       {/* Templates Table */}
       <div style={cardStyle}>
-        <h2 style={sectionTitle}>Templates</h2>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
-              {["Name", "Channel", "Subject", "Status", "Last Modified", "Actions"].map((col) => (
-                <th key={col} style={{ ...thStyle, ...(col === "Actions" ? { textAlign: "center" } : {}) }}>{col}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {templates.map((t, i) => {
-              const sc = templateStatusColor(t.status);
-              return (
-                <tr
-                  key={`${t.name}-${i}`}
-                  style={{ borderBottom: i < templates.length - 1 ? "1px solid var(--gf-border)" : "none", transition: "background 0.15s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(249,115,22,0.04)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                >
-                  <td style={tdPrimary}>{t.name}</td>
-                  <td style={tdSecondary}>{t.channel}</td>
-                  <td style={{ ...tdSecondary, maxWidth: "16rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {t.subject}
-                  </td>
-                  <td style={{ padding: "0.75rem" }}>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 500, color: sc.color, background: sc.bg, borderRadius: "9999px", padding: "0.125rem 0.5rem" }}>
-                      {t.status}
-                    </span>
-                  </td>
-                  <td style={{ ...tdSecondary, fontSize: "0.75rem", color: "var(--gf-text-muted)", whiteSpace: "nowrap" }}>
-                    {t.lastModified}
-                  </td>
-                  <td style={{ padding: "0.75rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem" }}>
-                      <button onClick={() => setPreviewIndex(i)} title="Preview" style={actionBtnStyle("#6b7280")}>
-                        <Eye style={{ width: "0.875rem", height: "0.875rem" }} />
-                      </button>
-                      <button onClick={() => openDrawer(i)} title="Edit template" style={actionBtnStyle("#3b82f6")}>
-                        <Pencil style={{ width: "0.875rem", height: "0.875rem" }} />
-                      </button>
-                      <button onClick={() => setDeleteIndex(i)} title="Delete template" style={actionBtnStyle("#ef4444")}>
-                        <Trash2 style={{ width: "0.875rem", height: "0.875rem" }} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+          <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Templates</h2>
+          <button
+            onClick={openCreate}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "0.375rem",
+              padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "none",
+              background: "#f97316", color: "#fff", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            <Plus style={{ width: "0.875rem", height: "0.875rem" }} />
+            Create New Template
+          </button>
+        </div>
+
+        {/* Search & Filter Bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+          {/* Search */}
+          <div style={{ position: "relative", flex: "1 1 14rem" }}>
+            <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", width: "0.875rem", height: "0.875rem", color: "#6b7280", pointerEvents: "none" }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search templates..."
+              style={{
+                width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem",
+                fontSize: "0.8125rem", borderRadius: "0.5rem",
+                border: "1px solid #2a2d3e", background: "#1a1d2e", color: "#f3f4f6",
+                outline: "none",
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#f97316")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2d3e")}
+            />
+          </div>
+          {/* Channel filter */}
+          <select
+            value={channelFilter}
+            onChange={(e) => setChannelFilter(e.target.value as typeof channelFilter)}
+            style={{ ...filterSelectStyle }}
+          >
+            <option value="All">All Channels</option>
+            <option value="Email">Email</option>
+            <option value="SMS">SMS</option>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Push">Push</option>
+          </select>
+          {/* Status filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            style={{ ...filterSelectStyle }}
+          >
+            <option value="All">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Draft">Draft</option>
+          </select>
+          {/* Clear filters */}
+          {filtersActive && (
+            <button
+              onClick={clearFilters}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "0.375rem",
+                padding: "0.5rem 0.75rem", borderRadius: "0.5rem",
+                border: "1px solid #2a2d3e", background: "rgba(127,127,127,0.1)",
+                color: "#9ca3af", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <FilterX style={{ width: "0.875rem", height: "0.875rem" }} />
+              Clear Filters
+            </button>
+          )}
+        </div>
+
+        {filteredTemplates.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
+            <Search style={{ width: "2rem", height: "2rem", color: "#4b5563", margin: "0 auto 0.75rem" }} />
+            <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>No templates found</p>
+          </div>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Name", "Channel", "Subject", "Status", "Last Modified", "Actions"].map((col) => (
+                  <th key={col} style={{ ...thStyle, ...(col === "Actions" ? { textAlign: "center" } : {}) }}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTemplates.map((t, fi) => {
+                const realIndex = templates.indexOf(t);
+                const sc = templateStatusColor(t.status);
+                return (
+                  <tr
+                    key={`${t.name}-${realIndex}`}
+                    style={{ borderBottom: fi < filteredTemplates.length - 1 ? "1px solid var(--gf-border)" : "none", transition: "background 0.15s" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(249,115,22,0.04)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                  >
+                    <td style={tdPrimary}>{t.name}</td>
+                    <td style={tdSecondary}>{t.channel}</td>
+                    <td style={{ ...tdSecondary, maxWidth: "16rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {t.subject}
+                    </td>
+                    <td style={{ padding: "0.75rem" }}>
+                      <span style={{ fontSize: "0.75rem", fontWeight: 500, color: sc.color, background: sc.bg, borderRadius: "9999px", padding: "0.125rem 0.5rem" }}>
+                        {t.status}
+                      </span>
+                    </td>
+                    <td style={{ ...tdSecondary, fontSize: "0.75rem", color: "var(--gf-text-muted)", whiteSpace: "nowrap" }}>
+                      {t.lastModified}
+                    </td>
+                    <td style={{ padding: "0.75rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem" }}>
+                        <button onClick={() => setPreviewIndex(realIndex)} title="Preview" style={actionBtnStyle("#6b7280")}>
+                          <Eye style={{ width: "0.875rem", height: "0.875rem" }} />
+                        </button>
+                        <button onClick={() => openDrawer(realIndex)} title="Edit template" style={actionBtnStyle("#3b82f6")}>
+                          <Pencil style={{ width: "0.875rem", height: "0.875rem" }} />
+                        </button>
+                        <button onClick={() => setDeleteIndex(realIndex)} title="Delete template" style={actionBtnStyle("#ef4444")}>
+                          <Trash2 style={{ width: "0.875rem", height: "0.875rem" }} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Channel Settings */}
@@ -799,6 +1047,17 @@ const inputStyle: React.CSSProperties = {
   background: "#0f1117",
   color: "#f3f4f6",
   outline: "none",
+};
+
+const filterSelectStyle: React.CSSProperties = {
+  padding: "0.5rem 0.75rem",
+  fontSize: "0.8125rem",
+  borderRadius: "0.5rem",
+  border: "1px solid #2a2d3e",
+  background: "#1a1d2e",
+  color: "#f3f4f6",
+  outline: "none",
+  cursor: "pointer",
 };
 
 function actionBtnStyle(color: string): React.CSSProperties {
