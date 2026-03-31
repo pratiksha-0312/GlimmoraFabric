@@ -32,6 +32,8 @@ import {
   MonitorDot,
   Wrench,
   Code2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -46,124 +48,38 @@ interface NavItem {
   label: string;
   href: string;
   icon: typeof LayoutDashboard;
-  /** Roles that can see this nav item. If omitted, visible to all. */
   visibleTo?: UserRole[];
-  /** Optional section label displayed above this item */
   section?: string;
 }
 
 const navItems: NavItem[] = [
-  // ── CORE ──
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  {
-    label: "Tenants",
-    href: "/dashboard/tenants",
-    icon: Building2,
-    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "product_manager", "governance_admin"],
-  },
-  {
-    label: "Users & Access",
-    href: "/dashboard/identity",
-    icon: Users,
-    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "governance_admin"],
-  },
-
-  // ── PLATFORM ──
-  {
-    label: "Services",
-    href: "/dashboard/services",
-    icon: Activity,
-    section: "Platform",
-    visibleTo: ["super_admin", "developer", "platform_engineer", "qa_engineer", "product_manager"],
-  },
-  {
-    label: "API Gateway & Keys",
-    href: "/dashboard/api-gateway",
-    icon: Key,
-    visibleTo: ["super_admin", "developer", "platform_engineer"],
-  },
-
-  // ── OPERATIONS ──
-  {
-    label: "Workflows",
-    href: "/dashboard/workflows",
-    icon: GitBranch,
-    section: "Operations",
-    visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineer", "qa_engineer", "product_manager", "governance_admin"],
-  },
-  {
-    label: "Notifications",
-    href: "/dashboard/notifications",
-    icon: Bell,
-  },
-  {
-    label: "Payments",
-    href: "/dashboard/payments",
-    icon: CreditCard,
-    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "product_manager", "governance_admin"],
-  },
-  {
-    label: "Documents",
-    href: "/dashboard/documents",
-    icon: File,
-  },
-
-  // ── INTELLIGENCE ──
-  {
-    label: "AI & Prompt Platform",
-    href: "/dashboard/ai-platform",
-    icon: Brain,
-    section: "Intelligence",
-    visibleTo: ["super_admin", "developer", "platform_engineer", "ai_prompt_owner"],
-  },
-
-  // ── COMPLIANCE ──
-  {
-    label: "Audit & Compliance",
-    href: "/dashboard/audit",
-    icon: FileText,
-    section: "Compliance",
-    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "qa_engineer", "governance_admin"],
-  },
-  {
-    label: "Monitoring & Logs",
-    href: "/dashboard/monitoring",
-    icon: MonitorDot,
-    visibleTo: ["super_admin", "platform_engineer", "qa_engineer", "governance_admin"],
-  },
-
-  // ── SYSTEM ──
-  {
-    label: "Configuration",
-    href: "/dashboard/configuration",
-    icon: Settings,
-    section: "System",
-    visibleTo: ["super_admin", "platform_engineer"],
-  },
-  {
-    label: "Developer Tools",
-    href: "/dashboard/developer-tools",
-    icon: Code2,
-    visibleTo: ["super_admin", "developer", "platform_engineer", "qa_engineer", "ai_prompt_owner"],
-  },
-  {
-    label: "Reports & Analytics",
-    href: "/dashboard/analytics",
-    icon: BarChart3,
-    visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "qa_engineer", "product_manager", "governance_admin"],
-  },
+  { label: "Tenants", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "product_manager", "governance_admin"] },
+  { label: "Users & Access", href: "/dashboard/identity", icon: Users, visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "governance_admin"] },
+  { label: "Services", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineer", "qa_engineer", "product_manager"] },
+  { label: "API Gateway & Keys", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineer"] },
+  { label: "Workflows", href: "/dashboard/workflows", icon: GitBranch, section: "Operations", visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineer", "qa_engineer", "product_manager", "governance_admin"] },
+  { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
+  { label: "Payments", href: "/dashboard/payments", icon: CreditCard, visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "product_manager", "governance_admin"] },
+  { label: "Documents", href: "/dashboard/documents", icon: File },
+  { label: "AI & Prompt Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineer", "ai_prompt_owner"] },
+  { label: "Audit & Compliance", href: "/dashboard/audit", icon: FileText, section: "Compliance", visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "qa_engineer", "governance_admin"] },
+  { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineer", "qa_engineer", "governance_admin"] },
+  { label: "Configuration", href: "/dashboard/configuration", icon: Settings, section: "System", visibleTo: ["super_admin", "platform_engineer"] },
+  { label: "Developer Tools", href: "/dashboard/developer-tools", icon: Code2, visibleTo: ["super_admin", "developer", "platform_engineer", "qa_engineer", "ai_prompt_owner"] },
+  { label: "Reports & Analytics", href: "/dashboard/analytics", icon: BarChart3, visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "qa_engineer", "product_manager", "governance_admin"] },
 ];
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const SIDEBAR_EXPANDED = 256;
+const SIDEBAR_COLLAPSED = 72;
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -176,36 +92,20 @@ export default function DashboardLayout({
     return () => clearInterval(timer);
   }, []);
 
-  // Ctrl+K to open search
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-      e.preventDefault();
-      setSearchOpen(true);
-    }
-    if (e.key === "Escape") {
-      setNotificationsOpen(false);
-      setHelpOpen(false);
-      setColorPickerOpen(false);
-    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); }
+    if (e.key === "Escape") { setNotificationsOpen(false); setHelpOpen(false); setColorPickerOpen(false); }
   }, []);
 
-  // Close dropdowns on outside click
   const handleClickOutside = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (!target.closest("[data-dropdown]")) {
-      setNotificationsOpen(false);
-      setHelpOpen(false);
-      setColorPickerOpen(false);
-    }
+    if (!target.closest("[data-dropdown]")) { setNotificationsOpen(false); setHelpOpen(false); setColorPickerOpen(false); }
   }, []);
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("click", handleClickOutside);
-    };
+    return () => { document.removeEventListener("keydown", handleKeyDown); document.removeEventListener("click", handleClickOutside); };
   }, [handleKeyDown, handleClickOutside]);
 
   const userRole = user?.role ?? "developer";
@@ -213,163 +113,141 @@ export default function DashboardLayout({
   const roleColor = ROLE_COLORS[userRole];
   const userInitial = user?.fullName?.charAt(0).toUpperCase() ?? "U";
 
-  const filteredNavItems = navItems.filter(
-    (item) => !item.visibleTo || item.visibleTo.includes(userRole)
-  );
+  const filteredNavItems = navItems.filter((item) => !item.visibleTo || item.visibleTo.includes(userRole));
 
-  const handleSignOut = () => {
-    logout();
-    router.push("/login");
-  };
+  const handleSignOut = () => { logout(); router.push("/login"); };
+
+  const sidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "var(--gf-bg-base)" }}>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "var(--gf-bg-base)" }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
+      {/* ========== SIDEBAR (fixed, never scrolls) ========== */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
-        style={{ backgroundColor: "var(--gf-bg-surface)", borderRight: "1px solid var(--gf-border)" }}
+        style={{
+          width: sidebarWidth,
+          backgroundColor: "var(--gf-bg-surface)",
+          borderRight: "1px solid var(--gf-border)",
+        }}
       >
-        <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex h-16 items-center gap-3 px-6" style={{ borderBottom: "1px solid var(--gf-border)" }}>
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 48 48"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M26 4L8 28H24L22 44L40 20H24L26 4Z"
-                fill="url(#bolt-nav)"
-                stroke="url(#bolt-nav)"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-              <defs>
-                <linearGradient
-                  id="bolt-nav"
-                  x1="24"
-                  y1="4"
-                  x2="24"
-                  y2="44"
-                  gradientUnits="userSpaceOnUse"
+        {/* Logo header */}
+        <div
+          className="flex h-16 shrink-0 items-center gap-3 px-5"
+          style={{ borderBottom: "1px solid var(--gf-border)" }}
+        >
+          <svg width="28" height="28" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+            <path d="M26 4L8 28H24L22 44L40 20H24L26 4Z" fill="url(#bolt-nav)" stroke="url(#bolt-nav)" strokeWidth="1.5" strokeLinejoin="round" />
+            <defs><linearGradient id="bolt-nav" x1="24" y1="4" x2="24" y2="44" gradientUnits="userSpaceOnUse"><stop stopColor="#f59e0b" /><stop offset="1" stopColor="#f97316" /></linearGradient></defs>
+          </svg>
+          {!sidebarCollapsed && (
+            <span className="text-lg font-bold whitespace-nowrap" style={{ color: "var(--gf-text-primary)" }}>Glimmora</span>
+          )}
+          {/* Mobile close button */}
+          <button onClick={() => setSidebarOpen(false)} className="ml-auto lg:hidden" style={{ color: "var(--gf-text-secondary)" }}>
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Navigation (scrollable area) */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
+          {filteredNavItems.map((item, idx) => {
+            const isActive = pathname === item.href;
+            const showSection = item.section && filteredNavItems.findIndex((n) => n.section === item.section) === idx;
+            return (
+              <div key={item.href}>
+                {showSection && !sidebarCollapsed && (
+                  <p className="mt-4 mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--gf-text-muted)" }}>
+                    {item.section}
+                  </p>
+                )}
+                {showSection && sidebarCollapsed && <div className="mt-3 mb-1 mx-3 border-t" style={{ borderColor: "var(--gf-border)" }} />}
+                <Link
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`group relative flex items-center rounded-lg text-sm font-medium transition-colors ${
+                    sidebarCollapsed ? "justify-center px-0 py-2.5 mx-1" : "gap-3 px-3 py-2"
+                  } ${isActive ? "" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
+                  style={isActive ? { backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" } : { color: "var(--gf-text-secondary)" }}
+                  title={sidebarCollapsed ? item.label : undefined}
                 >
-                  <stop stopColor="#f59e0b" />
-                  <stop offset="1" stopColor="#f97316" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <span className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Glimmora</span>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="ml-auto lg:hidden"
-              style={{ color: "var(--gf-text-secondary)" }}
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Nav */}
-          <nav className="flex-1 overflow-y-auto px-3 py-4">
-            {filteredNavItems.map((item, idx) => {
-              const isActive = pathname === item.href;
-              const showSection =
-                item.section &&
-                filteredNavItems.findIndex((n) => n.section === item.section) === idx;
-              return (
-                <div key={item.href}>
-                  {showSection && (
-                    <p
-                      className="mt-4 mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider"
-                      style={{ color: "var(--gf-text-muted)" }}
-                    >
-                      {item.section}
-                    </p>
+                  <item.icon className="h-[18px] w-[18px] shrink-0" />
+                  {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+                  {/* Tooltip on hover when collapsed */}
+                  {sidebarCollapsed && (
+                    <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium shadow-lg group-hover:block z-[60]" style={{ backgroundColor: "var(--gf-bg-elevated)", color: "var(--gf-text-primary)", border: "1px solid var(--gf-border)" }}>
+                      {item.label}
+                    </span>
                   )}
-                  <Link
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                      isActive
-                        ? ""
-                        : "hover:bg-black/5 dark:hover:bg-white/5"
-                    }`}
-                    style={
-                      isActive
-                        ? { backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }
-                        : { color: "var(--gf-text-secondary)" }
-                    }
-                  >
-                    <item.icon className="h-4.5 w-4.5" />
-                    {item.label}
-                  </Link>
-                </div>
-              );
-            })}
-          </nav>
+                </Link>
+              </div>
+            );
+          })}
+        </nav>
 
-          {/* User info + Logout */}
-          <div className="p-3" style={{ borderTop: "1px solid var(--gf-border)" }}>
+        {/* User info + Logout (pinned to bottom) */}
+        <div className="shrink-0 p-3" style={{ borderTop: "1px solid var(--gf-border)" }}>
+          {!sidebarCollapsed && (
             <div className="mb-2 px-3 py-2">
-              <p className="text-sm font-medium truncate" style={{ color: "var(--gf-text-primary)" }}>
-                {user?.fullName ?? "User"}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--gf-text-muted)" }}>
-                {roleLabel}
-              </p>
+              <p className="text-sm font-medium truncate" style={{ color: "var(--gf-text-primary)" }}>{user?.fullName ?? "User"}</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--gf-text-muted)" }}>{roleLabel}</p>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-              style={{ color: "var(--gf-text-secondary)" }}
-            >
-              <LogOut className="h-5 w-5" />
-              Sign out
-            </button>
-          </div>
+          )}
+          <button
+            onClick={handleSignOut}
+            className={`flex w-full items-center rounded-lg text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${
+              sidebarCollapsed ? "justify-center py-2.5" : "gap-3 px-3 py-2.5"
+            }`}
+            style={{ color: "var(--gf-text-secondary)" }}
+            title={sidebarCollapsed ? "Sign out" : undefined}
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            {!sidebarCollapsed && <span>Sign out</span>}
+          </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col">
-        {/* Top bar */}
-        <header role="banner" className="relative flex h-14 items-center px-4" style={{ backgroundColor: "var(--gf-bg-surface)", borderBottom: "1px solid var(--gf-border)" }}>
-          {/* Gradient accent line at bottom */}
+      {/* ========== MAIN AREA (offset by sidebar width) ========== */}
+      <div
+        className="flex flex-1 flex-col min-h-screen transition-all duration-300 ease-in-out"
+        style={{ marginLeft: `${sidebarWidth}px` }}
+      >
+        {/* ========== HEADER (sticky, never scrolls) ========== */}
+        <header
+          role="banner"
+          className="sticky top-0 z-30 flex h-14 shrink-0 items-center px-4"
+          style={{ backgroundColor: "var(--gf-bg-surface)", borderBottom: "1px solid var(--gf-border)" }}
+        >
+          {/* Gradient accent line */}
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-500 via-orange-500 to-teal-500" />
-          {/* Mobile menu */}
+
+          {/* Sidebar collapse toggle (desktop) */}
           <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden mr-3"
-            style={{ color: "var(--gf-text-secondary)" }}
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="hidden lg:flex items-center justify-center rounded-lg border h-9 w-9 mr-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-secondary)" }}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
+            {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+
+          {/* Mobile menu button */}
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden mr-3" style={{ color: "var(--gf-text-secondary)" }}>
             <Menu className="h-5 w-5" />
           </button>
 
           {/* Company name + Live badge */}
           <div className="hidden md:flex items-center gap-2 mr-4">
-            <span className="text-sm font-semibold whitespace-nowrap" style={{ color: "var(--gf-text-primary)" }}>
-              Glimmora Fabric
-            </span>
-            <span
-              className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-              style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)", border: "1px solid rgba(var(--gf-accent-rgb), 0.3)" }}
-            >
-              Live
-            </span>
+            <span className="text-sm font-semibold whitespace-nowrap" style={{ color: "var(--gf-text-primary)" }}>Glimmora Fabric</span>
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)", border: "1px solid rgba(var(--gf-accent-rgb), 0.3)" }}>Live</span>
           </div>
 
-          {/* Separator */}
           <div className="hidden md:block h-6 w-px bg-gray-300 dark:bg-gray-700 mr-4" />
 
           {/* Date */}
@@ -377,11 +255,7 @@ export default function DashboardLayout({
             <Calendar className="h-3.5 w-3.5" style={{ color: "var(--gf-text-muted)" }} />
             <span className="text-xs" style={{ color: "var(--gf-text-secondary)" }}>Date</span>
             <span className="text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>
-              {currentTime.toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
+              {currentTime.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
             </span>
           </div>
 
@@ -390,15 +264,10 @@ export default function DashboardLayout({
             <Clock className="h-3.5 w-3.5" style={{ color: "var(--gf-text-muted)" }} />
             <span className="text-xs" style={{ color: "var(--gf-text-secondary)" }}>Time</span>
             <span className="text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>
-              {currentTime.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}
+              {currentTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}
             </span>
           </div>
 
-          {/* Separator */}
           <div className="hidden lg:block h-6 w-px bg-gray-300 dark:bg-gray-700 mr-4" />
 
           {/* Search */}
@@ -407,15 +276,10 @@ export default function DashboardLayout({
             className="flex items-center gap-2 rounded-lg border px-3 py-1.5 flex-1 max-w-xs mr-2 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-[#141927] cursor-pointer hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
           >
             <Search className="h-3.5 w-3.5" style={{ color: "var(--gf-text-muted)" }} />
-            <span className="text-xs flex-1 text-left" style={{ color: "var(--gf-text-muted)" }}>
-              Search...
-            </span>
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-mono border-gray-300 bg-white dark:border-gray-600 dark:bg-[#0d1120]" style={{ color: "var(--gf-text-muted)" }}>
-              Ctrl K
-            </kbd>
+            <span className="text-xs flex-1 text-left" style={{ color: "var(--gf-text-muted)" }}>Search...</span>
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-mono border-gray-300 bg-white dark:border-gray-600 dark:bg-[#0d1120]" style={{ color: "var(--gf-text-muted)" }}>Ctrl K</kbd>
           </button>
 
-          {/* Separator */}
           <div className="hidden md:block h-6 w-px bg-gray-300 dark:bg-gray-700 mr-4" />
 
           {/* Color picker */}
@@ -423,33 +287,18 @@ export default function DashboardLayout({
             <button
               onClick={() => { setColorPickerOpen(!colorPickerOpen); setNotificationsOpen(false); setHelpOpen(false); }}
               className="rounded-lg border px-3 py-1.5 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-[#141927] transition-colors cursor-pointer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                color: "var(--gf-text-secondary)",
-              }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--gf-text-secondary)" }}
               title="Pick color theme"
               aria-label="Pick color theme"
               aria-expanded={colorPickerOpen}
               aria-haspopup="menu"
             >
-              <span
-                aria-hidden="true"
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "50%",
-                  background: "var(--gf-accent)",
-                  flexShrink: 0,
-                }}
-              />
+              <span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "50%", background: "var(--gf-accent)", flexShrink: 0 }} />
               <Palette size={13} aria-hidden="true" />
             </button>
             <ColorPicker open={colorPickerOpen} onClose={() => setColorPickerOpen(false)} />
           </div>
 
-          {/* Separator */}
           <div className="hidden md:block h-6 w-px bg-gray-300 dark:bg-gray-700 mr-3" />
 
           {/* Theme + Help */}
@@ -460,17 +309,7 @@ export default function DashboardLayout({
               style={{ color: "var(--gf-text-secondary)" }}
               aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
-              {theme === "dark" ? (
-                <>
-                  <Sun className="h-3.5 w-3.5" />
-                  <span>Light</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="h-3.5 w-3.5" />
-                  <span>Dark</span>
-                </>
-              )}
+              {theme === "dark" ? (<><Sun className="h-3.5 w-3.5" /><span>Light</span></>) : (<><Moon className="h-3.5 w-3.5" /><span>Dark</span></>)}
             </button>
             <div className="relative" data-dropdown>
               <button
@@ -478,14 +317,12 @@ export default function DashboardLayout({
                 className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-[#141927] cursor-pointer"
                 style={{ color: "var(--gf-text-secondary)" }}
               >
-                <HelpCircle className="h-3.5 w-3.5" />
-                <span>Help</span>
+                <HelpCircle className="h-3.5 w-3.5" /><span>Help</span>
               </button>
               <HelpDropdown open={helpOpen} onClose={() => setHelpOpen(false)} />
             </div>
           </div>
 
-          {/* Separator */}
           <div className="hidden md:block h-6 w-px bg-gray-300 dark:bg-gray-700 mr-3" />
 
           {/* Notification Bell */}
@@ -497,38 +334,28 @@ export default function DashboardLayout({
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                  {unreadCount}
-                </span>
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{unreadCount}</span>
               )}
             </button>
             <NotificationsDropdown open={notificationsOpen} onClose={() => setNotificationsOpen(false)} onUnreadCountChange={setUnreadCount} />
           </div>
 
-          {/* Separator */}
           <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mr-4" />
 
           {/* User profile */}
           <div className="flex items-center gap-3">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
-              style={{ backgroundColor: "var(--gf-accent)" }}
-            >
+            <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white" style={{ backgroundColor: "var(--gf-accent)" }}>
               {userInitial}{user?.fullName?.split(" ")[1]?.charAt(0).toUpperCase() ?? ""}
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium leading-tight" style={{ color: "var(--gf-text-primary)" }}>
-                {user?.fullName ?? "User"}
-              </p>
-              <p className={`text-[11px] font-medium ${roleColor.text}`}>
-                {roleLabel}
-              </p>
+              <p className="text-sm font-medium leading-tight" style={{ color: "var(--gf-text-primary)" }}>{user?.fullName ?? "User"}</p>
+              <p className={`text-[11px] font-medium ${roleColor.text}`}>{roleLabel}</p>
             </div>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 p-6">{children}</main>
+        {/* ========== PAGE CONTENT (only this scrolls) ========== */}
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
 
       {/* Search Modal */}
