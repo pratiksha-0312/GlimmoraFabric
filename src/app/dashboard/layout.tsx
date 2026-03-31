@@ -168,6 +168,7 @@ export default function DashboardLayout({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(3);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -495,11 +496,13 @@ export default function DashboardLayout({
               style={{ color: "var(--gf-text-secondary)" }}
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                3
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {unreadCount}
+                </span>
+              )}
             </button>
-            <NotificationsDropdown open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+            <NotificationsDropdown open={notificationsOpen} onClose={() => setNotificationsOpen(false)} onUnreadCountChange={setUnreadCount} />
           </div>
 
           {/* Separator */}

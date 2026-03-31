@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import {
   Shield,
   Users,
@@ -12,6 +13,7 @@ import {
 interface NotificationsDropdownProps {
   open: boolean;
   onClose: () => void;
+  onUnreadCountChange?: (count: number) => void;
 }
 
 interface Notification {
@@ -23,7 +25,7 @@ interface Notification {
   unread: boolean;
 }
 
-const mockNotifications: Notification[] = [
+const initialNotifications: Notification[] = [
   {
     id: 1,
     icon: Shield,
@@ -69,7 +71,26 @@ const mockNotifications: Notification[] = [
 export function NotificationsDropdown({
   open,
   onClose,
+  onUnreadCountChange,
 }: NotificationsDropdownProps) {
+  const [notifications, setNotifications] = useState(initialNotifications);
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  useEffect(() => {
+    onUnreadCountChange?.(unreadCount);
+  }, [unreadCount, onUnreadCountChange]);
+
+  const markAllRead = useCallback(() => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  }, []);
+
+  const markOneRead = useCallback((id: number) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
+    );
+  }, []);
+
   if (!open) return null;
 
   return (
@@ -94,22 +115,23 @@ export function NotificationsDropdown({
           >
             Notifications
           </h3>
-          <button
-            className="text-xs font-medium text-teal-500 hover:text-teal-400 transition-colors"
-            onClick={() => {
-              /* mark all read handler */
-            }}
-          >
-            Mark all read
-          </button>
+          {unreadCount > 0 && (
+            <button
+              className="text-xs font-medium text-teal-500 hover:text-teal-400 transition-colors"
+              onClick={markAllRead}
+            >
+              Mark all read
+            </button>
+          )}
         </div>
 
         {/* Notification list */}
         <div className="max-h-96 overflow-y-auto">
-          {mockNotifications.map((notification) => (
+          {notifications.map((notification) => (
             <NotificationItem
               key={notification.id}
               notification={notification}
+              onRead={markOneRead}
             />
           ))}
         </div>
@@ -131,21 +153,36 @@ export function NotificationsDropdown({
   );
 }
 
-function NotificationItem({ notification }: { notification: Notification }) {
+function NotificationItem({
+  notification,
+  onRead,
+}: {
+  notification: Notification;
+  onRead: (id: number) => void;
+}) {
   const Icon = notification.icon;
 
   return (
     <div
       className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
-      style={
-        {
-          "--hover-bg": "var(--gf-bg-elevated)",
-        } as React.CSSProperties
-      }
+      style={{
+        backgroundColor: notification.unread
+          ? "rgba(20, 184, 166, 0.06)"
+          : "transparent",
+      }}
+      onClick={() => {
+        if (notification.unread) onRead(notification.id);
+      }}
       onMouseEnter={(e) =>
-        (e.currentTarget.style.backgroundColor = "var(--gf-bg-elevated)")
+        (e.currentTarget.style.backgroundColor = notification.unread
+          ? "rgba(20, 184, 166, 0.10)"
+          : "var(--gf-bg-elevated)")
       }
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.backgroundColor = notification.unread
+          ? "rgba(20, 184, 166, 0.06)"
+          : "")
+      }
     >
       {/* Icon */}
       <div
@@ -184,7 +221,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
 
       {/* Unread dot */}
       {notification.unread && (
-        <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+        <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-orange-500" />
       )}
     </div>
   );
