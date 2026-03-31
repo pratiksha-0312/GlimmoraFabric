@@ -80,6 +80,126 @@ const initialTemplates: Template[] = [
     status: "Active",
     lastModified: "Mar 23, 2026",
   },
+  {
+    name: "Account Verification",
+    channel: "Email",
+    subject: "Verify your email address",
+    body: "Hi {{userName}}, please verify your email by clicking the link below.",
+    status: "Active",
+    lastModified: "Mar 22, 2026",
+  },
+  {
+    name: "Payment Receipt",
+    channel: "Email",
+    subject: "Payment received — thank you!",
+    body: "Hi {{userName}}, we've received your payment for order #{{orderId}}. Thank you!",
+    status: "Active",
+    lastModified: "Mar 21, 2026",
+  },
+  {
+    name: "Delivery Completed",
+    channel: "SMS",
+    subject: "Your order has been delivered",
+    body: "Hi {{userName}}, your order #{{orderId}} has been delivered. Enjoy!",
+    status: "Active",
+    lastModified: "Mar 20, 2026",
+  },
+  {
+    name: "Feedback Request",
+    channel: "Email",
+    subject: "How was your experience?",
+    body: "Hi {{userName}}, we'd love to hear about your experience with order #{{orderId}}. Share your feedback!",
+    status: "Active",
+    lastModified: "Mar 19, 2026",
+  },
+  {
+    name: "Subscription Renewal",
+    channel: "Push",
+    subject: "Your subscription is renewing soon",
+    body: "Hey {{userName}}, your subscription renews in 3 days. Manage it from your account settings.",
+    status: "Active",
+    lastModified: "Mar 18, 2026",
+  },
+  {
+    name: "Cart Abandonment",
+    channel: "Email",
+    subject: "You left something behind!",
+    body: "Hi {{userName}}, you have items waiting in your cart. Complete your purchase before they sell out!",
+    status: "Draft",
+    lastModified: "Mar 17, 2026",
+  },
+  {
+    name: "Appointment Reminder",
+    channel: "WhatsApp",
+    subject: "Upcoming appointment reminder",
+    body: "Hi {{userName}}, this is a reminder for your appointment tomorrow at 10:00 AM.",
+    status: "Active",
+    lastModified: "Mar 16, 2026",
+  },
+  {
+    name: "Referral Invite",
+    channel: "SMS",
+    subject: "Invite a friend, earn rewards",
+    body: "Hi {{userName}}, share your referral code and earn $10 for every friend who signs up!",
+    status: "Draft",
+    lastModified: "Mar 15, 2026",
+  },
+  {
+    name: "Security Code",
+    channel: "SMS",
+    subject: "Your verification code",
+    body: "Hi {{userName}}, your one-time verification code is 482910. It expires in 10 minutes.",
+    status: "Active",
+    lastModified: "Mar 14, 2026",
+  },
+  {
+    name: "Weekly Digest",
+    channel: "Email",
+    subject: "Your weekly activity summary",
+    body: "Hi {{userName}}, here's a summary of your activity this week on GlimmoraFabric.",
+    status: "Active",
+    lastModified: "Mar 13, 2026",
+  },
+  {
+    name: "Feature Announcement",
+    channel: "Push",
+    subject: "New feature: Dark Mode is here!",
+    body: "Hey {{userName}}, we just launched Dark Mode! Try it out in your settings.",
+    status: "Active",
+    lastModified: "Mar 12, 2026",
+  },
+  {
+    name: "Return Confirmation",
+    channel: "WhatsApp",
+    subject: "Return request confirmed",
+    body: "Hi {{userName}}, your return for order #{{orderId}} has been confirmed. We'll process your refund within 5 days.",
+    status: "Active",
+    lastModified: "Mar 11, 2026",
+  },
+  {
+    name: "Loyalty Points",
+    channel: "Push",
+    subject: "You earned 250 loyalty points!",
+    body: "Hey {{userName}}, congrats! You've earned 250 points from your recent purchase. Redeem them anytime.",
+    status: "Active",
+    lastModified: "Mar 10, 2026",
+  },
+  {
+    name: "Service Outage",
+    channel: "Email",
+    subject: "Scheduled maintenance notice",
+    body: "Hi {{userName}}, we'll be performing scheduled maintenance on Sunday 2 AM – 4 AM UTC. Some services may be temporarily unavailable.",
+    status: "Draft",
+    lastModified: "Mar 9, 2026",
+  },
+  {
+    name: "Birthday Greeting",
+    channel: "WhatsApp",
+    subject: "Happy Birthday from GlimmoraFabric!",
+    body: "Happy Birthday, {{userName}}! Here's a special 25% discount just for you. Use code BDAY25 at checkout.",
+    status: "Active",
+    lastModified: "Mar 8, 2026",
+  },
 ];
 
 interface Channel {
@@ -111,6 +231,25 @@ const deliveryLogs: DeliveryLog[] = [
   { template: "Password Reset", channel: "Email", recipient: "admin@example.com", status: "Pending", time: "18 min ago" },
   { template: "Promo Alert", channel: "Push", recipient: "device_token_x92", status: "Failed", time: "25 min ago" },
   { template: "Shipping Update", channel: "WhatsApp", recipient: "+91 98765 43210", status: "Bounced", time: "32 min ago" },
+  { template: "Account Verification", channel: "Email", recipient: "newuser@gmail.com", status: "Delivered", time: "38 min ago" },
+  { template: "Payment Receipt", channel: "Email", recipient: "buyer@shop.com", status: "Delivered", time: "42 min ago" },
+  { template: "Delivery Completed", channel: "SMS", recipient: "+1 (555) 987-6543", status: "Delivered", time: "50 min ago" },
+  { template: "Feedback Request", channel: "Email", recipient: "customer@inbox.com", status: "Pending", time: "55 min ago" },
+  { template: "Subscription Renewal", channel: "Push", recipient: "device_token_a41", status: "Delivered", time: "1 hour ago" },
+  { template: "Cart Abandonment", channel: "Email", recipient: "shopper@mail.com", status: "Delivered", time: "1.5 hours ago" },
+  { template: "Appointment Reminder", channel: "WhatsApp", recipient: "+44 7700 900123", status: "Delivered", time: "2 hours ago" },
+  { template: "Referral Invite", channel: "SMS", recipient: "+1 (555) 456-7890", status: "Failed", time: "2.5 hours ago" },
+  { template: "Security Code", channel: "SMS", recipient: "+91 91234 56789", status: "Delivered", time: "3 hours ago" },
+  { template: "Weekly Digest", channel: "Email", recipient: "team@company.io", status: "Delivered", time: "3.5 hours ago" },
+  { template: "Feature Announcement", channel: "Push", recipient: "device_token_b73", status: "Delivered", time: "4 hours ago" },
+  { template: "Return Confirmation", channel: "WhatsApp", recipient: "+61 400 123 456", status: "Pending", time: "4.5 hours ago" },
+  { template: "Loyalty Points", channel: "Push", recipient: "device_token_c55", status: "Delivered", time: "5 hours ago" },
+  { template: "Service Outage", channel: "Email", recipient: "ops@enterprise.com", status: "Bounced", time: "5.5 hours ago" },
+  { template: "Birthday Greeting", channel: "WhatsApp", recipient: "+49 170 1234567", status: "Delivered", time: "6 hours ago" },
+  { template: "Welcome Email", channel: "Email", recipient: "jane@startup.io", status: "Failed", time: "6.5 hours ago" },
+  { template: "Order Confirmation", channel: "SMS", recipient: "+1 (555) 321-0987", status: "Delivered", time: "7 hours ago" },
+  { template: "Password Reset", channel: "Email", recipient: "forgot@webmail.com", status: "Delivered", time: "7.5 hours ago" },
+  { template: "Promo Alert", channel: "Push", recipient: "device_token_d19", status: "Pending", time: "8 hours ago" },
 ];
 
 interface RetryRule {
@@ -439,10 +578,17 @@ export function NotificationsContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [channelFilter, setChannelFilter] = useState<"All" | Template["channel"]>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Draft">("All");
+  const [logSearch, setLogSearch] = useState("");
+  const [logChannelFilter, setLogChannelFilter] = useState<"All" | string>("All");
+  const [logStatusFilter, setLogStatusFilter] = useState<"All" | string>("All");
+  const [templatePage, setTemplatePage] = useState(1);
+  const [logPage, setLogPage] = useState(1);
 
   // --- Filtering ---
+  const ROWS_PER_PAGE = 10;
+
   const filtersActive = searchQuery !== "" || channelFilter !== "All" || statusFilter !== "All";
-  const clearFilters = () => { setSearchQuery(""); setChannelFilter("All"); setStatusFilter("All"); };
+  const clearFilters = () => { setSearchQuery(""); setChannelFilter("All"); setStatusFilter("All"); setTemplatePage(1); };
   const filteredTemplates = templates.filter((t) => {
     const q = searchQuery.toLowerCase();
     if (q && !t.name.toLowerCase().includes(q) && !t.subject.toLowerCase().includes(q)) return false;
@@ -450,6 +596,27 @@ export function NotificationsContent() {
     if (statusFilter !== "All" && t.status !== statusFilter) return false;
     return true;
   });
+
+  // Reset template page when filters or data change
+  useEffect(() => { setTemplatePage(1); }, [searchQuery, channelFilter, statusFilter, templates.length]);
+  const templateTotalPages = Math.ceil(filteredTemplates.length / ROWS_PER_PAGE);
+  const pagedTemplates = filteredTemplates.slice((templatePage - 1) * ROWS_PER_PAGE, templatePage * ROWS_PER_PAGE);
+
+  // --- Delivery Logs Filtering ---
+  const logFiltersActive = logSearch !== "" || logChannelFilter !== "All" || logStatusFilter !== "All";
+  const clearLogFilters = () => { setLogSearch(""); setLogChannelFilter("All"); setLogStatusFilter("All"); setLogPage(1); };
+  const filteredLogs = deliveryLogs.filter((log) => {
+    const q = logSearch.toLowerCase();
+    if (q && !log.template.toLowerCase().includes(q) && !log.recipient.toLowerCase().includes(q)) return false;
+    if (logChannelFilter !== "All" && log.channel !== logChannelFilter) return false;
+    if (logStatusFilter !== "All" && log.status !== logStatusFilter) return false;
+    return true;
+  });
+
+  // Reset log page when filters change
+  useEffect(() => { setLogPage(1); }, [logSearch, logChannelFilter, logStatusFilter]);
+  const logTotalPages = Math.ceil(filteredLogs.length / ROWS_PER_PAGE);
+  const pagedLogs = filteredLogs.slice((logPage - 1) * ROWS_PER_PAGE, logPage * ROWS_PER_PAGE);
 
   // --- Scroll lock when any drawer/modal is open ---
   const anyOverlayOpen = editingIndex !== null || previewIndex !== null || deleteIndex !== null || createOpen;
@@ -888,13 +1055,13 @@ export function NotificationsContent() {
               </tr>
             </thead>
             <tbody>
-              {filteredTemplates.map((t, fi) => {
+              {pagedTemplates.map((t, fi) => {
                 const realIndex = templates.indexOf(t);
                 const sc = templateStatusColor(t.status);
                 return (
                   <tr
                     key={`${t.name}-${realIndex}`}
-                    style={{ borderBottom: fi < filteredTemplates.length - 1 ? "1px solid var(--gf-border)" : "none", transition: "background 0.15s" }}
+                    style={{ borderBottom: fi < pagedTemplates.length - 1 ? "1px solid var(--gf-border)" : "none", transition: "background 0.15s" }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(249,115,22,0.04)")}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
                   >
@@ -930,6 +1097,10 @@ export function NotificationsContent() {
             </tbody>
           </table>
         )}
+        {/* Template Pagination */}
+        {filteredTemplates.length > ROWS_PER_PAGE && (
+          <Pagination current={templatePage} total={templateTotalPages} count={filteredTemplates.length} perPage={ROWS_PER_PAGE} onChange={setTemplatePage} />
+        )}
       </div>
 
       {/* Channel Settings */}
@@ -958,26 +1129,79 @@ export function NotificationsContent() {
       {/* Delivery Logs Table */}
       <div style={cardStyle}>
         <h2 style={sectionTitle}>Delivery Logs</h2>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
-              {["Template", "Channel", "Recipient", "Status", "Time"].map((col) => (
-                <th key={col} style={thStyle}>{col}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {deliveryLogs.map((log, i) => (
-              <tr key={i} style={{ borderBottom: i < deliveryLogs.length - 1 ? "1px solid var(--gf-border)" : "none" }}>
-                <td style={tdPrimary}>{log.template}</td>
-                <td style={tdSecondary}>{log.channel}</td>
-                <td style={tdSecondary}>{log.recipient}</td>
-                <td style={{ padding: "0.75rem", fontSize: "0.875rem", fontWeight: 500, color: deliveryStatusColor(log.status) }}>{log.status}</td>
-                <td style={{ padding: "0.75rem", fontSize: "0.75rem", color: "var(--gf-text-muted)", whiteSpace: "nowrap" }}>{log.time}</td>
+
+        {/* Search & Filter Bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+          <div style={{ position: "relative", flex: "1 1 14rem" }}>
+            <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", width: "0.875rem", height: "0.875rem", color: "#6b7280", pointerEvents: "none" }} />
+            <input
+              type="text"
+              value={logSearch}
+              onChange={(e) => setLogSearch(e.target.value)}
+              placeholder="Search by template or recipient..."
+              style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", fontSize: "0.8125rem", borderRadius: "0.5rem", border: "1px solid #2a2d3e", background: "#1a1d2e", color: "#f3f4f6", outline: "none" }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#f97316")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2d3e")}
+            />
+          </div>
+          <select value={logChannelFilter} onChange={(e) => setLogChannelFilter(e.target.value)} style={filterSelectStyle}>
+            <option value="All">All Channels</option>
+            <option value="Email">Email</option>
+            <option value="SMS">SMS</option>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Push">Push</option>
+          </select>
+          <select value={logStatusFilter} onChange={(e) => setLogStatusFilter(e.target.value)} style={filterSelectStyle}>
+            <option value="All">All Status</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Failed">Failed</option>
+            <option value="Pending">Pending</option>
+            <option value="Bounced">Bounced</option>
+          </select>
+          {logFiltersActive && (
+            <button onClick={clearLogFilters} style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid #2a2d3e", background: "rgba(127,127,127,0.1)", color: "#9ca3af", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }}>
+              <FilterX style={{ width: "0.875rem", height: "0.875rem" }} />
+              Clear Filters
+            </button>
+          )}
+        </div>
+
+        {filteredLogs.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
+            <Search style={{ width: "2rem", height: "2rem", color: "#4b5563", margin: "0 auto 0.75rem" }} />
+            <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>No delivery logs found</p>
+          </div>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                {["Template", "Channel", "Recipient", "Status", "Time"].map((col) => (
+                  <th key={col} style={thStyle}>{col}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pagedLogs.map((log, i) => (
+                <tr
+                  key={i}
+                  style={{ borderBottom: i < pagedLogs.length - 1 ? "1px solid var(--gf-border)" : "none", transition: "background 0.15s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(249,115,22,0.04)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                >
+                  <td style={tdPrimary}>{log.template}</td>
+                  <td style={tdSecondary}>{log.channel}</td>
+                  <td style={tdSecondary}>{log.recipient}</td>
+                  <td style={{ padding: "0.75rem", fontSize: "0.875rem", fontWeight: 500, color: deliveryStatusColor(log.status) }}>{log.status}</td>
+                  <td style={{ padding: "0.75rem", fontSize: "0.75rem", color: "var(--gf-text-muted)", whiteSpace: "nowrap" }}>{log.time}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {/* Log Pagination */}
+        {filteredLogs.length > ROWS_PER_PAGE && (
+          <Pagination current={logPage} total={logTotalPages} count={filteredLogs.length} perPage={ROWS_PER_PAGE} onChange={setLogPage} />
+        )}
       </div>
 
       {/* Retry Rules */}
@@ -1081,6 +1305,71 @@ function FieldGroup({ label, children }: { label: string; children: React.ReactN
         {label}
       </label>
       {children}
+    </div>
+  );
+}
+
+function Pagination({ current, total, count, perPage, onChange }: {
+  current: number; total: number; count: number; perPage: number; onChange: (p: number) => void;
+}) {
+  const start = (current - 1) * perPage + 1;
+  const end = Math.min(current * perPage, count);
+
+  const pageBtnBase: React.CSSProperties = {
+    padding: "0.375rem 0.75rem",
+    fontSize: "0.8125rem",
+    fontWeight: 500,
+    borderRadius: "0.375rem",
+    border: "1px solid #2a2d3e",
+    cursor: "pointer",
+    transition: "all 0.15s",
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "1rem", borderTop: "1px solid var(--gf-border)", marginTop: "0.75rem" }}>
+      <span style={{ fontSize: "0.8125rem", color: "#6b7280" }}>
+        Showing {start}-{end} of {count} results
+      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+        <button
+          onClick={() => onChange(current - 1)}
+          disabled={current === 1}
+          style={{
+            ...pageBtnBase,
+            background: current === 1 ? "rgba(127,127,127,0.08)" : "#1a1d2e",
+            color: current === 1 ? "#4b5563" : "#f3f4f6",
+            cursor: current === 1 ? "not-allowed" : "pointer",
+          }}
+        >
+          Previous
+        </button>
+        {Array.from({ length: total }, (_, i) => i + 1).map((p) => (
+          <button
+            key={p}
+            onClick={() => onChange(p)}
+            style={{
+              ...pageBtnBase,
+              background: p === current ? "#f97316" : "#1a1d2e",
+              color: p === current ? "#fff" : "#9ca3af",
+              border: p === current ? "1px solid #f97316" : "1px solid #2a2d3e",
+            }}
+          >
+            {p}
+          </button>
+        ))}
+        <button
+          onClick={() => onChange(current + 1)}
+          disabled={current === total}
+          style={{
+            ...pageBtnBase,
+            background: current === total ? "rgba(127,127,127,0.08)" : "#1a1d2e",
+            color: current === total ? "#4b5563" : "#f3f4f6",
+            cursor: current === total ? "not-allowed" : "pointer",
+          }}
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 }
