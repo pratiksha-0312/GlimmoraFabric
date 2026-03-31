@@ -373,33 +373,33 @@ function EmailPreview({ template }: { template: Template }) {
   const body = replacePlaceholders(template.body);
   return (
     <div style={{ width: "100%", maxWidth: "28rem", margin: "0 auto" }}>
-      <div style={{ background: "#1e2235", borderRadius: "0.75rem", overflow: "hidden", border: "1px solid #2a2d3e" }}>
+      <div style={{ background: "var(--gf-bg-elevated)", borderRadius: "0.75rem", overflow: "hidden", border: "1px solid var(--gf-border)" }}>
         {/* Email header bar */}
         <div style={{ background: "#f97316", padding: "0.75rem 1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <Mail style={{ width: "1rem", height: "1rem", color: "#fff" }} />
           <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#fff" }}>GlimmoraFabric</span>
         </div>
         {/* Email meta */}
-        <div style={{ padding: "1rem", borderBottom: "1px solid #2a2d3e", display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+        <div style={{ padding: "1rem", borderBottom: "1px solid var(--gf-border)", display: "flex", flexDirection: "column", gap: "0.375rem" }}>
           <div style={{ display: "flex", gap: "0.5rem", fontSize: "0.75rem" }}>
-            <span style={{ color: "#6b7280" }}>From:</span>
-            <span style={{ color: "#d1d5db" }}>noreply@glimmorafabric.com</span>
+            <span style={{ color: "var(--gf-text-muted)" }}>From:</span>
+            <span style={{ color: "var(--gf-text-secondary)" }}>noreply@glimmorafabric.com</span>
           </div>
           <div style={{ display: "flex", gap: "0.5rem", fontSize: "0.75rem" }}>
-            <span style={{ color: "#6b7280" }}>To:</span>
-            <span style={{ color: "#d1d5db" }}>john@example.com</span>
+            <span style={{ color: "var(--gf-text-muted)" }}>To:</span>
+            <span style={{ color: "var(--gf-text-secondary)" }}>john@example.com</span>
           </div>
           <div style={{ display: "flex", gap: "0.5rem", fontSize: "0.75rem" }}>
-            <span style={{ color: "#6b7280" }}>Subject:</span>
-            <span style={{ color: "#fff", fontWeight: 500 }}>{subject}</span>
+            <span style={{ color: "var(--gf-text-muted)" }}>Subject:</span>
+            <span style={{ color: "var(--gf-text-primary)", fontWeight: 500 }}>{subject}</span>
           </div>
         </div>
         {/* Email body */}
-        <div style={{ padding: "1.25rem 1rem", fontSize: "0.875rem", lineHeight: 1.6, color: "#d1d5db" }}>
+        <div style={{ padding: "1.25rem 1rem", fontSize: "0.875rem", lineHeight: 1.6, color: "var(--gf-text-secondary)" }}>
           {body}
         </div>
         {/* Email footer */}
-        <div style={{ padding: "0.75rem 1rem", borderTop: "1px solid #2a2d3e", fontSize: "0.6875rem", color: "#6b7280", textAlign: "center" }}>
+        <div style={{ padding: "0.75rem 1rem", borderTop: "1px solid var(--gf-border)", fontSize: "0.6875rem", color: "var(--gf-text-muted)", textAlign: "center" }}>
           &copy; 2026 GlimmoraFabric &middot; Unsubscribe
         </div>
       </div>
@@ -412,9 +412,9 @@ function SMSPreview({ template }: { template: Template }) {
   return (
     <div style={{ width: "100%", maxWidth: "20rem", margin: "0 auto" }}>
       {/* Phone frame */}
-      <div style={{ background: "#111318", borderRadius: "1.5rem", padding: "1rem", border: "2px solid #2a2d3e" }}>
+      <div style={{ background: "var(--gf-bg-base)", borderRadius: "1.5rem", padding: "1rem", border: "2px solid var(--gf-border)" }}>
         {/* Status bar */}
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0.5rem 0.75rem", fontSize: "0.6875rem", color: "#6b7280" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0.5rem 0.75rem", fontSize: "0.6875rem", color: "var(--gf-text-muted)" }}>
           <span>9:41 AM</span>
           <span>GlimmoraFabric</span>
           <span>100%</span>
@@ -423,8 +423,8 @@ function SMSPreview({ template }: { template: Template }) {
         <div style={{ minHeight: "10rem", display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: "0.5rem", padding: "0.5rem" }}>
           <div style={{
             alignSelf: "flex-start",
-            background: "#2a2d3e",
-            color: "#e5e7eb",
+            background: "var(--gf-bg-elevated)",
+            color: "var(--gf-text-primary)",
             borderRadius: "1rem 1rem 1rem 0.25rem",
             padding: "0.75rem 1rem",
             fontSize: "0.8125rem",
@@ -433,7 +433,7 @@ function SMSPreview({ template }: { template: Template }) {
           }}>
             {body}
           </div>
-          <div style={{ alignSelf: "flex-start", fontSize: "0.625rem", color: "#6b7280", paddingLeft: "0.25rem" }}>
+          <div style={{ alignSelf: "flex-start", fontSize: "0.625rem", color: "var(--gf-text-muted)", paddingLeft: "0.25rem" }}>
             Just now
           </div>
         </div>
@@ -446,7 +446,7 @@ function WhatsAppPreview({ template }: { template: Template }) {
   const body = replacePlaceholders(template.body);
   return (
     <div style={{ width: "100%", maxWidth: "22rem", margin: "0 auto" }}>
-      <div style={{ borderRadius: "1rem", overflow: "hidden", border: "1px solid #2a2d3e" }}>
+      <div style={{ borderRadius: "1rem", overflow: "hidden", border: "1px solid var(--gf-border)" }}>
         {/* WhatsApp header */}
         <div style={{ background: "#075e54", padding: "0.75rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <div style={{ width: "2rem", height: "2rem", borderRadius: "9999px", background: "#128c7e", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -458,11 +458,11 @@ function WhatsAppPreview({ template }: { template: Template }) {
           </div>
         </div>
         {/* Chat bg */}
-        <div style={{ background: "#0b141a", minHeight: "12rem", padding: "1rem", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+        <div style={{ background: "var(--gf-bg-base)", minHeight: "12rem", padding: "1rem", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
           <div style={{
             alignSelf: "flex-start",
-            background: "#1f3a34",
-            color: "#e5e7eb",
+            background: "#dcf8c6",
+            color: "#1a1a1a",
             borderRadius: "0 0.75rem 0.75rem 0.75rem",
             padding: "0.625rem 0.75rem",
             fontSize: "0.8125rem",
@@ -487,30 +487,30 @@ function PushPreview({ template }: { template: Template }) {
   return (
     <div style={{ width: "100%", maxWidth: "22rem", margin: "0 auto" }}>
       {/* Phone frame */}
-      <div style={{ background: "#111318", borderRadius: "1.5rem", padding: "1.25rem 1rem", border: "2px solid #2a2d3e" }}>
+      <div style={{ background: "var(--gf-bg-base)", borderRadius: "1.5rem", padding: "1.25rem 1rem", border: "2px solid var(--gf-border)" }}>
         {/* Lock screen time */}
         <div style={{ textAlign: "center", padding: "1rem 0 1.5rem" }}>
-          <div style={{ fontSize: "2.5rem", fontWeight: 300, color: "#e5e7eb" }}>9:41</div>
-          <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>Monday, March 31</div>
+          <div style={{ fontSize: "2.5rem", fontWeight: 300, color: "var(--gf-text-primary)" }}>9:41</div>
+          <div style={{ fontSize: "0.75rem", color: "var(--gf-text-muted)" }}>Monday, March 31</div>
         </div>
         {/* Notification card */}
         <div style={{
-          background: "rgba(42,45,62,0.95)",
+          background: "var(--gf-bg-elevated)",
           borderRadius: "0.875rem",
           padding: "0.875rem",
-          backdropFilter: "blur(20px)",
+          border: "1px solid var(--gf-border)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.375rem" }}>
             <div style={{ width: "1.25rem", height: "1.25rem", borderRadius: "0.25rem", background: "#f97316", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Bell style={{ width: "0.75rem", height: "0.75rem", color: "#fff" }} />
             </div>
-            <span style={{ fontSize: "0.6875rem", fontWeight: 500, color: "#9ca3af", textTransform: "uppercase" }}>GlimmoraFabric</span>
-            <span style={{ fontSize: "0.6875rem", color: "#6b7280", marginLeft: "auto" }}>now</span>
+            <span style={{ fontSize: "0.6875rem", fontWeight: 500, color: "var(--gf-text-muted)", textTransform: "uppercase" }}>GlimmoraFabric</span>
+            <span style={{ fontSize: "0.6875rem", color: "var(--gf-text-muted)", marginLeft: "auto" }}>now</span>
           </div>
-          <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "#f3f4f6", marginBottom: "0.25rem" }}>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--gf-text-primary)", marginBottom: "0.25rem" }}>
             {subject}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#9ca3af", lineHeight: 1.4 }}>
+          <div style={{ fontSize: "0.75rem", color: "var(--gf-text-secondary)", lineHeight: 1.4 }}>
             {body}
           </div>
         </div>
@@ -697,15 +697,15 @@ export function NotificationsContent() {
           <div onClick={closeDrawer} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, animation: "gf-fade-in 0.2s ease-out" }} />
           <div style={{
             position: "fixed", top: 0, right: 0, bottom: 0, width: "28rem", zIndex: 1001,
-            background: "#1a1d2e", borderLeft: "1px solid #2a2d3e",
+            background: "var(--gf-bg-surface)", borderLeft: "1px solid var(--gf-border)",
             boxShadow: "-4px 0 24px rgba(0,0,0,0.3)",
             display: "flex", flexDirection: "column", overflow: "hidden",
             animation: "gf-slide-right 0.3s ease-out",
           }}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid #2a2d3e" }}>
-              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#f3f4f6" }}>Edit Template</h2>
-              <button onClick={closeDrawer} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>
+              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Edit Template</h2>
+              <button onClick={closeDrawer} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)" }}>
                 <X style={{ width: "1.25rem", height: "1.25rem" }} />
               </button>
             </div>
@@ -731,7 +731,7 @@ export function NotificationsContent() {
               {/* Body */}
               <FieldGroup label="Body / Message">
                 <textarea value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} rows={5} style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }} />
-                <span style={{ fontSize: "0.6875rem", color: "#6b7280" }}>
+                <span style={{ fontSize: "0.6875rem", color: "var(--gf-text-muted)" }}>
                   Supports placeholders: {"{{userName}}"}, {"{{orderId}}"}, etc.
                 </span>
               </FieldGroup>
@@ -741,16 +741,16 @@ export function NotificationsContent() {
                   <div style={{ width: "2.75rem", height: "1.5rem", borderRadius: "9999px", background: draft.status === "Active" ? "#22c55e" : "rgba(127,127,127,0.35)", position: "relative", transition: "background 0.2s" }}>
                     <div style={{ position: "absolute", top: "0.125rem", left: draft.status === "Active" ? "1.375rem" : "0.125rem", width: "1.25rem", height: "1.25rem", borderRadius: "9999px", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
                   </div>
-                  <span style={{ fontSize: "0.875rem", fontWeight: 500, color: draft.status === "Active" ? "#22c55e" : "#6b7280" }}>{draft.status}</span>
+                  <span style={{ fontSize: "0.875rem", fontWeight: 500, color: draft.status === "Active" ? "#22c55e" : "var(--gf-text-muted)" }}>{draft.status}</span>
                 </div>
               </FieldGroup>
             </div>
             {/* Footer */}
-            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid #2a2d3e", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid var(--gf-border)", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
               <button onClick={saveTemplate} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "none", background: "#f97316", color: "#fff", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
                 Save Changes
               </button>
-              <button onClick={closeDrawer} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #2a2d3e", background: "rgba(127,127,127,0.12)", color: "#9ca3af", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+              <button onClick={closeDrawer} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
                 Cancel
               </button>
             </div>
@@ -768,17 +768,17 @@ export function NotificationsContent() {
           <div style={{
             position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 1001,
             width: "36rem", maxHeight: "85vh", overflowY: "auto",
-            background: "#1a1d2e", border: "1px solid #2a2d3e", borderRadius: "1rem",
+            background: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)", borderRadius: "1rem",
             boxShadow: "0 24px 48px rgba(0,0,0,0.3)",
             animation: "gf-slide-up 0.3s ease-out",
           }}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid #2a2d3e" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>
               <div>
-                <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#f3f4f6" }}>Preview: {templates[previewIndex].name}</h2>
-                <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>{templates[previewIndex].channel} channel</span>
+                <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Preview: {templates[previewIndex].name}</h2>
+                <span style={{ fontSize: "0.75rem", color: "var(--gf-text-muted)" }}>{templates[previewIndex].channel} channel</span>
               </div>
-              <button onClick={() => setPreviewIndex(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
+              <button onClick={() => setPreviewIndex(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)" }}>
                 <X style={{ width: "1.25rem", height: "1.25rem" }} />
               </button>
             </div>
@@ -790,8 +790,8 @@ export function NotificationsContent() {
               {templates[previewIndex].channel === "Push" && <PushPreview template={templates[previewIndex]} />}
             </div>
             {/* Footer */}
-            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid #2a2d3e" }}>
-              <button onClick={() => setPreviewIndex(null)} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #2a2d3e", background: "rgba(127,127,127,0.12)", color: "#9ca3af", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid var(--gf-border)" }}>
+              <button onClick={() => setPreviewIndex(null)} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
                 Close
               </button>
             </div>
@@ -808,7 +808,7 @@ export function NotificationsContent() {
           <div onClick={() => setDeleteIndex(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, animation: "gf-fade-in 0.2s ease-out" }} />
           <div style={{
             position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 1001,
-            width: "26rem", background: "#1a1d2e", border: "1px solid #2a2d3e", borderRadius: "1rem",
+            width: "26rem", background: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)", borderRadius: "1rem",
             boxShadow: "0 24px 48px rgba(0,0,0,0.3)",
             padding: "2rem 1.5rem",
             animation: "gf-slide-up 0.3s ease-out",
@@ -817,12 +817,12 @@ export function NotificationsContent() {
             <div style={{ width: "3rem", height: "3rem", borderRadius: "9999px", background: "rgba(239,68,68,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
               <Trash2 style={{ width: "1.25rem", height: "1.25rem", color: "#ef4444" }} />
             </div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 600, color: "#f3f4f6", marginBottom: "0.5rem" }}>Delete Template</h3>
-            <p style={{ fontSize: "0.875rem", color: "#9ca3af", lineHeight: 1.5, marginBottom: "1.5rem" }}>
-              Are you sure you want to delete <strong style={{ color: "#f3f4f6" }}>{templates[deleteIndex].name}</strong>? This action cannot be undone.
+            <h3 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--gf-text-primary)", marginBottom: "0.5rem" }}>Delete Template</h3>
+            <p style={{ fontSize: "0.875rem", color: "var(--gf-text-secondary)", lineHeight: 1.5, marginBottom: "1.5rem" }}>
+              Are you sure you want to delete <strong style={{ color: "var(--gf-text-primary)" }}>{templates[deleteIndex].name}</strong>? This action cannot be undone.
             </p>
             <div style={{ display: "flex", gap: "0.75rem" }}>
-              <button onClick={() => setDeleteIndex(null)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #2a2d3e", background: "rgba(127,127,127,0.12)", color: "#9ca3af", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+              <button onClick={() => setDeleteIndex(null)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
                 Cancel
               </button>
               <button onClick={confirmDelete} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.5rem", border: "none", background: "#dc2626", color: "#fff", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
@@ -842,15 +842,15 @@ export function NotificationsContent() {
           <div onClick={closeCreate} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, animation: "gf-fade-in 0.2s ease-out" }} />
           <div style={{
             position: "fixed", top: 0, right: 0, bottom: 0, width: "30rem", zIndex: 1001,
-            background: "#1a1d2e", borderLeft: "1px solid #2a2d3e",
+            background: "var(--gf-bg-surface)", borderLeft: "1px solid var(--gf-border)",
             boxShadow: "-4px 0 24px rgba(0,0,0,0.3)",
             display: "flex", flexDirection: "column", overflow: "hidden",
             animation: "gf-slide-right 0.3s ease-out",
           }}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid #2a2d3e" }}>
-              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#f3f4f6" }}>Create New Template</h2>
-              <button onClick={closeCreate} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>
+              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Create New Template</h2>
+              <button onClick={closeCreate} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)" }}>
                 <X style={{ width: "1.25rem", height: "1.25rem" }} />
               </button>
             </div>
@@ -897,7 +897,7 @@ export function NotificationsContent() {
                   style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit", ...(createErrors.body ? { border: "1px solid #ef4444" } : {}) }}
                 />
                 {createErrors.body && <span style={{ fontSize: "0.6875rem", color: "#ef4444" }}>Message body is required</span>}
-                <span style={{ fontSize: "0.6875rem", color: "#6b7280" }}>
+                <span style={{ fontSize: "0.6875rem", color: "var(--gf-text-muted)" }}>
                   Supports placeholders: {"{{userName}}"}, {"{{orderId}}"}, etc.
                 </span>
               </FieldGroup>
@@ -907,14 +907,14 @@ export function NotificationsContent() {
                   <div style={{ width: "2.75rem", height: "1.5rem", borderRadius: "9999px", background: createDraft.status === "Active" ? "#22c55e" : "rgba(127,127,127,0.35)", position: "relative", transition: "background 0.2s" }}>
                     <div style={{ position: "absolute", top: "0.125rem", left: createDraft.status === "Active" ? "1.375rem" : "0.125rem", width: "1.25rem", height: "1.25rem", borderRadius: "9999px", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
                   </div>
-                  <span style={{ fontSize: "0.875rem", fontWeight: 500, color: createDraft.status === "Active" ? "#22c55e" : "#6b7280" }}>{createDraft.status}</span>
+                  <span style={{ fontSize: "0.875rem", fontWeight: 500, color: createDraft.status === "Active" ? "#22c55e" : "var(--gf-text-muted)" }}>{createDraft.status}</span>
                 </div>
               </FieldGroup>
 
               {/* Live Preview */}
               {createDraft.body.trim() && (
-                <div style={{ borderTop: "1px solid #2a2d3e", paddingTop: "1.25rem" }}>
-                  <h3 style={{ fontSize: "0.75rem", fontWeight: 500, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>Live Preview</h3>
+                <div style={{ borderTop: "1px solid var(--gf-border)", paddingTop: "1.25rem" }}>
+                  <h3 style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--gf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>Live Preview</h3>
                   <div style={{ transform: "scale(0.85)", transformOrigin: "top left", width: "117.6%" }}>
                     {createDraft.channel === "Email" && <EmailPreview template={createDraft} />}
                     {createDraft.channel === "SMS" && <SMSPreview template={createDraft} />}
@@ -925,11 +925,11 @@ export function NotificationsContent() {
               )}
             </div>
             {/* Footer */}
-            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid #2a2d3e", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid var(--gf-border)", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
               <button onClick={saveNewTemplate} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "none", background: "#f97316", color: "#fff", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
                 Save Template
               </button>
-              <button onClick={closeCreate} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #2a2d3e", background: "rgba(127,127,127,0.12)", color: "#9ca3af", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+              <button onClick={closeCreate} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
                 Cancel
               </button>
             </div>
@@ -984,7 +984,7 @@ export function NotificationsContent() {
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
           {/* Search */}
           <div style={{ position: "relative", flex: "1 1 14rem" }}>
-            <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", width: "0.875rem", height: "0.875rem", color: "#6b7280", pointerEvents: "none" }} />
+            <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", width: "0.875rem", height: "0.875rem", color: "var(--gf-text-muted)", pointerEvents: "none" }} />
             <input
               type="text"
               value={searchQuery}
@@ -993,11 +993,11 @@ export function NotificationsContent() {
               style={{
                 width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem",
                 fontSize: "0.8125rem", borderRadius: "0.5rem",
-                border: "1px solid #2a2d3e", background: "#1a1d2e", color: "#f3f4f6",
+                border: "1px solid var(--gf-border)", background: "var(--gf-bg-surface)", color: "var(--gf-text-primary)",
                 outline: "none",
               }}
               onFocus={(e) => (e.currentTarget.style.borderColor = "#f97316")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2d3e")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--gf-border)")}
             />
           </div>
           {/* Channel filter */}
@@ -1029,8 +1029,8 @@ export function NotificationsContent() {
               style={{
                 display: "inline-flex", alignItems: "center", gap: "0.375rem",
                 padding: "0.5rem 0.75rem", borderRadius: "0.5rem",
-                border: "1px solid #2a2d3e", background: "rgba(127,127,127,0.1)",
-                color: "#9ca3af", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer",
+                border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.1)",
+                color: "var(--gf-text-secondary)", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer",
                 whiteSpace: "nowrap",
               }}
             >
@@ -1042,8 +1042,8 @@ export function NotificationsContent() {
 
         {filteredTemplates.length === 0 ? (
           <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
-            <Search style={{ width: "2rem", height: "2rem", color: "#4b5563", margin: "0 auto 0.75rem" }} />
-            <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>No templates found</p>
+            <Search style={{ width: "2rem", height: "2rem", color: "var(--gf-text-muted)", margin: "0 auto 0.75rem" }} />
+            <p style={{ fontSize: "0.875rem", color: "var(--gf-text-muted)" }}>No templates found</p>
           </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -1080,7 +1080,7 @@ export function NotificationsContent() {
                     </td>
                     <td style={{ padding: "0.75rem" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem" }}>
-                        <button onClick={() => setPreviewIndex(realIndex)} title="Preview" style={actionBtnStyle("#6b7280")}>
+                        <button onClick={() => setPreviewIndex(realIndex)} title="Preview" style={actionBtnStyle("var(--gf-text-muted)")}>
                           <Eye style={{ width: "0.875rem", height: "0.875rem" }} />
                         </button>
                         <button onClick={() => openDrawer(realIndex)} title="Edit template" style={actionBtnStyle("#3b82f6")}>
@@ -1133,15 +1133,15 @@ export function NotificationsContent() {
         {/* Search & Filter Bar */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
           <div style={{ position: "relative", flex: "1 1 14rem" }}>
-            <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", width: "0.875rem", height: "0.875rem", color: "#6b7280", pointerEvents: "none" }} />
+            <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", width: "0.875rem", height: "0.875rem", color: "var(--gf-text-muted)", pointerEvents: "none" }} />
             <input
               type="text"
               value={logSearch}
               onChange={(e) => setLogSearch(e.target.value)}
               placeholder="Search by template or recipient..."
-              style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", fontSize: "0.8125rem", borderRadius: "0.5rem", border: "1px solid #2a2d3e", background: "#1a1d2e", color: "#f3f4f6", outline: "none" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", fontSize: "0.8125rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "var(--gf-bg-surface)", color: "var(--gf-text-primary)", outline: "none" }}
               onFocus={(e) => (e.currentTarget.style.borderColor = "#f97316")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2d3e")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--gf-border)")}
             />
           </div>
           <select value={logChannelFilter} onChange={(e) => setLogChannelFilter(e.target.value)} style={filterSelectStyle}>
@@ -1159,7 +1159,7 @@ export function NotificationsContent() {
             <option value="Bounced">Bounced</option>
           </select>
           {logFiltersActive && (
-            <button onClick={clearLogFilters} style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid #2a2d3e", background: "rgba(127,127,127,0.1)", color: "#9ca3af", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }}>
+            <button onClick={clearLogFilters} style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.1)", color: "var(--gf-text-secondary)", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }}>
               <FilterX style={{ width: "0.875rem", height: "0.875rem" }} />
               Clear Filters
             </button>
@@ -1168,8 +1168,8 @@ export function NotificationsContent() {
 
         {filteredLogs.length === 0 ? (
           <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
-            <Search style={{ width: "2rem", height: "2rem", color: "#4b5563", margin: "0 auto 0.75rem" }} />
-            <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>No delivery logs found</p>
+            <Search style={{ width: "2rem", height: "2rem", color: "var(--gf-text-muted)", margin: "0 auto 0.75rem" }} />
+            <p style={{ fontSize: "0.875rem", color: "var(--gf-text-muted)" }}>No delivery logs found</p>
           </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -1267,9 +1267,9 @@ const inputStyle: React.CSSProperties = {
   padding: "0.625rem 0.75rem",
   fontSize: "0.875rem",
   borderRadius: "0.5rem",
-  border: "1px solid #2a2d3e",
-  background: "#0f1117",
-  color: "#f3f4f6",
+  border: "1px solid var(--gf-border)",
+  background: "var(--gf-bg-base)",
+  color: "var(--gf-text-primary)",
   outline: "none",
 };
 
@@ -1277,9 +1277,9 @@ const filterSelectStyle: React.CSSProperties = {
   padding: "0.5rem 0.75rem",
   fontSize: "0.8125rem",
   borderRadius: "0.5rem",
-  border: "1px solid #2a2d3e",
-  background: "#1a1d2e",
-  color: "#f3f4f6",
+  border: "1px solid var(--gf-border)",
+  background: "var(--gf-bg-surface)",
+  color: "var(--gf-text-primary)",
   outline: "none",
   cursor: "pointer",
 };
@@ -1301,7 +1301,7 @@ function actionBtnStyle(color: string): React.CSSProperties {
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
-      <label style={{ fontSize: "0.75rem", fontWeight: 500, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+      <label style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--gf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
         {label}
       </label>
       {children}
@@ -1320,14 +1320,14 @@ function Pagination({ current, total, count, perPage, onChange }: {
     fontSize: "0.8125rem",
     fontWeight: 500,
     borderRadius: "0.375rem",
-    border: "1px solid #2a2d3e",
+    border: "1px solid var(--gf-border)",
     cursor: "pointer",
     transition: "all 0.15s",
   };
 
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "1rem", borderTop: "1px solid var(--gf-border)", marginTop: "0.75rem" }}>
-      <span style={{ fontSize: "0.8125rem", color: "#6b7280" }}>
+      <span style={{ fontSize: "0.8125rem", color: "var(--gf-text-muted)" }}>
         Showing {start}-{end} of {count} results
       </span>
       <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
@@ -1336,8 +1336,8 @@ function Pagination({ current, total, count, perPage, onChange }: {
           disabled={current === 1}
           style={{
             ...pageBtnBase,
-            background: current === 1 ? "rgba(127,127,127,0.08)" : "#1a1d2e",
-            color: current === 1 ? "#4b5563" : "#f3f4f6",
+            background: current === 1 ? "rgba(127,127,127,0.08)" : "var(--gf-bg-surface)",
+            color: current === 1 ? "var(--gf-text-muted)" : "var(--gf-text-primary)",
             cursor: current === 1 ? "not-allowed" : "pointer",
           }}
         >
@@ -1349,9 +1349,9 @@ function Pagination({ current, total, count, perPage, onChange }: {
             onClick={() => onChange(p)}
             style={{
               ...pageBtnBase,
-              background: p === current ? "#f97316" : "#1a1d2e",
-              color: p === current ? "#fff" : "#9ca3af",
-              border: p === current ? "1px solid #f97316" : "1px solid #2a2d3e",
+              background: p === current ? "#f97316" : "var(--gf-bg-surface)",
+              color: p === current ? "#fff" : "var(--gf-text-secondary)",
+              border: p === current ? "1px solid #f97316" : "1px solid var(--gf-border)",
             }}
           >
             {p}
@@ -1362,8 +1362,8 @@ function Pagination({ current, total, count, perPage, onChange }: {
           disabled={current === total}
           style={{
             ...pageBtnBase,
-            background: current === total ? "rgba(127,127,127,0.08)" : "#1a1d2e",
-            color: current === total ? "#4b5563" : "#f3f4f6",
+            background: current === total ? "rgba(127,127,127,0.08)" : "var(--gf-bg-surface)",
+            color: current === total ? "var(--gf-text-muted)" : "var(--gf-text-primary)",
             cursor: current === total ? "not-allowed" : "pointer",
           }}
         >
