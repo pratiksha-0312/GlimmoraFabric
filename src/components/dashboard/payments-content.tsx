@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   CreditCard,
   DollarSign,
@@ -12,6 +12,11 @@ import {
   Eye,
   X,
   RotateCcw,
+  Search,
+  FilterX,
+  Calendar,
+  ChevronDown,
+  AlertCircle,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -173,6 +178,82 @@ const routingRules = [
 ];
 
 // ---------------------------------------------------------------------------
+// Custom Dropdown (always opens downward)
+// ---------------------------------------------------------------------------
+
+function Dropdown({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm outline-none transition-shadow focus:ring-2 focus:ring-orange-500 whitespace-nowrap"
+        style={{
+          backgroundColor: "var(--gf-bg-elevated)",
+          border: "1px solid var(--gf-border)",
+          color: "var(--gf-text-primary)",
+        }}
+      >
+        {value}
+        <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} style={{ color: "var(--gf-text-secondary)" }} />
+      </button>
+      {open && (
+        <div
+          className="absolute top-full left-0 mt-1 min-w-full rounded-lg py-1 shadow-xl z-50 overflow-hidden"
+          style={{
+            backgroundColor: "var(--gf-bg-elevated)",
+            border: "1px solid var(--gf-border)",
+          }}
+        >
+          {options.map((o) => (
+            <button
+              key={o}
+              type="button"
+              onClick={() => {
+                onChange(o);
+                setOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-sm transition-colors"
+              style={{
+                color: o === value ? "#f97316" : "var(--gf-text-primary)",
+                backgroundColor: o === value ? "rgba(249,115,22,0.1)" : "transparent",
+              }}
+              onMouseEnter={(e) => {
+                if (o !== value) e.currentTarget.style.backgroundColor = "var(--gf-bg-surface)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = o === value ? "rgba(249,115,22,0.1)" : "transparent";
+              }}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -183,6 +264,63 @@ export function PaymentsContent() {
   const [refunds, setRefunds] = useState<Refund[]>(initialRefunds);
   const [refundTx, setRefundTx] = useState<Transaction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [gatewayFilter, setGatewayFilter] = useState("All Gateways");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [dateRange, setDateRange] = useState("Last 30 days");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+
+  const isFilterActive =
+    searchQuery !== "" ||
+    gatewayFilter !== "All Gateways" ||
+    statusFilter !== "All Status" ||
+    dateRange !== "Last 30 days";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setGatewayFilter("All Gateways");
+    setStatusFilter("All Status");
+    setDateRange("Last 30 days");
+    setCustomFrom("");
+    setCustomTo("");
+  };
+
+  // Parse "createdAt" like "Mar 28, 2026 — 12:12 PM" into a Date
+  const parseCreatedAt = (s: string): Date => {
+    const cleaned = s.replace("—", "").replace(/\s+/g, " ").trim();
+    return new Date(cleaned);
+  };
+
+  const filteredTransactions = transactions.filter((tx) => {
+    if (searchQuery && !tx.id.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (gatewayFilter !== "All Gateways" && tx.gateway !== gatewayFilter) return false;
+    if (statusFilter !== "All Status" && tx.status !== statusFilter) return false;
+
+    // Date filtering
+    const txDate = parseCreatedAt(tx.createdAt);
+    const now = new Date();
+    if (dateRange === "Last 7 days") {
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() - 7);
+      if (txDate < cutoff) return false;
+    } else if (dateRange === "Last 30 days") {
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() - 30);
+      if (txDate < cutoff) return false;
+    } else if (dateRange === "Custom") {
+      if (customFrom && txDate < new Date(customFrom)) return false;
+      if (customTo) {
+        const toEnd = new Date(customTo);
+        toEnd.setHours(23, 59, 59, 999);
+        if (txDate > toEnd) return false;
+      }
+    }
+
+    return true;
+  });
 
   const pendingRefundCount = refunds.filter((r) => r.status === "Pending").length;
   const stats = baseStats.map((s) =>
@@ -296,10 +434,116 @@ export function PaymentsContent() {
         <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
           Transactions
         </h2>
+
+        {/* Filter Bar */}
+        <div className="flex flex-wrap items-end gap-3 mb-3">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: "var(--gf-text-secondary)" }}
+            />
+            <input
+              type="text"
+              placeholder="Search by Transaction ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition-shadow focus:ring-2 focus:ring-orange-500"
+              style={{
+                backgroundColor: "var(--gf-bg-elevated)",
+                border: "1px solid var(--gf-border)",
+                color: "var(--gf-text-primary)",
+              }}
+            />
+          </div>
+
+          {/* Gateway Filter */}
+          <Dropdown
+            value={gatewayFilter}
+            options={["All Gateways", "Stripe", "Razorpay", "Adyen"]}
+            onChange={setGatewayFilter}
+          />
+
+          {/* Status Filter */}
+          <Dropdown
+            value={statusFilter}
+            options={["All Status", "Succeeded", "Pending", "Failed", "Refunded"]}
+            onChange={setStatusFilter}
+          />
+
+          {/* Date Range */}
+          <Dropdown
+            value={dateRange}
+            options={["Last 7 days", "Last 30 days", "Custom"]}
+            onChange={setDateRange}
+          />
+
+          {/* Custom Date Inputs */}
+          {dateRange === "Custom" && (
+            <>
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="px-3 py-2 rounded-lg text-sm outline-none transition-shadow focus:ring-2 focus:ring-orange-500 dark:[color-scheme:dark]"
+                style={{
+                  backgroundColor: "var(--gf-bg-elevated)",
+                  border: "1px solid var(--gf-border)",
+                  color: "var(--gf-text-primary)",
+                }}
+              />
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="px-3 py-2 rounded-lg text-sm outline-none transition-shadow focus:ring-2 focus:ring-orange-500 dark:[color-scheme:dark]"
+                style={{
+                  backgroundColor: "var(--gf-bg-elevated)",
+                  border: "1px solid var(--gf-border)",
+                  color: "var(--gf-text-primary)",
+                }}
+              />
+            </>
+          )}
+
+          {/* Clear Filters */}
+          {isFilterActive && (
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
+              style={{
+                backgroundColor: "var(--gf-bg-elevated)",
+                border: "1px solid var(--gf-border)",
+                color: "#f97316",
+              }}
+            >
+              <FilterX size={14} />
+              Clear Filters
+            </button>
+          )}
+        </div>
+
+        {/* Results count */}
+        <p className="text-xs mb-2" style={{ color: "var(--gf-text-secondary)" }}>
+          Showing {filteredTransactions.length} of {transactions.length} results
+        </p>
+
         <div
           className="rounded-xl overflow-hidden"
           style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
         >
+          {filteredTransactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <AlertCircle size={40} style={{ color: "var(--gf-text-secondary)" }} className="mb-3 opacity-50" />
+              <p className="text-sm font-medium" style={{ color: "var(--gf-text-secondary)" }}>
+                No transactions found
+              </p>
+              <p className="text-xs mt-1" style={{ color: "var(--gf-text-secondary)", opacity: 0.7 }}>
+                Try adjusting your filters
+              </p>
+            </div>
+          ) : (
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
@@ -315,7 +559,7 @@ export function PaymentsContent() {
               </tr>
             </thead>
             <tbody>
-              {transactions.map((tx) => (
+              {filteredTransactions.map((tx) => (
                 <tr key={tx.id} style={{ borderBottom: "1px solid var(--gf-border)" }}>
                   <td className="px-4 py-3 font-mono" style={{ color: "var(--gf-text-primary)" }}>
                     <span className="inline-flex items-center gap-1.5">
@@ -376,6 +620,7 @@ export function PaymentsContent() {
               ))}
             </tbody>
           </table>
+          )}
         </div>
       </div>
 
