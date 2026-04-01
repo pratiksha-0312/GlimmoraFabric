@@ -696,11 +696,13 @@ export function NotificationsContent() {
         <>
           <div onClick={closeDrawer} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, animation: "gf-fade-in 0.2s ease-out" }} />
           <div style={{
-            position: "fixed", top: 0, right: 0, bottom: 0, width: "28rem", zIndex: 1001,
-            background: "var(--gf-bg-surface)", borderLeft: "1px solid var(--gf-border)",
-            boxShadow: "-4px 0 24px rgba(0,0,0,0.3)",
+            position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 1001,
+            width: "700px", maxWidth: "90vw", maxHeight: "85vh",
+            background: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)",
+            borderRadius: "0.75rem",
+            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
             display: "flex", flexDirection: "column", overflow: "hidden",
-            animation: "gf-slide-right 0.3s ease-out",
+            animation: "gf-slide-up 0.3s ease-out",
           }}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>
@@ -841,11 +843,13 @@ export function NotificationsContent() {
         <>
           <div onClick={closeCreate} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, animation: "gf-fade-in 0.2s ease-out" }} />
           <div style={{
-            position: "fixed", top: 0, right: 0, bottom: 0, width: "30rem", zIndex: 1001,
-            background: "var(--gf-bg-surface)", borderLeft: "1px solid var(--gf-border)",
-            boxShadow: "-4px 0 24px rgba(0,0,0,0.3)",
+            position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 1001,
+            width: "700px", maxWidth: "90vw", maxHeight: "85vh",
+            background: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)",
+            borderRadius: "0.75rem",
+            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
             display: "flex", flexDirection: "column", overflow: "hidden",
-            animation: "gf-slide-right 0.3s ease-out",
+            animation: "gf-slide-up 0.3s ease-out",
           }}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>

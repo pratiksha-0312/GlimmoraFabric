@@ -145,8 +145,8 @@ const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--g
 
 function AuditDetailPanel({ event, onClose }: { event: AuditEvent; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
-      <div className="w-full max-w-lg h-full overflow-y-auto border-l shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-xl shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
           <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Event Details</h2>
           <button onClick={onClose} className="rounded-lg p-1 hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}><X className="h-5 w-5" /></button>
@@ -216,8 +216,8 @@ function SecurityDetailPanel({ event, onClose, onStatusChange }: { event: Securi
   const Icon = SEC_ICONS[event.type];
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
-      <div className="w-full max-w-lg h-full overflow-y-auto border-l shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-xl shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
           <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Security Event</h2>
           <button onClick={onClose} className="rounded-lg p-1 hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}><X className="h-5 w-5" /></button>

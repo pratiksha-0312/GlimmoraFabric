@@ -411,9 +411,9 @@ function TenantDetail({ tenant, onClose, onEdit }: { tenant: Tenant; onClose: ()
   const statusColor = STATUS_DOT_COLORS[tenant.status];
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
-        className="w-full max-w-lg h-full overflow-y-auto border-l shadow-2xl animate-in slide-in-from-right"
+        className="w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-xl shadow-2xl animate-in slide-in-from-right"
         style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }}
         onClick={(e) => e.stopPropagation()}
       >

@@ -116,8 +116,8 @@ function ServiceDetailPanel({ service, onClose, onRestart }: { service: ServiceI
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
-      <div className="w-full max-w-lg h-full overflow-y-auto border-l shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-xl shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
           <div className="flex items-center gap-2">
             <Server className="h-4 w-4" style={{ color: "var(--gf-accent)" }} />
@@ -197,8 +197,8 @@ function LogDetailPanel({ log, onClose }: { log: LogEntry; onClose: () => void }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
-      <div className="w-full max-w-lg h-full overflow-y-auto border-l shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-xl shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ backgroundColor: `${lc}20`, color: lc }}>{log.level}</span>
@@ -246,8 +246,8 @@ function KafkaEventDetailPanel({ event, onClose, onRetry }: { event: KafkaEvent;
   const fullPayload = JSON.stringify({ eventId: event.id, type: event.eventType, tenant: event.tenant, data: JSON.parse(event.payload), meta: { partition: event.partition, offset: event.offset, retries: event.status === "Failed" ? 3 : 0 } }, null, 2);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
-      <div className="w-full max-w-lg h-full overflow-y-auto border-l shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-xl shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>Kafka Event</span>

@@ -474,8 +474,8 @@ function PromptDetail({ prompt, onClose, onEdit }: { prompt: PromptTemplate; onC
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
-      <div className="w-full max-w-xl h-full overflow-y-auto border-l shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-xl shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
           <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Prompt Details</h2>
           <div className="flex items-center gap-2">
@@ -532,8 +532,8 @@ function AgentDetail({ agent, onClose, onEdit }: { agent: AgentWorkflow; onClose
   const typeStyle = TYPE_COLORS[agent.type];
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
-      <div className="w-full max-w-xl h-full overflow-y-auto border-l shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-xl shadow-2xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
           <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Agent Details</h2>
           <div className="flex items-center gap-2">
