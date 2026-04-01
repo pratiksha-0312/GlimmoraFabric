@@ -1,21 +1,28 @@
+
 "use client";
 
+import { useState } from "react";
 import {
   CreditCard,
   DollarSign,
   ArrowUpDown,
   RefreshCw,
+  Copy,
+  Check,
+  Eye,
+  X,
+  RotateCcw,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Stats data
 // ---------------------------------------------------------------------------
 
-const stats = [
+const baseStats = [
   { label: "Revenue (MTD)", value: "$124,500", icon: DollarSign },
   { label: "Transactions", value: "2,847", icon: ArrowUpDown },
   { label: "Success Rate", value: "99.2%", icon: CreditCard },
-  { label: "Pending Refunds", value: "5", icon: RefreshCw },
+  { label: "Pending Refunds", value: "", icon: RefreshCw },
 ];
 
 // ---------------------------------------------------------------------------
@@ -49,18 +56,26 @@ const gateways = [
 
 type TxStatus = "Succeeded" | "Pending" | "Failed" | "Refunded";
 
-const transactions: {
+type Transaction = {
   id: string;
   amount: string;
   gateway: string;
   status: TxStatus;
   time: string;
-}[] = [
-  { id: "TXN-001", amount: "$250.00", gateway: "Stripe", status: "Succeeded", time: "12 min ago" },
-  { id: "TXN-002", amount: "$1,200.00", gateway: "Razorpay", status: "Pending", time: "25 min ago" },
-  { id: "TXN-003", amount: "$89.99", gateway: "Stripe", status: "Succeeded", time: "1 hr ago" },
-  { id: "TXN-004", amount: "$450.00", gateway: "Adyen", status: "Failed", time: "2 hr ago" },
-  { id: "TXN-005", amount: "$175.50", gateway: "Stripe", status: "Refunded", time: "3 hr ago" },
+  customerName: string;
+  customerEmail: string;
+  cardType: string;
+  createdAt: string;
+  description: string;
+  metadata: string;
+};
+
+const initialTransactions: Transaction[] = [
+  { id: "TXN-001", amount: "$250.00", gateway: "Stripe", status: "Succeeded", time: "12 min ago", customerName: "John Doe", customerEmail: "john@example.com", cardType: "Visa •••• 4242", createdAt: "Mar 28, 2026 — 12:12 PM", description: "Subscription payment", metadata: '{ "plan": "pro", "cycle": "monthly" }' },
+  { id: "TXN-002", amount: "$1,200.00", gateway: "Razorpay", status: "Pending", time: "25 min ago", customerName: "Priya Sharma", customerEmail: "priya@example.com", cardType: "Mastercard •••• 8819", createdAt: "Mar 28, 2026 — 11:59 AM", description: "Invoice #INV-2026-118", metadata: '{ "plan": "enterprise", "cycle": "annual" }' },
+  { id: "TXN-003", amount: "$89.99", gateway: "Stripe", status: "Succeeded", time: "1 hr ago", customerName: "Alice Martin", customerEmail: "alice@example.com", cardType: "Visa •••• 1234", createdAt: "Mar 28, 2026 — 11:24 AM", description: "One-time purchase", metadata: '{ "product": "widget-x", "qty": 1 }' },
+  { id: "TXN-004", amount: "$450.00", gateway: "Adyen", status: "Failed", time: "2 hr ago", customerName: "Carlos Rivera", customerEmail: "carlos@example.com", cardType: "Amex •••• 3782", createdAt: "Mar 28, 2026 — 10:31 AM", description: "Upgrade to Business plan", metadata: '{ "plan": "business", "prev_plan": "starter" }' },
+  { id: "TXN-005", amount: "$175.50", gateway: "Stripe", status: "Refunded", time: "3 hr ago", customerName: "Emily Chen", customerEmail: "emily@example.com", cardType: "Visa •••• 9090", createdAt: "Mar 28, 2026 — 09:45 AM", description: "Subscription payment", metadata: '{ "plan": "pro", "cycle": "monthly" }' },
 ];
 
 const statusColors: Record<TxStatus, string> = {
@@ -104,13 +119,15 @@ const subStatusColors: Record<SubStatus, string> = {
 
 type RefundStatus = "Processed" | "Pending" | "Rejected";
 
-const refunds: {
+type Refund = {
   transactionId: string;
   amount: string;
   reason: string;
   status: RefundStatus;
   processedDate: string;
-}[] = [
+};
+
+const initialRefunds: Refund[] = [
   { transactionId: "TXN-005", amount: "$175.50", reason: "Customer request", status: "Processed", processedDate: "2026-03-29" },
   { transactionId: "TXN-098", amount: "$340.00", reason: "Duplicate charge", status: "Processed", processedDate: "2026-03-28" },
   { transactionId: "TXN-112", amount: "$59.99", reason: "Service not rendered", status: "Pending", processedDate: "—" },
@@ -160,6 +177,46 @@ const routingRules = [
 // ---------------------------------------------------------------------------
 
 export function PaymentsContent() {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [viewTx, setViewTx] = useState<Transaction | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [refunds, setRefunds] = useState<Refund[]>(initialRefunds);
+  const [refundTx, setRefundTx] = useState<Transaction | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const pendingRefundCount = refunds.filter((r) => r.status === "Pending").length;
+  const stats = baseStats.map((s) =>
+    s.label === "Pending Refunds" ? { ...s, value: String(pendingRefundCount) } : s
+  );
+
+  const copyToClipboard = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const confirmRefund = () => {
+    if (!refundTx) return;
+    setTransactions((prev) =>
+      prev.map((tx) =>
+        tx.id === refundTx.id ? { ...tx, status: "Refunded" as TxStatus } : tx
+      )
+    );
+    setRefunds((prev) => [
+      {
+        transactionId: refundTx.id,
+        amount: refundTx.amount,
+        reason: "Customer request",
+        status: "Pending",
+        processedDate: "—",
+      },
+      ...prev,
+    ]);
+    setRefundTx(null);
+    setToast("Refund added to Recent Refunds ✓");
+    setTimeout(() => setToast(null), 3000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -246,7 +303,7 @@ export function PaymentsContent() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
-                {["Transaction ID", "Amount", "Gateway", "Status", "Time"].map((h) => (
+                {["Transaction ID", "Amount", "Gateway", "Status", "Time", "Actions"].map((h) => (
                   <th
                     key={h}
                     className="text-left px-4 py-3 font-medium"
@@ -261,7 +318,17 @@ export function PaymentsContent() {
               {transactions.map((tx) => (
                 <tr key={tx.id} style={{ borderBottom: "1px solid var(--gf-border)" }}>
                   <td className="px-4 py-3 font-mono" style={{ color: "var(--gf-text-primary)" }}>
-                    {tx.id}
+                    <span className="inline-flex items-center gap-1.5">
+                      {tx.id}
+                      <button
+                        title="Copy ID"
+                        onClick={() => copyToClipboard(tx.id)}
+                        className="inline-flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        style={{ width: 22, height: 22, color: copiedId === tx.id ? "#22c55e" : "var(--gf-text-secondary)" }}
+                      >
+                        {copiedId === tx.id ? <Check size={14} /> : <Copy size={14} />}
+                      </button>
+                    </span>
                   </td>
                   <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>
                     {tx.amount}
@@ -282,6 +349,28 @@ export function PaymentsContent() {
                   </td>
                   <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>
                     {tx.time}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1">
+                      <button
+                        title="View Details"
+                        onClick={() => setViewTx(tx)}
+                        className="inline-flex items-center justify-center rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                        style={{ width: 28, height: 28, color: "#3b82f6" }}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      {(tx.status === "Succeeded" || tx.status === "Failed") && (
+                        <button
+                          title="Refund"
+                          onClick={() => setRefundTx(tx)}
+                          className="inline-flex items-center justify-center rounded hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                          style={{ width: 28, height: 28, color: "#f97316" }}
+                        >
+                          <RotateCcw size={16} />
+                        </button>
+                      )}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -376,7 +465,17 @@ export function PaymentsContent() {
               {refunds.map((r) => (
                 <tr key={r.transactionId} style={{ borderBottom: "1px solid var(--gf-border)" }}>
                   <td className="px-4 py-3 font-mono" style={{ color: "var(--gf-text-primary)" }}>
-                    {r.transactionId}
+                    <span className="inline-flex items-center gap-1.5">
+                      {r.transactionId}
+                      <button
+                        title="Copy ID"
+                        onClick={() => copyToClipboard(r.transactionId)}
+                        className="inline-flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        style={{ width: 22, height: 22, color: copiedId === r.transactionId ? "#22c55e" : "var(--gf-text-secondary)" }}
+                      >
+                        {copiedId === r.transactionId ? <Check size={14} /> : <Copy size={14} />}
+                      </button>
+                    </span>
                   </td>
                   <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>
                     {r.amount}
@@ -441,6 +540,145 @@ export function PaymentsContent() {
           ))}
         </div>
       </div>
+      {/* Toast */}
+      {toast && (
+        <div
+          className="fixed bottom-6 right-6 z-[10000] animate-in slide-in-from-bottom-4 fade-in duration-300 rounded-lg px-4 py-3 text-sm font-medium shadow-lg"
+          style={{ backgroundColor: "#22c55e", color: "#fff" }}
+        >
+          {toast}
+        </div>
+      )}
+
+      {/* Refund Confirmation Dialog */}
+      {refundTx && (
+        <div
+          className="flex items-center justify-center animate-in fade-in duration-200"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: "rgba(0,0,0,0.7)",
+          }}
+          onClick={() => setRefundTx(null)}
+        >
+          <div
+            className="rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-in zoom-in-95 duration-200"
+            style={{
+              backgroundColor: "var(--gf-bg-surface)",
+              border: "1px solid var(--gf-border)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
+              Confirm Refund
+            </h3>
+            <p className="text-sm mb-5" style={{ color: "var(--gf-text-secondary)" }}>
+              Initiate refund of <strong style={{ color: "var(--gf-text-primary)" }}>{refundTx.amount}</strong> for
+              transaction <strong style={{ color: "var(--gf-text-primary)" }}>{refundTx.id}</strong>?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmRefund}
+                className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
+                style={{ backgroundColor: "#f97316", color: "#fff" }}
+              >
+                Yes, Refund
+              </button>
+              <button
+                onClick={() => setRefundTx(null)}
+                className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
+                style={{ backgroundColor: "var(--gf-text-secondary)", color: "var(--gf-bg-surface)" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Detail Modal */}
+      {viewTx && (
+        <div
+          className="flex items-center justify-center animate-in fade-in duration-200"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: "rgba(0,0,0,0.7)",
+          }}
+          onClick={() => setViewTx(null)}
+        >
+          <div
+            className="rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 animate-in zoom-in-95 duration-200"
+            style={{
+              backgroundColor: "var(--gf-bg-surface)",
+              border: "1px solid var(--gf-border)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>
+                Transaction Details
+              </h3>
+              <button
+                onClick={() => setViewTx(null)}
+                className="rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors p-1"
+                style={{ color: "var(--gf-text-secondary)" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              {([
+                ["Transaction ID", viewTx.id],
+                ["Amount", viewTx.amount],
+                ["Gateway", viewTx.gateway],
+                ["Status", viewTx.status],
+                ["Customer Name", viewTx.customerName],
+                ["Customer Email", viewTx.customerEmail],
+                ["Card Type", viewTx.cardType],
+                ["Created At", viewTx.createdAt],
+                ["Description", viewTx.description],
+                ["Metadata", viewTx.metadata],
+              ] as const).map(([label, value]) => (
+                <div key={label} className="flex gap-3">
+                  <span
+                    className="font-medium shrink-0"
+                    style={{ color: "var(--gf-text-secondary)", minWidth: 130 }}
+                  >
+                    {label}
+                  </span>
+                  <span
+                    className={label === "Transaction ID" || label === "Metadata" ? "font-mono" : ""}
+                    style={{
+                      color:
+                        label === "Status"
+                          ? statusColors[value as TxStatus]
+                          : "var(--gf-text-primary)",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setViewTx(null)}
+              className="mt-6 w-full py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
+              style={{
+                backgroundColor: "var(--gf-text-secondary)",
+                color: "var(--gf-bg-surface)",
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
