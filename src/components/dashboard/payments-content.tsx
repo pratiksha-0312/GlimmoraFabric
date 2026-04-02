@@ -26,6 +26,10 @@ import {
   TrendingUp,
   Bell,
   Clock,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  CircleDot,
+  XCircle,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -174,6 +178,65 @@ const planPrices: Record<SubPlan, { monthly: number; annual: number; features: s
   Pro: { monthly: 99, annual: 990, features: ["Up to 50 users", "Advanced analytics", "Priority support"] },
   Enterprise: { monthly: 249, annual: 2400, features: ["Unlimited users", "Custom integrations", "Dedicated account manager"] },
 };
+
+type HistoryAction = "upgraded" | "downgraded" | "started" | "cancelled";
+
+interface PlanHistoryEntry {
+  action: HistoryAction;
+  plan: string;
+  fromPlan?: string;
+  date: string;
+  by: string;
+}
+
+const planHistory: Record<string, PlanHistoryEntry[]> = {
+  "Acme Corp": [
+    { action: "upgraded", plan: "Enterprise", fromPlan: "Pro", date: "Mar 15, 2026", by: "Super Admin" },
+    { action: "started", plan: "Pro", date: "Jan 10, 2026", by: "System" },
+  ],
+  "Globex Inc": [
+    { action: "started", plan: "Pro", date: "Feb 01, 2026", by: "System" },
+  ],
+  "Initech": [
+    { action: "downgraded", plan: "Pro", fromPlan: "Enterprise", date: "Mar 01, 2026", by: "Admin" },
+    { action: "upgraded", plan: "Enterprise", fromPlan: "Starter", date: "Nov 15, 2025", by: "Super Admin" },
+    { action: "started", plan: "Starter", date: "Oct 01, 2025", by: "System" },
+  ],
+  "Wonka Ltd": [
+    { action: "started", plan: "Starter", date: "Mar 20, 2026", by: "System" },
+  ],
+  "Umbrella Co": [
+    { action: "cancelled", plan: "Pro", date: "Mar 25, 2026", by: "Admin" },
+    { action: "started", plan: "Pro", date: "Jan 05, 2026", by: "System" },
+  ],
+};
+
+function historyActionColor(action: HistoryAction): string {
+  switch (action) {
+    case "upgraded": return "#22c55e";
+    case "downgraded": return "#ef4444";
+    case "started": return "#f59e0b";
+    case "cancelled": return "#ef4444";
+  }
+}
+
+function historyActionLabel(entry: PlanHistoryEntry): string {
+  switch (entry.action) {
+    case "upgraded": return `Upgraded to ${entry.plan}`;
+    case "downgraded": return `Downgraded to ${entry.plan}`;
+    case "started": return `Started ${entry.plan} Trial`;
+    case "cancelled": return `Cancelled ${entry.plan}`;
+  }
+}
+
+function historyActionSubtext(entry: PlanHistoryEntry): string {
+  switch (entry.action) {
+    case "upgraded": return `from ${entry.fromPlan} → ${entry.plan}`;
+    case "downgraded": return `from ${entry.fromPlan} → ${entry.plan}`;
+    case "started": return "New subscription created";
+    case "cancelled": return "Subscription cancelled";
+  }
+}
 
 function computeMrr(subs: Subscription[]): number {
   return subs.reduce((sum, s) => {
@@ -1650,6 +1713,68 @@ export function PaymentsContent() {
                 </div>
               ))}
             </div>
+
+            {/* Plan Change History */}
+            <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--gf-border)" }}>
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="h-4 w-4" style={{ color: "var(--gf-accent)" }} />
+                <h4 className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>Plan Change History</h4>
+              </div>
+              {(() => {
+                const history = planHistory[viewSub.tenant];
+                if (!history || history.length === 0) {
+                  return <p className="text-xs" style={{ color: "var(--gf-text-secondary)" }}>No plan changes recorded</p>;
+                }
+                const HistoryIcon = ({ action }: { action: HistoryAction }) => {
+                  const color = historyActionColor(action);
+                  const props = { className: "h-4 w-4", style: { color } };
+                  switch (action) {
+                    case "upgraded": return <ArrowUpCircle {...props} />;
+                    case "downgraded": return <ArrowDownCircle {...props} />;
+                    case "started": return <CircleDot {...props} />;
+                    case "cancelled": return <XCircle {...props} />;
+                  }
+                };
+                return (
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {history.map((entry, idx) => {
+                      const isLast = idx === history.length - 1;
+                      return (
+                        <div key={idx} className="flex gap-3 relative" style={{ paddingBottom: isLast ? 0 : 16 }}>
+                          {/* Vertical dotted line */}
+                          {!isLast && (
+                            <div
+                              className="absolute left-[9px] top-[22px] w-0"
+                              style={{
+                                height: "calc(100% - 14px)",
+                                borderLeft: "2px dotted var(--gf-border)",
+                              }}
+                            />
+                          )}
+                          {/* Icon */}
+                          <div className="relative z-10 flex-shrink-0 mt-0.5 flex items-center justify-center w-5 h-5">
+                            <HistoryIcon action={entry.action} />
+                          </div>
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium" style={{ color: historyActionColor(entry.action) }}>
+                                {historyActionLabel(entry)}
+                              </p>
+                              <span className="text-xs shrink-0" style={{ color: "var(--gf-text-secondary)" }}>{entry.date}</span>
+                            </div>
+                            <p className="text-xs" style={{ color: "var(--gf-text-secondary)" }}>
+                              {historyActionSubtext(entry)} &middot; by {entry.by}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
             <button onClick={() => setViewSub(null)} className="mt-6 w-full py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90" style={{ backgroundColor: "var(--gf-text-secondary)", color: "var(--gf-bg-surface)" }}>
               Close
             </button>
