@@ -18,6 +18,14 @@ import {
   Plus,
   Search,
   FilterX,
+  Megaphone,
+  Clock,
+  Calendar,
+  Info,
+  Download,
+  Settings,
+  ArrowRight,
+  EyeOff,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -280,6 +288,93 @@ const userPreferences: UserPref[] = [
   { channel: "WhatsApp", optedIn: 2_840, optedOut: 460, total: 3_300 },
   { channel: "Push", optedIn: 3_900, optedOut: 310, total: 4_210 },
 ];
+
+// ---------------------------------------------------------------------------
+// Scheduled Queue data
+// ---------------------------------------------------------------------------
+
+interface ScheduledNotification {
+  id: number;
+  template: string;
+  channel: string;
+  recipient: string;
+  scheduledAt: string;
+  repeat: string;
+  status: "Scheduled" | "Sent" | "Cancelled";
+}
+
+const initialScheduledQueue: ScheduledNotification[] = [
+  { id: 1, template: "Weekly Digest", channel: "Email", recipient: "All Users", scheduledAt: "Apr 05, 2026 09:00 AM IST", repeat: "Weekly", status: "Scheduled" },
+  { id: 2, template: "Promo Alert", channel: "Push", recipient: "Opted-in Users", scheduledAt: "Apr 03, 2026 02:00 PM UTC", repeat: "Once", status: "Scheduled" },
+  { id: 3, template: "Subscription Renewal", channel: "SMS", recipient: "+1 (555) 123-4567", scheduledAt: "Apr 01, 2026 10:00 AM EST", repeat: "Monthly", status: "Sent" },
+];
+
+// ---------------------------------------------------------------------------
+// Channel Settings data
+// ---------------------------------------------------------------------------
+
+interface ChannelSetting {
+  channel: string;
+  provider: string;
+  dailyLimit: number;
+  enabled: boolean;
+  apiKey: string;
+  icon: typeof Mail;
+  providers: string[];
+}
+
+const initialChannelSettings: ChannelSetting[] = [
+  { channel: "Email", provider: "AWS SES", dailyLimit: 10000, enabled: true, apiKey: "ses_••••••••••••abcd", icon: Mail, providers: ["AWS SES", "SendGrid", "Mailgun"] },
+  { channel: "SMS", provider: "Twilio", dailyLimit: 5000, enabled: true, apiKey: "twilio_••••••••••••efgh", icon: MessageSquare, providers: ["Twilio", "Vonage", "Plivo"] },
+  { channel: "WhatsApp", provider: "Twilio", dailyLimit: 3000, enabled: true, apiKey: "wa_••••••••••••ijkl", icon: MessageSquare, providers: ["Twilio", "360dialog", "MessageBird"] },
+  { channel: "Push", provider: "Firebase FCM", dailyLimit: 50000, enabled: true, apiKey: "fcm_••••••••••••mnop", icon: Smartphone, providers: ["Firebase FCM", "OneSignal", "Pusher"] },
+];
+
+interface FallbackRule {
+  id: number;
+  primary: string;
+  fallback: string;
+}
+
+const initialFallbackRules: FallbackRule[] = [
+  { id: 1, primary: "Push", fallback: "SMS" },
+  { id: 2, primary: "SMS", fallback: "Email" },
+  { id: 3, primary: "WhatsApp", fallback: "SMS" },
+];
+
+// ---------------------------------------------------------------------------
+// Opt-out data
+// ---------------------------------------------------------------------------
+
+interface OptOutUser {
+  name: string;
+  contact: string;
+  date: string;
+  reason: string;
+}
+
+const optOutData: Record<string, OptOutUser[]> = {
+  Email: [
+    { name: "John Doe", contact: "john@example.com", date: "Mar 28, 2026", reason: "Too many emails" },
+    { name: "Jane Smith", contact: "jane@example.com", date: "Mar 25, 2026", reason: "Not relevant" },
+    { name: "Mike Chen", contact: "mike@example.com", date: "Mar 20, 2026", reason: "Unsubscribed" },
+    { name: "Sara Wilson", contact: "sara@example.com", date: "Mar 18, 2026", reason: "Spam" },
+  ],
+  SMS: [
+    { name: "Alex Rivera", contact: "+1 (555) 234-5678", date: "Mar 27, 2026", reason: "Too frequent" },
+    { name: "Priya Sharma", contact: "+91 98765 43210", date: "Mar 22, 2026", reason: "Not relevant" },
+    { name: "Tom Brown", contact: "+1 (555) 876-5432", date: "Mar 15, 2026", reason: "Unsubscribed" },
+  ],
+  WhatsApp: [
+    { name: "Lisa Park", contact: "+44 7700 900123", date: "Mar 26, 2026", reason: "Too many messages" },
+    { name: "Emma Davis", contact: "+61 400 123 456", date: "Mar 21, 2026", reason: "Not relevant" },
+  ],
+  Push: [
+    { name: "Carlos Rivera", contact: "device_token_x92", date: "Mar 24, 2026", reason: "Battery drain" },
+    { name: "Rahul Gupta", contact: "device_token_a41", date: "Mar 19, 2026", reason: "Too frequent" },
+    { name: "Jordan Lee", contact: "device_token_b73", date: "Mar 14, 2026", reason: "Not useful" },
+  ],
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -585,6 +680,45 @@ export function NotificationsContent() {
   const [templatePage, setTemplatePage] = useState(1);
   const [logPage, setLogPage] = useState(1);
 
+  // PART 1 — Broadcast
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [bcChannels, setBcChannels] = useState({ Email: true, SMS: true, WhatsApp: false, Push: false });
+  const [bcTemplate, setBcTemplate] = useState("");
+  const [bcAudience, setBcAudience] = useState<"all" | "opted" | "segment">("opted");
+  const [bcSegment, setBcSegment] = useState("");
+  const [bcConfirm, setBcConfirm] = useState(false);
+
+  // PART 2 — Schedule
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [schTemplate, setSchTemplate] = useState("");
+  const [schChannel, setSchChannel] = useState("Email");
+  const [schRecipient, setSchRecipient] = useState("");
+  const [schSendAll, setSchSendAll] = useState(false);
+  const [schDate, setSchDate] = useState("");
+  const [schTime, setSchTime] = useState("");
+  const [schTimezone, setSchTimezone] = useState("IST");
+  const [schRepeat, setSchRepeat] = useState("Once");
+  const [schNotes, setSchNotes] = useState("");
+  const [scheduledQueue, setScheduledQueue] = useState<ScheduledNotification[]>(initialScheduledQueue);
+  const [nextSchId, setNextSchId] = useState(4);
+
+  // PART 3 — Edit Retry Rules
+  const [retryRulesState, setRetryRulesState] = useState(retryRules.map((r) => ({ ...r })));
+  const [editRetryChannel, setEditRetryChannel] = useState<string | null>(null);
+  const [retryForm, setRetryForm] = useState({ maxRetries: 3, intervalVal: 5, intervalUnit: "min" as "min" | "hours", backoff: "Exponential" });
+
+  // PART 4 — Channel Settings + Fallback
+  const [chSettings, setChSettings] = useState<ChannelSetting[]>(initialChannelSettings);
+  const [editChSetting, setEditChSetting] = useState<ChannelSetting | null>(null);
+  const [chForm, setChForm] = useState({ provider: "", dailyLimit: 0, apiKey: "" });
+  const [showChApiKey, setShowChApiKey] = useState(false);
+  const [fallbackRules, setFallbackRules] = useState<FallbackRule[]>(initialFallbackRules);
+  const [nextFbId, setNextFbId] = useState(4);
+
+  // PART 5 — View/Export Opt-outs
+  const [optOutChannel, setOptOutChannel] = useState<string | null>(null);
+  const [optOutSearch, setOptOutSearch] = useState("");
+
   // --- Filtering ---
   const ROWS_PER_PAGE = 10;
 
@@ -620,7 +754,7 @@ export function NotificationsContent() {
   const pagedLogs = filteredLogs.slice((logPage - 1) * ROWS_PER_PAGE, logPage * ROWS_PER_PAGE);
 
   // --- Scroll lock when any drawer/modal is open ---
-  const anyOverlayOpen = editingIndex !== null || previewIndex !== null || deleteIndex !== null || createOpen;
+  const anyOverlayOpen = editingIndex !== null || previewIndex !== null || deleteIndex !== null || createOpen || broadcastOpen || scheduleOpen || editRetryChannel !== null || editChSetting !== null || optOutChannel !== null;
   useEffect(() => {
     if (anyOverlayOpen) {
       document.body.style.overflow = "hidden";
@@ -944,13 +1078,40 @@ export function NotificationsContent() {
       )}
 
       {/* Header */}
-      <div>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--gf-text-primary)" }}>
-          Notification Hub
-        </h1>
-        <p style={{ fontSize: "0.875rem", color: "var(--gf-text-muted)", marginTop: "0.25rem" }}>
-          Email, SMS, WhatsApp, and push notification management
-        </p>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <div>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--gf-text-primary)" }}>
+            Notification Hub
+          </h1>
+          <p style={{ fontSize: "0.875rem", color: "var(--gf-text-muted)", marginTop: "0.25rem" }}>
+            Email, SMS, WhatsApp, and push notification management
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            onClick={() => setScheduleOpen(true)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "0.375rem",
+              padding: "0.5rem 1rem", borderRadius: "0.5rem",
+              border: "1px solid #f97316", background: "transparent",
+              color: "#f97316", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            <Calendar style={{ width: "0.875rem", height: "0.875rem" }} />
+            + Schedule
+          </button>
+          <button
+            onClick={() => setBroadcastOpen(true)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "0.375rem",
+              padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "none",
+              background: "#f97316", color: "#fff", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            <Megaphone style={{ width: "0.875rem", height: "0.875rem" }} />
+            Broadcast
+          </button>
+        </div>
       </div>
 
       {/* Stats Row */}
@@ -1213,8 +1374,19 @@ export function NotificationsContent() {
       <div>
         <h2 style={sectionTitle}>Retry Rules</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
-          {retryRules.map((rule) => (
-            <div key={rule.channel} style={cardStyle}>
+          {retryRulesState.map((rule) => (
+            <div key={rule.channel} style={{ ...cardStyle, position: "relative" }}>
+              <button
+                onClick={() => {
+                  setEditRetryChannel(rule.channel);
+                  const parts = rule.interval.split(" ");
+                  setRetryForm({ maxRetries: rule.maxRetries, intervalVal: parseInt(parts[0]) || 5, intervalUnit: parts[1] === "hours" || parts[1] === "hr" ? "hours" : "min", backoff: rule.backoff });
+                }}
+                style={{ position: "absolute", top: "0.75rem", right: "0.75rem", background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)", padding: "0.25rem" }}
+                title="Edit retry rule"
+              >
+                <Pencil style={{ width: "0.875rem", height: "0.875rem" }} />
+              </button>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
                 <RefreshCw style={{ width: "1rem", height: "1rem", color: "var(--gf-accent)" }} />
                 <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>{rule.channel}</span>
@@ -1232,6 +1404,121 @@ export function NotificationsContent() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Channel Settings — PART 4 */}
+      <div>
+        <h2 style={sectionTitle}>Channel Settings</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
+          {chSettings.map((ch) => (
+            <div key={ch.channel} style={cardStyle}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <ch.icon style={{ width: "1.125rem", height: "1.125rem", color: "var(--gf-accent)" }} />
+                  <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>{ch.channel}</span>
+                </div>
+                {/* ON/OFF Toggle */}
+                <div
+                  onClick={() => {
+                    if (ch.enabled) {
+                      const activeCount = chSettings.filter((c) => c.enabled).length;
+                      if (activeCount <= 1) {
+                        setToast({ message: "At least one channel must remain active", type: "error" });
+                        return;
+                      }
+                    }
+                    setChSettings((prev) => prev.map((c) => c.channel === ch.channel ? { ...c, enabled: !c.enabled } : c));
+                    setToast({ message: `${ch.channel} channel ${ch.enabled ? "disabled" : "enabled"} \u2713`, type: "success" });
+                  }}
+                  style={{ width: "2.5rem", height: "1.25rem", borderRadius: "9999px", background: ch.enabled ? "#22c55e" : "rgba(127,127,127,0.35)", position: "relative", cursor: "pointer", transition: "background 0.2s", flexShrink: 0 }}
+                >
+                  <div style={{ position: "absolute", top: "0.125rem", left: ch.enabled ? "1.375rem" : "0.125rem", width: "1rem", height: "1rem", borderRadius: "9999px", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--gf-text-muted)" }}>Provider: <span style={{ color: "var(--gf-text-primary)", fontWeight: 500 }}>{ch.provider}</span></span>
+                <span style={{ fontSize: "0.75rem", color: "var(--gf-text-muted)" }}>Daily Limit: <span style={{ color: "var(--gf-text-primary)", fontWeight: 500 }}>{ch.dailyLimit.toLocaleString()} /user</span></span>
+                <span style={{ fontSize: "0.75rem", color: "var(--gf-text-muted)" }}>Status: <span style={{ color: ch.enabled ? "#22c55e" : "#ef4444", fontWeight: 500 }}>{ch.enabled ? "Active" : "Disabled"}</span></span>
+              </div>
+              <button
+                onClick={() => {
+                  setEditChSetting(ch);
+                  setChForm({ provider: ch.provider, dailyLimit: ch.dailyLimit, apiKey: ch.apiKey });
+                  setShowChApiKey(false);
+                }}
+                style={{
+                  marginTop: "0.75rem", width: "100%", padding: "0.5rem", borderRadius: "0.5rem",
+                  border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.08)",
+                  color: "var(--gf-text-secondary)", fontSize: "0.75rem", fontWeight: 500, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
+                }}
+              >
+                <Settings style={{ width: "0.75rem", height: "0.75rem" }} /> Edit Settings
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Fallback Rules */}
+        <div style={{ marginTop: "1.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            <h3 style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Fallback Rules</h3>
+            <div style={{ position: "relative", display: "inline-flex" }} title="If primary channel fails, send via fallback">
+              <Info style={{ width: "0.875rem", height: "0.875rem", color: "var(--gf-text-muted)", cursor: "help" }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            {fallbackRules.map((rule) => (
+              <div key={rule.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "var(--gf-bg-surface)" }}>
+                <select
+                  value={rule.primary}
+                  onChange={(e) => setFallbackRules((prev) => prev.map((r) => r.id === rule.id ? { ...r, primary: e.target.value } : r))}
+                  style={{ ...filterSelectStyle, flex: 1 }}
+                >
+                  {["Email", "SMS", "WhatsApp", "Push"].map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <span style={{ fontSize: "0.75rem", color: "var(--gf-text-muted)", fontWeight: 500 }}>fails →</span>
+                <select
+                  value={rule.fallback}
+                  onChange={(e) => setFallbackRules((prev) => prev.map((r) => r.id === rule.id ? { ...r, fallback: e.target.value } : r))}
+                  style={{ ...filterSelectStyle, flex: 1 }}
+                >
+                  {["Email", "SMS", "WhatsApp", "Push"].map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <button
+                  onClick={() => setFallbackRules((prev) => prev.filter((r) => r.id !== rule.id))}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", padding: "0.25rem" }}
+                  title="Delete rule"
+                >
+                  <Trash2 style={{ width: "0.875rem", height: "0.875rem" }} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.75rem" }}>
+            <button
+              onClick={() => { setFallbackRules((prev) => [...prev, { id: nextFbId, primary: "Email", fallback: "SMS" }]); setNextFbId((p) => p + 1); }}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "0.375rem",
+                padding: "0.5rem 0.75rem", borderRadius: "0.5rem",
+                border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.08)",
+                color: "var(--gf-text-secondary)", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer",
+              }}
+            >
+              <Plus style={{ width: "0.875rem", height: "0.875rem" }} /> Add Fallback Rule
+            </button>
+            <button
+              onClick={() => setToast({ message: "Fallback rules saved \u2713", type: "success" })}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "0.375rem",
+                padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "none",
+                background: "#f97316", color: "#fff", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              Save Fallback Rules
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1255,11 +1542,505 @@ export function NotificationsContent() {
                   <div style={{ height: "100%", width: `${pct}%`, borderRadius: "9999px", background: "#22c55e" }} />
                 </div>
                 <p style={{ fontSize: "0.6875rem", color: "var(--gf-text-muted)", marginTop: "0.375rem", textAlign: "right" }}>{pct}% opted in</p>
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+                  <button
+                    onClick={() => { setOptOutChannel(pref.channel); setOptOutSearch(""); }}
+                    style={{
+                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem",
+                      padding: "0.375rem 0.5rem", borderRadius: "0.375rem",
+                      border: "1px solid var(--gf-border)", background: "transparent",
+                      color: "var(--gf-text-secondary)", fontSize: "0.6875rem", fontWeight: 500, cursor: "pointer",
+                    }}
+                  >
+                    <Eye style={{ width: "0.75rem", height: "0.75rem" }} /> View Opt-outs
+                  </button>
+                  <button
+                    onClick={() => {
+                      const data = optOutData[pref.channel] || [];
+                      const headers = "User Name,Contact,Opted Out On,Reason";
+                      const rows = data.map((u) => [u.name, u.contact, u.date, u.reason].map((v) => `"${v}"`).join(","));
+                      const csv = [headers, ...rows].join("\n");
+                      const blob = new Blob([csv], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      const today = new Date().toISOString().split("T")[0];
+                      a.href = url;
+                      a.download = `glimmora-optouts-${pref.channel.toLowerCase()}-${today}.csv`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      setToast({ message: "Opt-out list exported \u2713", type: "success" });
+                    }}
+                    style={{
+                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem",
+                      padding: "0.375rem 0.5rem", borderRadius: "0.375rem",
+                      border: "1px solid #f97316", background: "transparent",
+                      color: "#f97316", fontSize: "0.6875rem", fontWeight: 500, cursor: "pointer",
+                    }}
+                  >
+                    <Download style={{ width: "0.75rem", height: "0.75rem" }} /> Export CSV
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Scheduled Queue — PART 2 */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+          <Calendar style={{ width: "1.125rem", height: "1.125rem", color: "var(--gf-accent)" }} />
+          <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Scheduled Queue</h2>
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+              {["Template", "Channel", "Recipient", "Scheduled At", "Repeat", "Status", "Actions"].map((col) => (
+                <th key={col} style={thStyle}>{col}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {scheduledQueue.map((item) => (
+              <tr key={item.id} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                <td style={tdPrimary}>{item.template}</td>
+                <td style={tdSecondary}>{item.channel}</td>
+                <td style={tdSecondary}>{item.recipient}</td>
+                <td style={{ ...tdSecondary, fontSize: "0.75rem", whiteSpace: "nowrap" }}>{item.scheduledAt}</td>
+                <td style={tdSecondary}>{item.repeat}</td>
+                <td style={{ padding: "0.75rem" }}>
+                  <span style={{
+                    fontSize: "0.75rem", fontWeight: 500, borderRadius: "9999px", padding: "0.125rem 0.5rem",
+                    color: item.status === "Scheduled" ? "#3b82f6" : item.status === "Sent" ? "#22c55e" : "#6b7280",
+                    background: item.status === "Scheduled" ? "rgba(59,130,246,0.12)" : item.status === "Sent" ? "rgba(34,197,94,0.12)" : "rgba(107,114,128,0.12)",
+                  }}>
+                    {item.status}
+                  </span>
+                </td>
+                <td style={{ padding: "0.75rem" }}>
+                  {item.status === "Scheduled" && (
+                    <button
+                      onClick={() => {
+                        setScheduledQueue((prev) => prev.map((q) => q.id === item.id ? { ...q, status: "Cancelled" as const } : q));
+                        setToast({ message: "Scheduled notification cancelled \u2713", type: "error" });
+                      }}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", padding: "0.25rem" }}
+                      title="Cancel scheduled notification"
+                    >
+                      <Trash2 style={{ width: "0.875rem", height: "0.875rem" }} />
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ================================================================= */}
+      {/* BROADCAST MODAL — PART 1                                          */}
+      {/* ================================================================= */}
+      {broadcastOpen && createPortal(
+        <>
+          <div onClick={() => { setBroadcastOpen(false); setBcConfirm(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, animation: "gf-fade-in 0.2s ease-out" }} />
+          <div style={{
+            position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10000,
+            width: "36rem", maxWidth: "90vw", maxHeight: "85vh", overflowY: "auto",
+            background: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)", borderRadius: "1rem",
+            boxShadow: "0 24px 48px rgba(0,0,0,0.3)", animation: "gf-slide-up 0.3s ease-out",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>
+              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Send Broadcast Notification</h2>
+              <button onClick={() => { setBroadcastOpen(false); setBcConfirm(false); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)" }}><X style={{ width: "1.25rem", height: "1.25rem" }} /></button>
+            </div>
+            <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {/* Channels */}
+              <FieldGroup label="Channel">
+                <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+                  {(["Email", "SMS", "WhatsApp", "Push"] as const).map((ch) => (
+                    <label key={ch} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.875rem", color: "var(--gf-text-primary)" }}>
+                      <input type="checkbox" checked={bcChannels[ch]} onChange={() => setBcChannels((p) => ({ ...p, [ch]: !p[ch] }))} style={{ accentColor: "#f97316" }} />
+                      {ch}
+                    </label>
+                  ))}
+                </div>
+              </FieldGroup>
+              {/* Template */}
+              <FieldGroup label="Template">
+                <select value={bcTemplate} onChange={(e) => setBcTemplate(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                  <option value="">Select a template...</option>
+                  {templates.filter((t) => t.status === "Active").map((t) => <option key={t.name} value={t.name}>{t.name} ({t.channel})</option>)}
+                </select>
+              </FieldGroup>
+              {/* Audience */}
+              <FieldGroup label="Audience">
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  {([["all", "All Users"], ["opted", "Opted-in Only (recommended)"], ["segment", "Specific Segment"]] as const).map(([val, label]) => (
+                    <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.875rem", color: "var(--gf-text-primary)" }}>
+                      <input type="radio" name="bc-audience" checked={bcAudience === val} onChange={() => setBcAudience(val)} style={{ accentColor: "#f97316" }} />
+                      {label}
+                    </label>
+                  ))}
+                  {bcAudience === "segment" && (
+                    <input type="text" value={bcSegment} onChange={(e) => setBcSegment(e.target.value)} placeholder="Enter segment name..." style={{ ...inputStyle, marginLeft: "1.5rem" }} />
+                  )}
+                </div>
+              </FieldGroup>
+              {/* Estimated Reach */}
+              <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.2)" }}>
+                <span style={{ fontSize: "0.8125rem", color: "#f97316", fontWeight: 500 }}>
+                  ~{bcAudience === "all" ? "4,700" : bcAudience === "opted" ? "4,520" : "1,200"} users will receive this across {Object.values(bcChannels).filter(Boolean).length} channel(s)
+                </span>
+              </div>
+              {/* Preview */}
+              {bcTemplate && (() => {
+                const tpl = templates.find((t) => t.name === bcTemplate);
+                if (!tpl) return null;
+                return (
+                  <div style={{ borderTop: "1px solid var(--gf-border)", paddingTop: "1rem" }}>
+                    <h3 style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--gf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>Preview</h3>
+                    <div style={{ transform: "scale(0.75)", transformOrigin: "top left", width: "133%" }}>
+                      {tpl.channel === "Email" && <EmailPreview template={tpl} />}
+                      {tpl.channel === "SMS" && <SMSPreview template={tpl} />}
+                      {tpl.channel === "WhatsApp" && <WhatsAppPreview template={tpl} />}
+                      {tpl.channel === "Push" && <PushPreview template={tpl} />}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Confirmation */}
+              {bcConfirm && (
+                <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                  <p style={{ fontSize: "0.8125rem", color: "#ef4444", fontWeight: 500, marginBottom: "0.75rem" }}>
+                    Send to ~{bcAudience === "all" ? "4,700" : bcAudience === "opted" ? "4,520" : "1,200"} users across {Object.values(bcChannels).filter(Boolean).length} channel(s). This cannot be undone.
+                  </p>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button onClick={() => { setBroadcastOpen(false); setBcConfirm(false); setToast({ message: "Broadcast queued successfully \u2713", type: "success" }); }} style={{ flex: 1, padding: "0.625rem", borderRadius: "0.5rem", border: "none", background: "#22c55e", color: "#fff", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer" }}>
+                      Yes, Send
+                    </button>
+                    <button onClick={() => setBcConfirm(false)} style={{ flex: 1, padding: "0.625rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer" }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Footer */}
+            {!bcConfirm && (
+              <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid var(--gf-border)", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+                <button onClick={() => setBcConfirm(true)} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "none", background: "#f97316", color: "#fff", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+                  Send Broadcast
+                </button>
+                <button onClick={() => setBroadcastOpen(false)} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* ================================================================= */}
+      {/* SCHEDULE DRAWER — PART 2                                          */}
+      {/* ================================================================= */}
+      {scheduleOpen && createPortal(
+        <>
+          <div onClick={() => setScheduleOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, animation: "gf-fade-in 0.2s ease-out" }} />
+          <div style={{
+            position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 10000,
+            width: "28rem", maxWidth: "90vw",
+            background: "var(--gf-bg-surface)", borderLeft: "1px solid var(--gf-border)",
+            boxShadow: "0 24px 48px rgba(0,0,0,0.3)", animation: "gf-slide-right 0.3s ease-out",
+            display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>
+              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Schedule Notification</h2>
+              <button onClick={() => setScheduleOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)" }}><X style={{ width: "1.25rem", height: "1.25rem" }} /></button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <FieldGroup label="Template">
+                <select value={schTemplate} onChange={(e) => setSchTemplate(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                  <option value="">Select template...</option>
+                  {templates.filter((t) => t.status === "Active").map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
+                </select>
+              </FieldGroup>
+              <FieldGroup label="Channel">
+                <select value={schChannel} onChange={(e) => setSchChannel(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                  {["Email", "SMS", "WhatsApp", "Push"].map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </FieldGroup>
+              <FieldGroup label="Recipient">
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.375rem" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--gf-text-muted)" }}>Send to All</span>
+                  <div
+                    onClick={() => setSchSendAll((p) => !p)}
+                    style={{ width: "2.25rem", height: "1.125rem", borderRadius: "9999px", background: schSendAll ? "#22c55e" : "rgba(127,127,127,0.35)", position: "relative", cursor: "pointer", transition: "background 0.2s" }}
+                  >
+                    <div style={{ position: "absolute", top: "0.0625rem", left: schSendAll ? "1.1875rem" : "0.0625rem", width: "1rem", height: "1rem", borderRadius: "9999px", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                  </div>
+                </div>
+                {!schSendAll && <input type="text" value={schRecipient} onChange={(e) => setSchRecipient(e.target.value)} placeholder="email / phone / token" style={inputStyle} />}
+              </FieldGroup>
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <div style={{ flex: 1 }}>
+                  <FieldGroup label="Date"><input type="date" value={schDate} onChange={(e) => setSchDate(e.target.value)} style={inputStyle} /></FieldGroup>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <FieldGroup label="Time"><input type="time" value={schTime} onChange={(e) => setSchTime(e.target.value)} style={inputStyle} /></FieldGroup>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <div style={{ flex: 1 }}>
+                  <FieldGroup label="Timezone">
+                    <select value={schTimezone} onChange={(e) => setSchTimezone(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                      {["IST", "UTC", "EST", "PST"].map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+                    </select>
+                  </FieldGroup>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <FieldGroup label="Repeat">
+                    <select value={schRepeat} onChange={(e) => setSchRepeat(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                      {["Once", "Daily", "Weekly", "Monthly"].map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </FieldGroup>
+                </div>
+              </div>
+              <FieldGroup label="Notes (optional)">
+                <textarea value={schNotes} onChange={(e) => setSchNotes(e.target.value)} rows={3} placeholder="Add notes..." style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }} />
+              </FieldGroup>
+              {/* Live Preview */}
+              {schTemplate && (() => {
+                const tpl = templates.find((t) => t.name === schTemplate);
+                if (!tpl) return null;
+                return (
+                  <div style={{ borderTop: "1px solid var(--gf-border)", paddingTop: "1rem" }}>
+                    <h3 style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--gf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>Preview</h3>
+                    <div style={{ transform: "scale(0.7)", transformOrigin: "top left", width: "142%" }}>
+                      {tpl.channel === "Email" && <EmailPreview template={tpl} />}
+                      {tpl.channel === "SMS" && <SMSPreview template={tpl} />}
+                      {tpl.channel === "WhatsApp" && <WhatsAppPreview template={tpl} />}
+                      {tpl.channel === "Push" && <PushPreview template={tpl} />}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid var(--gf-border)", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+              <button
+                onClick={() => {
+                  if (!schTemplate || (!schSendAll && !schRecipient) || !schDate || !schTime) return;
+                  const dateObj = new Date(`${schDate}T${schTime}`);
+                  const dateStr = dateObj.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+                  const timeStr = dateObj.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+                  const newItem: ScheduledNotification = {
+                    id: nextSchId, template: schTemplate, channel: schChannel,
+                    recipient: schSendAll ? "All Users" : schRecipient,
+                    scheduledAt: `${dateStr} ${timeStr} ${schTimezone}`, repeat: schRepeat, status: "Scheduled",
+                  };
+                  setScheduledQueue((prev) => [newItem, ...prev]);
+                  setNextSchId((p) => p + 1);
+                  setScheduleOpen(false);
+                  setSchTemplate(""); setSchRecipient(""); setSchSendAll(false); setSchDate(""); setSchTime(""); setSchNotes("");
+                  setToast({ message: `Notification scheduled for ${dateStr} ${timeStr} ${schTimezone} \u2713`, type: "success" });
+                }}
+                style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "none", background: "#f97316", color: "#fff", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
+              >
+                Schedule
+              </button>
+              <button onClick={() => setScheduleOpen(false)} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* ================================================================= */}
+      {/* EDIT RETRY RULE MODAL — PART 3                                    */}
+      {/* ================================================================= */}
+      {editRetryChannel !== null && createPortal(
+        <>
+          <div onClick={() => setEditRetryChannel(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, animation: "gf-fade-in 0.2s ease-out" }} />
+          <div style={{
+            position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10000,
+            width: "26rem", maxWidth: "90vw", background: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)", borderRadius: "1rem",
+            boxShadow: "0 24px 48px rgba(0,0,0,0.3)", animation: "gf-slide-up 0.3s ease-out",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>
+              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Edit Retry Rule — {editRetryChannel}</h2>
+              <button onClick={() => setEditRetryChannel(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)" }}><X style={{ width: "1.25rem", height: "1.25rem" }} /></button>
+            </div>
+            <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <FieldGroup label="Channel">
+                <div style={{ padding: "0.625rem 0.75rem", fontSize: "0.875rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "var(--gf-bg-base)", color: "var(--gf-text-muted)" }}>{editRetryChannel}</div>
+              </FieldGroup>
+              <FieldGroup label="Max Retries">
+                <input type="number" min={1} max={10} value={retryForm.maxRetries} onChange={(e) => setRetryForm({ ...retryForm, maxRetries: Number(e.target.value) })} style={inputStyle} />
+              </FieldGroup>
+              <FieldGroup label="Interval">
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <input type="number" min={1} value={retryForm.intervalVal} onChange={(e) => setRetryForm({ ...retryForm, intervalVal: Number(e.target.value) })} style={{ ...inputStyle, flex: 1 }} />
+                  <select value={retryForm.intervalUnit} onChange={(e) => setRetryForm({ ...retryForm, intervalUnit: e.target.value as "min" | "hours" })} style={{ ...inputStyle, cursor: "pointer" }}>
+                    <option value="min">minutes</option>
+                    <option value="hours">hours</option>
+                  </select>
+                </div>
+              </FieldGroup>
+              <FieldGroup label="Backoff Type">
+                <select value={retryForm.backoff} onChange={(e) => setRetryForm({ ...retryForm, backoff: e.target.value })} style={{ ...inputStyle, cursor: "pointer" }}>
+                  <option value="Linear">Linear</option>
+                  <option value="Exponential">Exponential</option>
+                </select>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "0.375rem", marginTop: "0.25rem" }}>
+                  <Info style={{ width: "0.75rem", height: "0.75rem", color: "var(--gf-text-muted)", flexShrink: 0, marginTop: "0.125rem" }} />
+                  <span style={{ fontSize: "0.6875rem", color: "var(--gf-text-muted)", lineHeight: 1.4 }}>
+                    {retryForm.backoff === "Linear" ? "Retry every same interval (e.g. 5min, 5min, 5min)" : "Interval doubles each retry (e.g. 5min, 10min, 20min)"}
+                  </span>
+                </div>
+              </FieldGroup>
+            </div>
+            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid var(--gf-border)", display: "flex", gap: "0.75rem" }}>
+              <button onClick={() => setEditRetryChannel(null)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setRetryRulesState((prev) => prev.map((r) => r.channel === editRetryChannel ? { ...r, maxRetries: retryForm.maxRetries, interval: `${retryForm.intervalVal} ${retryForm.intervalUnit}`, backoff: retryForm.backoff } : r));
+                  setEditRetryChannel(null);
+                  setToast({ message: "Retry rule updated \u2713", type: "success" });
+                }}
+                style={{ flex: 1, padding: "0.75rem", borderRadius: "0.5rem", border: "none", background: "#f97316", color: "#fff", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* ================================================================= */}
+      {/* EDIT CHANNEL SETTINGS MODAL — PART 4                              */}
+      {/* ================================================================= */}
+      {editChSetting !== null && createPortal(
+        <>
+          <div onClick={() => setEditChSetting(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, animation: "gf-fade-in 0.2s ease-out" }} />
+          <div style={{
+            position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10000,
+            width: "26rem", maxWidth: "90vw", background: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)", borderRadius: "1rem",
+            boxShadow: "0 24px 48px rgba(0,0,0,0.3)", animation: "gf-slide-up 0.3s ease-out",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>
+              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>Edit {editChSetting.channel} Settings</h2>
+              <button onClick={() => setEditChSetting(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)" }}><X style={{ width: "1.25rem", height: "1.25rem" }} /></button>
+            </div>
+            <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <FieldGroup label="Provider">
+                <select value={chForm.provider} onChange={(e) => setChForm({ ...chForm, provider: e.target.value })} style={{ ...inputStyle, cursor: "pointer" }}>
+                  {editChSetting.providers.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </FieldGroup>
+              <FieldGroup label="Daily Limit (per user)">
+                <input type="number" min={0} value={chForm.dailyLimit} onChange={(e) => setChForm({ ...chForm, dailyLimit: Number(e.target.value) })} style={inputStyle} />
+              </FieldGroup>
+              <FieldGroup label="API Key">
+                <div style={{ position: "relative" }}>
+                  <input type={showChApiKey ? "text" : "password"} value={chForm.apiKey} onChange={(e) => setChForm({ ...chForm, apiKey: e.target.value })} style={{ ...inputStyle, paddingRight: "2.5rem", width: "100%", boxSizing: "border-box" }} />
+                  <button
+                    onClick={() => setShowChApiKey((p) => !p)}
+                    style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)", padding: "0.25rem" }}
+                  >
+                    {showChApiKey ? <EyeOff style={{ width: "1rem", height: "1rem" }} /> : <Eye style={{ width: "1rem", height: "1rem" }} />}
+                  </button>
+                </div>
+              </FieldGroup>
+            </div>
+            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid var(--gf-border)", display: "flex", gap: "0.75rem" }}>
+              <button onClick={() => setEditChSetting(null)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setChSettings((prev) => prev.map((c) => c.channel === editChSetting.channel ? { ...c, provider: chForm.provider, dailyLimit: chForm.dailyLimit, apiKey: chForm.apiKey } : c));
+                  setEditChSetting(null);
+                  setToast({ message: `${editChSetting.channel} settings saved \u2713`, type: "success" });
+                }}
+                style={{ flex: 1, padding: "0.75rem", borderRadius: "0.5rem", border: "none", background: "#f97316", color: "#fff", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* ================================================================= */}
+      {/* VIEW OPT-OUTS MODAL — PART 5                                      */}
+      {/* ================================================================= */}
+      {optOutChannel !== null && createPortal(
+        <>
+          <div onClick={() => setOptOutChannel(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, animation: "gf-fade-in 0.2s ease-out" }} />
+          <div style={{
+            position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10000,
+            width: "36rem", maxWidth: "90vw", maxHeight: "85vh",
+            background: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)", borderRadius: "1rem",
+            boxShadow: "0 24px 48px rgba(0,0,0,0.3)", animation: "gf-slide-up 0.3s ease-out",
+            display: "flex", flexDirection: "column", overflow: "hidden",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--gf-border)" }}>
+              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--gf-text-primary)" }}>{optOutChannel} Opt-outs</h2>
+              <button onClick={() => setOptOutChannel(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gf-text-muted)" }}><X style={{ width: "1.25rem", height: "1.25rem" }} /></button>
+            </div>
+            <div style={{ padding: "1rem 1.5rem 0" }}>
+              <div style={{ position: "relative" }}>
+                <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", width: "0.875rem", height: "0.875rem", color: "var(--gf-text-muted)", pointerEvents: "none" }} />
+                <input
+                  type="text" value={optOutSearch} onChange={(e) => setOptOutSearch(e.target.value)}
+                  placeholder="Search by name or contact..."
+                  style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", fontSize: "0.8125rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "var(--gf-bg-base)", color: "var(--gf-text-primary)", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.5rem" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                    {["User Name", "Contact", "Opted Out On", "Reason"].map((col) => (
+                      <th key={col} style={thStyle}>{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(optOutData[optOutChannel] || [])
+                    .filter((u) => {
+                      if (!optOutSearch) return true;
+                      const q = optOutSearch.toLowerCase();
+                      return u.name.toLowerCase().includes(q) || u.contact.toLowerCase().includes(q);
+                    })
+                    .map((u, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid var(--gf-border)" }}>
+                        <td style={tdPrimary}>{u.name}</td>
+                        <td style={tdSecondary}>{u.contact}</td>
+                        <td style={{ ...tdSecondary, fontSize: "0.75rem", whiteSpace: "nowrap" }}>{u.date}</td>
+                        <td style={tdSecondary}>{u.reason}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid var(--gf-border)" }}>
+              <button onClick={() => setOptOutChannel(null)} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--gf-border)", background: "rgba(127,127,127,0.12)", color: "var(--gf-text-secondary)", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
     </div>
   );
 }
