@@ -20,6 +20,12 @@ import {
   Settings,
   EyeOff,
   Star,
+  Pencil,
+  Pause,
+  Plus,
+  TrendingUp,
+  Bell,
+  Clock,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -131,28 +137,51 @@ const statusColors: Record<TxStatus, string> = {
 // ---------------------------------------------------------------------------
 
 type SubStatus = "Active" | "Trialing" | "Past Due" | "Cancelled";
+type SubPlan = "Starter" | "Pro" | "Enterprise";
+type SubCycle = "Monthly" | "Annual";
 
-const subscriptions: {
+interface Subscription {
+  id: number;
   tenant: string;
-  plan: string;
+  plan: SubPlan;
   amount: string;
-  billingCycle: string;
+  billingCycle: SubCycle;
   status: SubStatus;
   nextBilling: string;
-}[] = [
-  { tenant: "Acme Corp", plan: "Enterprise", amount: "$2,400.00", billingCycle: "Annual", status: "Active", nextBilling: "2026-04-15" },
-  { tenant: "Globex Inc", plan: "Pro", amount: "$99.00", billingCycle: "Monthly", status: "Active", nextBilling: "2026-04-01" },
-  { tenant: "Initech", plan: "Enterprise", amount: "$2,400.00", billingCycle: "Annual", status: "Past Due", nextBilling: "2026-03-28" },
-  { tenant: "Wonka Ltd", plan: "Starter", amount: "$29.00", billingCycle: "Monthly", status: "Trialing", nextBilling: "2026-04-10" },
-  { tenant: "Umbrella Co", plan: "Pro", amount: "$99.00", billingCycle: "Monthly", status: "Cancelled", nextBilling: "—" },
+  memberSince: string;
+  paymentMethod: string;
+  autoRenew: boolean;
+  reminderSent: boolean;
+}
+
+const initialSubscriptions: Subscription[] = [
+  { id: 1, tenant: "Acme Corp", plan: "Enterprise", amount: "$2,400.00", billingCycle: "Annual", status: "Active", nextBilling: "2026-04-15", memberSince: "2024-01-10", paymentMethod: "Visa •••• 4242", autoRenew: true, reminderSent: false },
+  { id: 2, tenant: "Globex Inc", plan: "Pro", amount: "$99.00", billingCycle: "Monthly", status: "Active", nextBilling: "2026-04-01", memberSince: "2024-06-15", paymentMethod: "Mastercard •••• 8819", autoRenew: true, reminderSent: false },
+  { id: 3, tenant: "Initech", plan: "Enterprise", amount: "$2,400.00", billingCycle: "Annual", status: "Past Due", nextBilling: "2026-03-28", memberSince: "2023-11-20", paymentMethod: "Visa •••• 1234", autoRenew: true, reminderSent: false },
+  { id: 4, tenant: "Wonka Ltd", plan: "Starter", amount: "$29.00", billingCycle: "Monthly", status: "Trialing", nextBilling: "2026-04-10", memberSince: "2026-03-10", paymentMethod: "Amex •••• 3782", autoRenew: true, reminderSent: false },
+  { id: 5, tenant: "Umbrella Co", plan: "Pro", amount: "$99.00", billingCycle: "Monthly", status: "Cancelled", nextBilling: "—", memberSince: "2024-09-01", paymentMethod: "Visa •••• 9090", autoRenew: false, reminderSent: false },
 ];
 
 const subStatusColors: Record<SubStatus, string> = {
   Active: "#22c55e",
-  Trialing: "#3b82f6",
-  "Past Due": "#f59e0b",
-  Cancelled: "#ef4444",
+  Trialing: "#f59e0b",
+  "Past Due": "#ef4444",
+  Cancelled: "#6b7280",
 };
+
+const planPrices: Record<SubPlan, { monthly: number; annual: number; features: string[] }> = {
+  Starter: { monthly: 29, annual: 290, features: ["Up to 5 users", "Basic analytics", "Email support"] },
+  Pro: { monthly: 99, annual: 990, features: ["Up to 50 users", "Advanced analytics", "Priority support"] },
+  Enterprise: { monthly: 249, annual: 2400, features: ["Unlimited users", "Custom integrations", "Dedicated account manager"] },
+};
+
+function computeMrr(subs: Subscription[]): number {
+  return subs.reduce((sum, s) => {
+    if (s.status === "Cancelled") return sum;
+    const amt = parseFloat(s.amount.replace(/[$,]/g, ""));
+    return sum + (s.billingCycle === "Annual" ? amt / 12 : amt);
+  }, 0);
+}
 
 // ---------------------------------------------------------------------------
 // Refunds data
@@ -358,6 +387,87 @@ export function PaymentsContent() {
   const [rejectTarget, setRejectTarget] = useState<Refund | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [viewRefund, setViewRefund] = useState<Refund | null>(null);
+
+  // Subscription state
+  const [subs, setSubs] = useState<Subscription[]>(initialSubscriptions);
+  const [subSearch, setSubSearch] = useState("");
+  const [subPlanFilter, setSubPlanFilter] = useState("All Plans");
+  const [subStatusFilter, setSubStatusFilter] = useState("All Status");
+  const [subCycleFilter, setSubCycleFilter] = useState("All");
+  const [viewSub, setViewSub] = useState<Subscription | null>(null);
+  const [changePlanSub, setChangePlanSub] = useState<Subscription | null>(null);
+  const [cancelSub, setCancelSub] = useState<Subscription | null>(null);
+  const [renewSub, setRenewSub] = useState<Subscription | null>(null);
+  const [reminderSub, setReminderSub] = useState<Subscription | null>(null);
+  const [showAddSub, setShowAddSub] = useState(false);
+  const [newSubForm, setNewSubForm] = useState({ tenant: "", plan: "Starter" as SubPlan, billingCycle: "Monthly" as SubCycle, amount: "$29.00", startDate: new Date().toISOString().split("T")[0], status: "Active" as "Active" | "Trialing", paymentMethod: "", autoRenew: true });
+  const [nextSubId, setNextSubId] = useState(6);
+
+  const subFiltersActive = subSearch !== "" || subPlanFilter !== "All Plans" || subStatusFilter !== "All Status" || subCycleFilter !== "All";
+
+  const filteredSubs = subs.filter((s) => {
+    if (subSearch && !s.tenant.toLowerCase().includes(subSearch.toLowerCase())) return false;
+    if (subPlanFilter !== "All Plans" && s.plan !== subPlanFilter) return false;
+    if (subStatusFilter !== "All Status" && s.status !== subStatusFilter) return false;
+    if (subCycleFilter !== "All" && s.billingCycle !== subCycleFilter) return false;
+    return true;
+  });
+
+  const subMrr = computeMrr(subs);
+  const subActiveCount = subs.filter((s) => s.status === "Active").length;
+  const subPastDueCount = subs.filter((s) => s.status === "Past Due").length;
+  const subTrialingCount = subs.filter((s) => s.status === "Trialing").length;
+
+  const handleChangePlan = (sub: Subscription, newPlan: SubPlan) => {
+    const price = sub.billingCycle === "Annual" ? planPrices[newPlan].annual : planPrices[newPlan].monthly;
+    setSubs((prev) => prev.map((s) => s.id === sub.id ? { ...s, plan: newPlan, amount: `$${price.toLocaleString("en-US", { minimumFractionDigits: 2 })}` } : s));
+    setChangePlanSub(null);
+    showToast(`Plan updated to ${newPlan} \u2713`);
+  };
+
+  const handleCancelSub = (sub: Subscription) => {
+    setSubs((prev) => prev.map((s) => s.id === sub.id ? { ...s, status: "Cancelled" as SubStatus, nextBilling: "\u2014", autoRenew: false } : s));
+    setCancelSub(null);
+    showToast("Subscription cancelled \u2713");
+  };
+
+  const handleRenewSub = (sub: Subscription) => {
+    const next = new Date();
+    next.setDate(next.getDate() + 30);
+    const nextStr = next.toISOString().split("T")[0];
+    setSubs((prev) => prev.map((s) => s.id === sub.id ? { ...s, status: "Active" as SubStatus, nextBilling: nextStr, autoRenew: true } : s));
+    setRenewSub(null);
+    showToast("Subscription renewed \u2713");
+  };
+
+  const handleSendReminder = (sub: Subscription) => {
+    setSubs((prev) => prev.map((s) => s.id === sub.id ? { ...s, reminderSent: true } : s));
+    setReminderSub(null);
+    showToast(`Reminder sent to ${sub.tenant} \u2713`);
+  };
+
+  const handleAddSub = () => {
+    if (!newSubForm.tenant.trim()) return;
+    const newSub: Subscription = {
+      id: nextSubId,
+      tenant: newSubForm.tenant,
+      plan: newSubForm.plan,
+      amount: newSubForm.amount,
+      billingCycle: newSubForm.billingCycle,
+      status: newSubForm.status,
+      nextBilling: (() => { const d = new Date(newSubForm.startDate); d.setDate(d.getDate() + 30); return d.toISOString().split("T")[0]; })(),
+      memberSince: newSubForm.startDate,
+      paymentMethod: newSubForm.paymentMethod || "—",
+      autoRenew: newSubForm.autoRenew,
+      reminderSent: false,
+    };
+    setSubs((prev) => [newSub, ...prev]);
+    setNextSubId((p) => p + 1);
+    setShowAddSub(false);
+    setNewSubForm({ tenant: "", plan: "Starter", billingCycle: "Monthly", amount: "$29.00", startDate: new Date().toISOString().split("T")[0], status: "Active", paymentMethod: "", autoRenew: true });
+    document.body.style.overflow = "";
+    showToast("Subscription created \u2713");
+  };
 
   // Gateway state
   const [gateways, setGateways] = useState<Gateway[]>(initialGateways);
@@ -1169,11 +1279,64 @@ export function PaymentsContent() {
         )}
       </div>
 
+      {/* Subscription Stats */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Total MRR", value: `$${subMrr.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: "#22c55e", icon: TrendingUp },
+          { label: "Active", value: String(subActiveCount), color: "#22c55e", icon: Check },
+          { label: "Past Due", value: String(subPastDueCount), color: "#ef4444", icon: AlertCircle },
+          { label: "Trialing", value: String(subTrialingCount), color: "#f59e0b", icon: Clock },
+        ].map((s) => (
+          <div key={s.label} className="rounded-xl p-5" style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium" style={{ color: "var(--gf-text-secondary)" }}>{s.label}</span>
+              <s.icon className="h-5 w-5" style={{ color: s.color }} />
+            </div>
+            <p className="text-2xl font-bold mt-2" style={{ color: s.color }}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Subscriptions */}
       <div>
-        <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>
-          Subscriptions
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>Subscriptions</h2>
+          <button
+            onClick={() => { setShowAddSub(true); document.body.style.overflow = "hidden"; }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: "#f97316" }}
+          >
+            <Plus className="h-4 w-4" /> Add Subscription
+          </button>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="flex flex-wrap items-center gap-3 mb-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--gf-text-secondary)" }} />
+            <input
+              type="text"
+              placeholder="Search by tenant name..."
+              value={subSearch}
+              onChange={(e) => setSubSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-500"
+              style={{ backgroundColor: "var(--gf-bg-elevated)", border: "1px solid var(--gf-border)", color: "var(--gf-text-primary)" }}
+            />
+          </div>
+          <Dropdown value={subPlanFilter} options={["All Plans", "Starter", "Pro", "Enterprise"]} onChange={setSubPlanFilter} />
+          <Dropdown value={subStatusFilter} options={["All Status", "Active", "Past Due", "Trialing", "Cancelled"]} onChange={setSubStatusFilter} />
+          <Dropdown value={subCycleFilter} options={["All", "Monthly", "Annual"]} onChange={setSubCycleFilter} />
+          {subFiltersActive && (
+            <button
+              onClick={() => { setSubSearch(""); setSubPlanFilter("All Plans"); setSubStatusFilter("All Status"); setSubCycleFilter("All"); }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-opacity"
+              style={{ color: "#f97316", border: "1px solid #f97316", backgroundColor: "rgba(249,115,22,0.08)" }}
+            >
+              <FilterX className="h-4 w-4" /> Clear Filters
+            </button>
+          )}
+        </div>
+
         <div
           className="rounded-xl overflow-hidden"
           style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
@@ -1181,45 +1344,72 @@ export function PaymentsContent() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
-                {["Tenant", "Plan", "Amount", "Billing Cycle", "Status", "Next Billing"].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-4 py-3 font-medium"
-                    style={{ color: "var(--gf-text-secondary)" }}
-                  >
-                    {h}
-                  </th>
+                {["Tenant", "Plan", "Amount", "Billing Cycle", "Status", "Next Billing", "Actions"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 font-medium text-xs" style={{ color: "var(--gf-text-secondary)" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {subscriptions.map((sub) => (
-                <tr key={sub.tenant} style={{ borderBottom: "1px solid var(--gf-border)" }}>
-                  <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>
-                    {sub.tenant}
-                  </td>
-                  <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>
-                    {sub.plan}
-                  </td>
-                  <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>
-                    {sub.amount}
-                  </td>
-                  <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>
-                    {sub.billingCycle}
-                  </td>
+              {filteredSubs.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: "var(--gf-text-secondary)" }}>No subscriptions match your filters.</td></tr>
+              )}
+              {filteredSubs.map((sub) => (
+                <tr
+                  key={sub.id}
+                  style={{
+                    borderBottom: "1px solid var(--gf-border)",
+                    borderLeft: sub.status === "Past Due" ? "3px solid #ef4444" : "3px solid transparent",
+                  }}
+                >
+                  <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>{sub.tenant}</td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>{sub.plan}</td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>{sub.amount}</td>
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>{sub.billingCycle}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className="text-xs font-medium px-2 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: `${subStatusColors[sub.status]}20`,
-                        color: subStatusColors[sub.status],
-                      }}
-                    >
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: `${subStatusColors[sub.status]}20`, color: subStatusColors[sub.status] }}>
                       {sub.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>
-                    {sub.nextBilling}
+                  <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>{sub.nextBilling}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {/* View Details */}
+                      <button onClick={() => setViewSub(sub)} className="rounded-lg p-1.5 hover:opacity-80 transition-opacity" style={{ backgroundColor: "#3b82f620", color: "#3b82f6" }} title="View Details">
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      {/* Change Plan */}
+                      <button onClick={() => setChangePlanSub(sub)} className="rounded-lg p-1.5 hover:opacity-80 transition-opacity" style={{ backgroundColor: "#f59e0b20", color: "#f59e0b" }} title="Change Plan">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      {/* Cancel — Active or Trialing only */}
+                      {(sub.status === "Active" || sub.status === "Trialing") && (
+                        <button onClick={() => setCancelSub(sub)} className="rounded-lg p-1.5 hover:opacity-80 transition-opacity" style={{ backgroundColor: "#ef444420", color: "#ef4444" }} title="Cancel Subscription">
+                          <Pause className="h-4 w-4" />
+                        </button>
+                      )}
+                      {/* Renew — Past Due or Cancelled only */}
+                      {(sub.status === "Past Due" || sub.status === "Cancelled") && (
+                        <button onClick={() => setRenewSub(sub)} className="rounded-lg p-1.5 hover:opacity-80 transition-opacity" style={{ backgroundColor: "#22c55e20", color: "#22c55e" }} title="Renew Subscription">
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                      )}
+                      {/* Send Reminder — Past Due only */}
+                      {sub.status === "Past Due" && (
+                        sub.reminderSent ? (
+                          <span className="text-xs px-2 py-1 rounded-lg font-medium" style={{ color: "#6b7280", backgroundColor: "var(--gf-border)" }}>
+                            Reminder Sent ✓
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setReminderSub(sub)}
+                            className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg font-medium hover:opacity-80 transition-opacity"
+                            style={{ color: "#ef4444", border: "1px solid #ef4444", backgroundColor: "transparent" }}
+                          >
+                            <Bell className="h-3 w-3" /> Send Reminder
+                          </button>
+                        )
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -1426,13 +1616,261 @@ export function PaymentsContent() {
         </div>
       )}
 
+      {/* View Subscription Details Modal */}
+      {viewSub && (
+        <div
+          className="flex items-center justify-center animate-in fade-in duration-200"
+          style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(0,0,0,0.7)" }}
+          onClick={() => setViewSub(null)}
+        >
+          <div
+            className="rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+            style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>Subscription Details</h3>
+              <button onClick={() => setViewSub(null)} className="rounded-lg p-1 hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}><X size={18} /></button>
+            </div>
+            <div className="space-y-3 text-sm">
+              {([
+                ["Tenant", viewSub.tenant],
+                ["Plan", viewSub.plan],
+                ["Amount", viewSub.amount],
+                ["Billing Cycle", viewSub.billingCycle],
+                ["Status", viewSub.status],
+                ["Next Billing", viewSub.nextBilling],
+                ["Member Since", viewSub.memberSince],
+                ["Payment Method", viewSub.paymentMethod],
+                ["Auto Renew", viewSub.autoRenew ? "Enabled" : "Disabled"],
+              ] as const).map(([label, value]) => (
+                <div key={label} className="flex gap-3">
+                  <span className="font-medium shrink-0" style={{ color: "var(--gf-text-secondary)", minWidth: 130 }}>{label}</span>
+                  <span style={{ color: label === "Status" ? subStatusColors[value as SubStatus] ?? "var(--gf-text-primary)" : "var(--gf-text-primary)" }}>{value}</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setViewSub(null)} className="mt-6 w-full py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90" style={{ backgroundColor: "var(--gf-text-secondary)", color: "var(--gf-bg-surface)" }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Change Plan Modal */}
+      {changePlanSub && (
+        <div
+          className="flex items-center justify-center animate-in fade-in duration-200"
+          style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(0,0,0,0.7)" }}
+          onClick={() => setChangePlanSub(null)}
+        >
+          <div
+            className="rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 animate-in zoom-in-95 duration-200"
+            style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>Change Plan — {changePlanSub.tenant}</h3>
+              <button onClick={() => setChangePlanSub(null)} className="rounded-lg p-1 hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}><X size={18} /></button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {(["Starter", "Pro", "Enterprise"] as SubPlan[]).map((plan) => {
+                const isCurrent = changePlanSub.plan === plan;
+                const price = changePlanSub.billingCycle === "Annual" ? planPrices[plan].annual : planPrices[plan].monthly;
+                return (
+                  <div
+                    key={plan}
+                    className="rounded-xl p-4 cursor-pointer transition-all hover:opacity-90"
+                    style={{
+                      border: isCurrent ? "2px solid #f97316" : "1px solid var(--gf-border)",
+                      backgroundColor: isCurrent ? "rgba(249,115,22,0.08)" : "var(--gf-bg-elevated)",
+                    }}
+                    onClick={() => { if (!isCurrent) handleChangePlan(changePlanSub, plan); }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold" style={{ color: "var(--gf-text-primary)" }}>{plan}</span>
+                      {isCurrent && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: "#f9731620", color: "#f97316" }}>Current</span>}
+                    </div>
+                    <p className="text-lg font-bold mb-2" style={{ color: "var(--gf-text-primary)" }}>
+                      ${price.toLocaleString()}<span className="text-xs font-normal" style={{ color: "var(--gf-text-secondary)" }}>/{changePlanSub.billingCycle === "Annual" ? "yr" : "mo"}</span>
+                    </p>
+                    <ul className="space-y-1">
+                      {planPrices[plan].features.map((f) => (
+                        <li key={f} className="text-xs flex items-center gap-1.5" style={{ color: "var(--gf-text-secondary)" }}>
+                          <Check className="h-3 w-3 shrink-0" style={{ color: "#22c55e" }} /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Subscription Dialog */}
+      {cancelSub && (
+        <div
+          className="flex items-center justify-center animate-in fade-in duration-200"
+          style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(0,0,0,0.7)" }}
+          onClick={() => setCancelSub(null)}
+        >
+          <div
+            className="rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-in zoom-in-95 duration-200"
+            style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>Cancel Subscription</h3>
+            <p className="text-sm mb-5" style={{ color: "var(--gf-text-secondary)" }}>
+              Cancel subscription for <strong style={{ color: "var(--gf-text-primary)" }}>{cancelSub.tenant}</strong>? They will lose access at end of billing period.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => handleCancelSub(cancelSub)} className="flex-1 py-2 rounded-lg text-sm font-medium hover:opacity-90" style={{ backgroundColor: "#ef4444", color: "#fff" }}>Yes, Cancel</button>
+              <button onClick={() => setCancelSub(null)} className="flex-1 py-2 rounded-lg text-sm font-medium hover:opacity-90" style={{ backgroundColor: "var(--gf-bg-elevated)", border: "1px solid var(--gf-border)", color: "var(--gf-text-primary)" }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Renew Subscription Dialog */}
+      {renewSub && (
+        <div
+          className="flex items-center justify-center animate-in fade-in duration-200"
+          style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(0,0,0,0.7)" }}
+          onClick={() => setRenewSub(null)}
+        >
+          <div
+            className="rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-in zoom-in-95 duration-200"
+            style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>Renew Subscription</h3>
+            <p className="text-sm mb-5" style={{ color: "var(--gf-text-secondary)" }}>
+              Renew subscription for <strong style={{ color: "var(--gf-text-primary)" }}>{renewSub.tenant}</strong>?
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => handleRenewSub(renewSub)} className="flex-1 py-2 rounded-lg text-sm font-medium hover:opacity-90" style={{ backgroundColor: "#22c55e", color: "#fff" }}>Yes, Renew</button>
+              <button onClick={() => setRenewSub(null)} className="flex-1 py-2 rounded-lg text-sm font-medium hover:opacity-90" style={{ backgroundColor: "var(--gf-bg-elevated)", border: "1px solid var(--gf-border)", color: "var(--gf-text-primary)" }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Reminder Dialog */}
+      {reminderSub && (
+        <div
+          className="flex items-center justify-center animate-in fade-in duration-200"
+          style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(0,0,0,0.7)" }}
+          onClick={() => setReminderSub(null)}
+        >
+          <div
+            className="rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-in zoom-in-95 duration-200"
+            style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>Send Payment Reminder</h3>
+            <p className="text-sm mb-5" style={{ color: "var(--gf-text-secondary)" }}>
+              Send payment reminder email to <strong style={{ color: "var(--gf-text-primary)" }}>{reminderSub.tenant}</strong>?
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => handleSendReminder(reminderSub)} className="flex-1 py-2 rounded-lg text-sm font-medium hover:opacity-90" style={{ backgroundColor: "#f97316", color: "#fff" }}>Yes, Send</button>
+              <button onClick={() => setReminderSub(null)} className="flex-1 py-2 rounded-lg text-sm font-medium hover:opacity-90" style={{ backgroundColor: "var(--gf-bg-elevated)", border: "1px solid var(--gf-border)", color: "var(--gf-text-primary)" }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Subscription Drawer */}
+      {showAddSub && (
+        <div
+          className="flex justify-end animate-in fade-in duration-200"
+          style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(0,0,0,0.7)" }}
+          onClick={() => { setShowAddSub(false); document.body.style.overflow = ""; }}
+        >
+          <div
+            className="h-full w-full max-w-md overflow-y-auto animate-in slide-in-from-right duration-300"
+            style={{ backgroundColor: "var(--gf-bg-surface)", borderLeft: "1px solid var(--gf-border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>Add Subscription</h3>
+                <button onClick={() => { setShowAddSub(false); document.body.style.overflow = ""; }} className="rounded-lg p-1 hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}><X size={18} /></button>
+              </div>
+              <div className="space-y-4">
+                {/* Tenant Name */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Tenant Name *</label>
+                  <input type="text" value={newSubForm.tenant} onChange={(e) => setNewSubForm({ ...newSubForm, tenant: e.target.value })} placeholder="e.g. Acme Corp" className="w-full px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-500" style={{ backgroundColor: "var(--gf-bg-elevated)", border: "1px solid var(--gf-border)", color: "var(--gf-text-primary)" }} />
+                </div>
+                {/* Plan */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Plan</label>
+                  <Dropdown value={newSubForm.plan} options={["Starter", "Pro", "Enterprise"]} onChange={(v) => {
+                    const p = v as SubPlan;
+                    const cycle = newSubForm.billingCycle;
+                    const price = cycle === "Annual" ? planPrices[p].annual : planPrices[p].monthly;
+                    setNewSubForm({ ...newSubForm, plan: p, amount: `$${price.toLocaleString("en-US", { minimumFractionDigits: 2 })}` });
+                  }} />
+                </div>
+                {/* Billing Cycle */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Billing Cycle</label>
+                  <Dropdown value={newSubForm.billingCycle} options={["Monthly", "Annual"]} onChange={(v) => {
+                    const cycle = v as SubCycle;
+                    const price = cycle === "Annual" ? planPrices[newSubForm.plan].annual : planPrices[newSubForm.plan].monthly;
+                    setNewSubForm({ ...newSubForm, billingCycle: cycle, amount: `$${price.toLocaleString("en-US", { minimumFractionDigits: 2 })}` });
+                  }} />
+                </div>
+                {/* Amount */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Amount</label>
+                  <input type="text" value={newSubForm.amount} onChange={(e) => setNewSubForm({ ...newSubForm, amount: e.target.value })} className="w-full px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-500" style={{ backgroundColor: "var(--gf-bg-elevated)", border: "1px solid var(--gf-border)", color: "var(--gf-text-primary)" }} />
+                </div>
+                {/* Start Date */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Start Date</label>
+                  <input type="date" value={newSubForm.startDate} onChange={(e) => setNewSubForm({ ...newSubForm, startDate: e.target.value })} className="w-full px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-500" style={{ backgroundColor: "var(--gf-bg-elevated)", border: "1px solid var(--gf-border)", color: "var(--gf-text-primary)" }} />
+                </div>
+                {/* Status */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Status</label>
+                  <Dropdown value={newSubForm.status} options={["Active", "Trialing"]} onChange={(v) => setNewSubForm({ ...newSubForm, status: v as "Active" | "Trialing" })} />
+                </div>
+                {/* Payment Method */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Payment Method</label>
+                  <input type="text" value={newSubForm.paymentMethod} onChange={(e) => setNewSubForm({ ...newSubForm, paymentMethod: e.target.value })} placeholder="e.g. Visa •••• 4242" className="w-full px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-500" style={{ backgroundColor: "var(--gf-bg-elevated)", border: "1px solid var(--gf-border)", color: "var(--gf-text-primary)" }} />
+                </div>
+                {/* Auto Renew */}
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium" style={{ color: "var(--gf-text-secondary)" }}>Auto Renew</label>
+                  <button
+                    onClick={() => setNewSubForm({ ...newSubForm, autoRenew: !newSubForm.autoRenew })}
+                    className="relative w-10 h-5 rounded-full transition-colors"
+                    style={{ backgroundColor: newSubForm.autoRenew ? "#22c55e" : "var(--gf-border)" }}
+                  >
+                    <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform" style={{ transform: newSubForm.autoRenew ? "translateX(20px)" : "translateX(0)" }} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button onClick={handleAddSub} className="flex-1 py-2.5 rounded-lg text-sm font-medium hover:opacity-90" style={{ backgroundColor: "#f97316", color: "#fff" }}>Save Subscription</button>
+                <button onClick={() => { setShowAddSub(false); document.body.style.overflow = ""; }} className="flex-1 py-2.5 rounded-lg text-sm font-medium hover:opacity-90" style={{ backgroundColor: "var(--gf-bg-elevated)", border: "1px solid var(--gf-border)", color: "var(--gf-text-primary)" }}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <div
           className="fixed bottom-6 right-6 z-[10000] animate-in slide-in-from-bottom-4 fade-in duration-300 rounded-lg px-4 py-3 text-sm font-medium shadow-lg"
           style={{
-            backgroundColor: toast.includes("At least one") || toast.includes("rejected") ? "#ef4444"
-              : toast.includes("No transactions") || toast.includes("Standby") ? "#f97316"
+            backgroundColor: toast.includes("At least one") || toast.includes("rejected") || toast.includes("cancelled") ? "#ef4444"
+              : toast.includes("No transactions") || toast.includes("Standby") || toast.includes("Reminder sent") ? "#f97316"
               : "#22c55e",
             color: "#fff",
           }}
