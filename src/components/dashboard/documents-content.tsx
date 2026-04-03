@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import {
   FileText,
   FilePlus,
@@ -69,14 +70,73 @@ const versionHistory: {
 ];
 
 const templates = [
-  { name: "Invoice Template", version: "v3.2", uses: 482, format: "PDF" },
-  { name: "NDA Template", version: "v2.1", uses: 156, format: "PDF / DOCX" },
-  { name: "Certificate Template", version: "v1.4", uses: 234, format: "PDF" },
-  { name: "Contract Template", version: "v4.0", uses: 98, format: "PDF / DOCX" },
-  { name: "Receipt Template", version: "v2.0", uses: 712, format: "PDF / HTML" },
+  { name: "Invoice Template", version: "v3.2", uses: 482, format: "PDF", formats: ["PDF"] },
+  { name: "NDA Template", version: "v2.1", uses: 156, format: "PDF / DOCX", formats: ["PDF", "DOCX"] },
+  { name: "Certificate Template", version: "v1.4", uses: 234, format: "PDF", formats: ["PDF"] },
+  { name: "Contract Template", version: "v4.0", uses: 98, format: "PDF / DOCX", formats: ["PDF", "DOCX"] },
+  { name: "Receipt Template", version: "v2.0", uses: 712, format: "PDF / HTML", formats: ["PDF", "HTML"] },
 ];
 
+const extMap: Record<string, string> = { PDF: "pdf", DOCX: "docx", HTML: "html" };
+const mimeMap: Record<string, string> = {
+  PDF: "application/pdf",
+  DOCX: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  HTML: "text/html",
+};
+
+function triggerDownload(templateName: string, fmt: string) {
+  const slug = templateName.toLowerCase().replace(/\s+/g, "-");
+  const ext = extMap[fmt];
+  const today = new Date().toISOString().slice(0, 10);
+  const fileName = `glimmora-${slug}-${today}.${ext}`;
+  const content = `${templateName} — exported as ${fmt} on ${today}`;
+  const blob = new Blob([content], { type: mimeMap[fmt] });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export function DocumentsContent() {
+  const [openPopover, setOpenPopover] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!openPopover) return;
+    function handleClick(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setOpenPopover(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [openPopover]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  function handleDownload(tpl: (typeof templates)[0], fmt?: string) {
+    if (!fmt) {
+      if (tpl.formats.length === 1) {
+        fmt = tpl.formats[0];
+      } else {
+        setOpenPopover(openPopover === tpl.name ? null : tpl.name);
+        return;
+      }
+    }
+    setOpenPopover(null);
+    triggerDownload(tpl.name, fmt);
+    setToast(`Downloading ${tpl.name} as ${fmt} ✓`);
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -118,7 +178,7 @@ export function DocumentsContent() {
           {templates.map((tpl) => (
             <div
               key={tpl.name}
-              className="rounded-xl p-5"
+              className="rounded-xl p-5 flex flex-col"
               style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}
             >
               <div className="flex items-start justify-between">
@@ -136,6 +196,69 @@ export function DocumentsContent() {
               <div className="mt-2 flex gap-4 text-xs" style={{ color: "var(--gf-text-secondary)" }}>
                 <span>{tpl.uses} uses</span>
                 <span>{tpl.format}</span>
+              </div>
+
+              {/* Download button + popover */}
+              <div className="relative mt-3">
+                <button
+                  onClick={() => handleDownload(tpl)}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                  style={{
+                    border: "1px solid var(--gf-accent)",
+                    color: "var(--gf-accent)",
+                    backgroundColor: "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "var(--gf-accent)";
+                    e.currentTarget.style.color = "#fff";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.color = "var(--gf-accent)";
+                  }}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download
+                </button>
+
+                {openPopover === tpl.name && tpl.formats.length > 1 && (
+                  <div
+                    ref={popoverRef}
+                    className="absolute left-0 bottom-full mb-2 rounded-lg p-3 z-50 shadow-lg"
+                    style={{
+                      backgroundColor: "var(--gf-card, var(--gf-bg-surface))",
+                      border: "1px solid var(--gf-border)",
+                    }}
+                  >
+                    <p className="text-xs font-medium mb-2" style={{ color: "var(--gf-text-secondary)" }}>
+                      ⬇ Download as:
+                    </p>
+                    <div className="flex gap-2">
+                      {tpl.formats.map((fmt) => (
+                        <button
+                          key={fmt}
+                          onClick={() => handleDownload(tpl, fmt)}
+                          className="text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
+                          style={{
+                            border: "1px solid var(--gf-accent)",
+                            color: "var(--gf-accent)",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "var(--gf-accent)";
+                            e.currentTarget.style.color = "#fff";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.color = "var(--gf-accent)";
+                          }}
+                        >
+                          {fmt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -295,6 +418,16 @@ export function DocumentsContent() {
           </table>
         </div>
       </div>
+
+      {/* Download Toast */}
+      {toast && (
+        <div
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-opacity"
+          style={{ backgroundColor: "#22c55e", color: "#fff" }}
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
