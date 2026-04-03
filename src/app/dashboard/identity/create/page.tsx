@@ -10,8 +10,8 @@ import { ROLE_LABELS, type UserRole } from "@/lib/roles";
 // ---------------------------------------------------------------------------
 
 const ALL_ROLES: UserRole[] = [
-  "super_admin", "tenant_admin", "developer", "platform_engineer",
-  "qa_engineer", "product_manager", "governance_admin", "ai_prompt_owner",
+  "super_admin", "tenant_admin", "developer", "platform_engineering_lead",
+  "qa_engineer", "product_lead", "cto", "ai_prompt_owner",
 ];
 
 const TENANTS = ["Glimmora HQ", "VerifAI", "Diamond Corp", "Hospitality Co", "Tax Solutions", "Aero Systems"];

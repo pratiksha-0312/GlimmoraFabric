@@ -30,7 +30,7 @@ const teamMembers: TeamMember[] = [
   {
     name: "Priya Sharma",
     email: "priya@glimmora.com",
-    role: "platform_engineer",
+    role: "platform_engineering_lead",
     status: "active",
   },
   {
@@ -48,13 +48,13 @@ const teamMembers: TeamMember[] = [
   {
     name: "Vikram Singh",
     email: "vikram@glimmora.com",
-    role: "governance_admin",
+    role: "cto",
     status: "active",
   },
   {
     name: "Neha Gupta",
     email: "neha@glimmora.com",
-    role: "product_manager",
+    role: "product_lead",
     status: "active",
   },
   {

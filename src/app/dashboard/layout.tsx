@@ -54,20 +54,20 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Tenants", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "product_manager", "governance_admin"] },
-  { label: "Users & Access", href: "/dashboard/identity", icon: Users, visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "governance_admin"] },
-  { label: "Services", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineer", "qa_engineer", "product_manager"] },
-  { label: "API Gateway & Keys", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineer"] },
-  { label: "Workflows", href: "/dashboard/workflows", icon: GitBranch, section: "Operations", visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineer", "qa_engineer", "product_manager", "governance_admin"] },
+  { label: "Tenants", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
+  { label: "Users & Access", href: "/dashboard/identity", icon: Users, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "cto"] },
+  { label: "Services", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
+  { label: "API Gateway & Keys", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
+  { label: "Workflows", href: "/dashboard/workflows", icon: GitBranch, section: "Operations", visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
   { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
-  { label: "Payments", href: "/dashboard/payments", icon: CreditCard, visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "product_manager", "governance_admin"] },
+  { label: "Payments", href: "/dashboard/payments", icon: CreditCard, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
   { label: "Documents", href: "/dashboard/documents", icon: File },
-  { label: "AI & Prompt Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineer", "ai_prompt_owner"] },
-  { label: "Audit & Compliance", href: "/dashboard/audit", icon: FileText, section: "Compliance", visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "qa_engineer", "governance_admin"] },
-  { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineer", "qa_engineer", "governance_admin"] },
-  { label: "Configuration", href: "/dashboard/configuration", icon: Settings, section: "System", visibleTo: ["super_admin", "platform_engineer"] },
-  { label: "Developer Tools", href: "/dashboard/developer-tools", icon: Code2, visibleTo: ["super_admin", "developer", "platform_engineer", "qa_engineer", "ai_prompt_owner"] },
-  { label: "Reports & Analytics", href: "/dashboard/analytics", icon: BarChart3, visibleTo: ["super_admin", "tenant_admin", "platform_engineer", "qa_engineer", "product_manager", "governance_admin"] },
+  { label: "AI & Prompt Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
+  { label: "Audit & Compliance", href: "/dashboard/audit", icon: FileText, section: "Compliance", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
+  { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
+  { label: "Configuration", href: "/dashboard/configuration", icon: Settings, section: "System", visibleTo: ["super_admin", "platform_engineering_lead"] },
+  { label: "Developer Tools", href: "/dashboard/developer-tools", icon: Code2, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "ai_prompt_owner"] },
+  { label: "Reports & Analytics", href: "/dashboard/analytics", icon: BarChart3, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
 ];
 
 const SIDEBAR_EXPANDED = 256;

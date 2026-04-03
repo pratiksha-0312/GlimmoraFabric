@@ -11,10 +11,10 @@ const testCredentials: Record<string, { fullName: string; email: string; role: U
   superadmin:   { fullName: "Super Admin",       email: "superadmin@glimmora.com",   role: "super_admin" },
   tenantadmin:  { fullName: "Tenant Admin",      email: "tenantadmin@glimmora.com",  role: "tenant_admin" },
   developer:    { fullName: "Dev User",          email: "developer@glimmora.com",    role: "developer" },
-  platform:     { fullName: "Platform Engineer", email: "platform@glimmora.com",     role: "platform_engineer" },
+  platform:     { fullName: "Platform Engineer", email: "platform@glimmora.com",     role: "platform_engineering_lead" },
   qa:           { fullName: "QA Engineer",       email: "qa@glimmora.com",           role: "qa_engineer" },
-  pm:           { fullName: "Product Manager",   email: "pm@glimmora.com",           role: "product_manager" },
-  governance:   { fullName: "Governance Admin",  email: "governance@glimmora.com",   role: "governance_admin" },
+  pm:           { fullName: "Product Manager",   email: "pm@glimmora.com",           role: "product_lead" },
+  governance:   { fullName: "Governance Admin",  email: "governance@glimmora.com",   role: "cto" },
   aiprompt:     { fullName: "AI Prompt Owner",   email: "aiprompt@glimmora.com",     role: "ai_prompt_owner" },
 };
 

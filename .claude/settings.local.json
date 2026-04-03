@@ -27,7 +27,25 @@
       "Bash(python3:*)",
       "Bash(py --version)",
       "Bash(curl:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(find /c/GlimmoraFabric/GlimmoraFabric/src/app/dashboard -type f -name \"*.tsx\" -exec wc -l {} +)",
+      "Bash(/tmp/structure_report.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(mkdir -p \"/c/GlimmoraFabric/GlimmoraFabric/src/app/dashboard/tenants/[id]\")",
+      "Bash(mkdir -p \"/c/GlimmoraFabric/GlimmoraFabric/src/app/dashboard/tenants/[id]/edit\")",
+      "Bash(mkdir -p \"/c/GlimmoraFabric/GlimmoraFabric/src/app/dashboard/identity/[id]\")",
+      "Bash(mkdir -p \"/c/GlimmoraFabric/GlimmoraFabric/src/app/dashboard/identity/[id]/edit\")",
+      "Bash(git pull:*)",
+      "Bash(git push:*)",
+      "Bash(mkdir -p \"/c/GlimmoraFabric/GlimmoraFabric/src/app/dashboard/ai-platform/prompts/[id]\")",
+      "Bash(mkdir -p \"/c/GlimmoraFabric/GlimmoraFabric/src/app/dashboard/ai-platform/agents/[id]\")",
+      "WebFetch(domain:verifaigrc.glimmora.ai)",
+      "Bash(node:*)",
+      "Bash(grep:*)",
+      "Bash(git stash:*)",
+      "Bash(find C:\\\\GlimmoraFabric\\\\GlimmoraFabric:*)"
     ]
   }
 }

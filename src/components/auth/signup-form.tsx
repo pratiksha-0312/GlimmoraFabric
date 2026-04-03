@@ -43,7 +43,7 @@ export function SignupForm() {
       selectedBg: "bg-amber-500/10",
     },
     {
-      value: "platform_engineer",
+      value: "platform_engineering_lead",
       label: "Platform Engineer",
       description: "Operate & manage Fabric services",
       borderColor: "border-blue-500",
@@ -57,14 +57,14 @@ export function SignupForm() {
       selectedBg: "bg-emerald-500/10",
     },
     {
-      value: "product_manager",
+      value: "product_lead",
       label: "Product Manager",
       description: "Roadmap, features & analytics",
       borderColor: "border-violet-500",
       selectedBg: "bg-violet-500/10",
     },
     {
-      value: "governance_admin",
+      value: "cto",
       label: "Governance Admin",
       description: "Compliance, audit & policies",
       borderColor: "border-rose-500",

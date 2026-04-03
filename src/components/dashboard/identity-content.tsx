@@ -56,11 +56,11 @@ export interface PlatformUser {
 
 const INITIAL_USERS: PlatformUser[] = [
   { id: "u1", name: "Ishan Yadav", email: "ishan@glimmora.com", role: "super_admin", status: "Active", mfa: true, lastLogin: "2 min ago", tenant: "Glimmora HQ", joinedDate: "2025-11-01" },
-  { id: "u2", name: "Priya Sharma", email: "priya@glimmora.com", role: "platform_engineer", status: "Active", mfa: true, lastLogin: "15 min ago", tenant: "Glimmora HQ", joinedDate: "2025-12-10" },
+  { id: "u2", name: "Priya Sharma", email: "priya@glimmora.com", role: "platform_engineering_lead", status: "Active", mfa: true, lastLogin: "15 min ago", tenant: "Glimmora HQ", joinedDate: "2025-12-10" },
   { id: "u3", name: "Rahul Verma", email: "rahul@glimmora.com", role: "developer", status: "Active", mfa: true, lastLogin: "1 hr ago", tenant: "Glimmora HQ", joinedDate: "2026-01-05" },
   { id: "u4", name: "Anita Desai", email: "anita@glimmora.com", role: "qa_engineer", status: "Active", mfa: false, lastLogin: "3 hr ago", tenant: "VerifAI", joinedDate: "2026-01-12" },
-  { id: "u5", name: "Vikram Singh", email: "vikram@glimmora.com", role: "governance_admin", status: "Active", mfa: true, lastLogin: "1 day ago", tenant: "Glimmora HQ", joinedDate: "2025-12-20" },
-  { id: "u6", name: "Neha Gupta", email: "neha@glimmora.com", role: "product_manager", status: "Active", mfa: false, lastLogin: "2 hr ago", tenant: "Diamond Corp", joinedDate: "2026-02-01" },
+  { id: "u5", name: "Vikram Singh", email: "vikram@glimmora.com", role: "cto", status: "Active", mfa: true, lastLogin: "1 day ago", tenant: "Glimmora HQ", joinedDate: "2025-12-20" },
+  { id: "u6", name: "Neha Gupta", email: "neha@glimmora.com", role: "product_lead", status: "Active", mfa: false, lastLogin: "2 hr ago", tenant: "Diamond Corp", joinedDate: "2026-02-01" },
   { id: "u7", name: "Arjun Mehta", email: "arjun@glimmora.com", role: "ai_prompt_owner", status: "Active", mfa: true, lastLogin: "30 min ago", tenant: "Glimmora HQ", joinedDate: "2026-01-22" },
   { id: "u8", name: "Dev Patel", email: "dev@glimmora.com", role: "tenant_admin", status: "Active", mfa: true, lastLogin: "5 hr ago", tenant: "Tax Solutions", joinedDate: "2026-02-10" },
   { id: "u9", name: "Sara Khan", email: "sara@techvault.com", role: "developer", status: "Invited", mfa: false, lastLogin: "—", tenant: "VerifAI", joinedDate: "2026-03-20" },
@@ -74,8 +74,8 @@ const STATUS_COLORS: Record<PlatformUser["status"], string> = {
 };
 
 const ALL_ROLES: UserRole[] = [
-  "super_admin", "tenant_admin", "developer", "platform_engineer",
-  "qa_engineer", "product_manager", "governance_admin", "ai_prompt_owner",
+  "super_admin", "tenant_admin", "developer", "platform_engineering_lead",
+  "qa_engineer", "product_lead", "cto", "ai_prompt_owner",
 ];
 
 const STATUSES: PlatformUser["status"][] = ["Active", "Inactive", "Invited"];
