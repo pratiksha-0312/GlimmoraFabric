@@ -113,7 +113,6 @@ const INITIAL_API_KEYS: ApiKey[] = [
 ];
 
 const INITIAL_ROUTES: GatewayRoute[] = [
-  { id: "r1", path: "/api/v1/auth/*", target: "identity-service", method: "ALL", rateLimit: "1000/min", status: "Active", authRequired: false, description: "Authentication and session management" },
   { id: "r2", path: "/api/v1/payments/*", target: "payment-service", method: "ALL", rateLimit: "500/min", status: "Active", authRequired: true, description: "Payment processing and invoicing" },
   { id: "r3", path: "/api/v1/notifications/*", target: "notification-service", method: "POST", rateLimit: "200/min", status: "Active", authRequired: true, description: "Push and email notifications" },
   { id: "r4", path: "/api/v1/documents/*", target: "document-service", method: "ALL", rateLimit: "100/min", status: "Active", authRequired: true, description: "Document upload and signing" },
@@ -150,7 +149,7 @@ const INITIAL_LOGS: ApiLog[] = [
 const TENANTS = ["Acme Corp", "TechVault", "GlobalFinance", "DataShield", "CloudBase", "Aero Systems"];
 const ENV_OPTIONS: EnvType[] = ["Production", "Staging", "Sandbox"];
 const KEY_STATUSES: KeyStatus[] = ["Active", "Expired", "Revoked"];
-const ROUTE_TARGETS = ["identity-service", "payment-service", "notification-service", "document-service", "ai-platform", "workflow-engine", "tenant-service", "legacy-proxy"];
+const ROUTE_TARGETS = ["payment-service", "notification-service", "document-service", "ai-platform", "workflow-engine", "tenant-service", "legacy-proxy"];
 const HTTP_METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "ALL"];
 const SCOPE_OPTIONS = ["read", "write", "admin", "billing", "analytics"];
 

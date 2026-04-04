@@ -42,8 +42,6 @@ const REPOS = [
 ];
 
 const ENDPOINTS = [
-  { method: "GET" as const, path: "/api/v1/users", service: "Identity", desc: "List all users with pagination & filters" },
-  { method: "POST" as const, path: "/api/v1/users", service: "Identity", desc: "Create a new user account" },
   { method: "GET" as const, path: "/api/v1/orders", service: "Commerce", desc: "List orders with status filtering" },
   { method: "PUT" as const, path: "/api/v1/orders/:id", service: "Commerce", desc: "Update order status or details" },
   { method: "DELETE" as const, path: "/api/v1/orders/:id", service: "Commerce", desc: "Cancel and delete an order" },
@@ -55,26 +53,24 @@ const ENDPOINTS = [
 const METHOD_COLORS: Record<string, string> = { GET: "#22c55e", POST: "#3b82f6", PUT: "#f59e0b", DELETE: "#ef4444" };
 
 const EVENTS = [
-  { name: "user.created", source: "Identity", schemaVersion: "2.1.0", subscribers: 5, lastEmitted: "2026-03-31T09:14:00Z" },
   { name: "order.placed", source: "Commerce", schemaVersion: "3.0.1", subscribers: 8, lastEmitted: "2026-03-31T09:12:30Z" },
   { name: "order.fulfilled", source: "Commerce", schemaVersion: "3.0.1", subscribers: 4, lastEmitted: "2026-03-31T08:55:00Z" },
   { name: "payment.completed", source: "Billing", schemaVersion: "1.4.0", subscribers: 6, lastEmitted: "2026-03-31T09:10:00Z" },
   { name: "notification.sent", source: "Notifications", schemaVersion: "1.2.0", subscribers: 2, lastEmitted: "2026-03-31T09:08:00Z" },
   { name: "analytics.aggregated", source: "Analytics", schemaVersion: "1.0.0", subscribers: 3, lastEmitted: "2026-03-31T08:00:00Z" },
-  { name: "session.expired", source: "Identity", schemaVersion: "2.0.0", subscribers: 4, lastEmitted: "2026-03-31T07:45:00Z" },
   { name: "inventory.low", source: "Commerce", schemaVersion: "1.1.0", subscribers: 3, lastEmitted: "2026-03-31T06:30:00Z" },
 ];
 
 const INITIAL_SANDBOXES = [
-  { id: "sb-001", name: "Dev Environment", status: "Running" as const, services: ["Identity", "Commerce", "EventBus"], url: "https://sb-001.sandbox.glimmora.dev", createdBy: "admin@glimmora.io" },
-  { id: "sb-002", name: "QA Integration", status: "Running" as const, services: ["Identity", "Commerce", "Analytics", "Notifications"], url: "https://sb-002.sandbox.glimmora.dev", createdBy: "qa-lead@glimmora.io" },
-  { id: "sb-003", name: "Staging Mirror", status: "Stopped" as const, services: ["Identity", "Commerce", "Billing", "Analytics", "EventBus", "Notifications"], url: "https://sb-003.sandbox.glimmora.dev", createdBy: "admin@glimmora.io" },
+  { id: "sb-001", name: "Dev Environment", status: "Running" as const, services: ["Commerce", "EventBus"], url: "https://sb-001.sandbox.glimmora.dev", createdBy: "admin@glimmora.io" },
+  { id: "sb-002", name: "QA Integration", status: "Running" as const, services: ["Commerce", "Analytics", "Notifications"], url: "https://sb-002.sandbox.glimmora.dev", createdBy: "qa-lead@glimmora.io" },
+  { id: "sb-003", name: "Staging Mirror", status: "Stopped" as const, services: ["Commerce", "Billing", "Analytics", "EventBus", "Notifications"], url: "https://sb-003.sandbox.glimmora.dev", createdBy: "admin@glimmora.io" },
   { id: "sb-004", name: "Load Testing", status: "Stopped" as const, services: ["Commerce", "Analytics"], url: "https://sb-004.sandbox.glimmora.dev", createdBy: "devops@glimmora.io" },
-  { id: "sb-005", name: "Feature Branch A", status: "Running" as const, services: ["Identity", "Commerce"], url: "https://sb-005.sandbox.glimmora.dev", createdBy: "dev1@glimmora.io" },
-  { id: "sb-006", name: "Demo Showcase", status: "Stopped" as const, services: ["Identity", "Commerce", "Analytics", "Notifications"], url: "https://sb-006.sandbox.glimmora.dev", createdBy: "sales@glimmora.io" },
+  { id: "sb-005", name: "Feature Branch A", status: "Running" as const, services: ["Commerce"], url: "https://sb-005.sandbox.glimmora.dev", createdBy: "dev1@glimmora.io" },
+  { id: "sb-006", name: "Demo Showcase", status: "Stopped" as const, services: ["Commerce", "Analytics", "Notifications"], url: "https://sb-006.sandbox.glimmora.dev", createdBy: "sales@glimmora.io" },
 ];
 
-const ALL_SERVICES = ["Identity", "Commerce", "Billing", "Analytics", "EventBus", "Notifications"];
+const ALL_SERVICES = ["Commerce", "Billing", "Analytics", "EventBus", "Notifications"];
 
 // ── Helpers ───────────────────────────────────────────────────────────
 

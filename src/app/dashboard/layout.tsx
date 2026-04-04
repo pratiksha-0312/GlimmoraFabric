@@ -43,6 +43,7 @@ import SearchModal from "@/components/dashboard/search-modal";
 import { NotificationsDropdown } from "@/components/dashboard/notifications-dropdown";
 import { HelpDropdown } from "@/components/dashboard/help-dropdown";
 import { ColorPicker } from "@/components/dashboard/color-picker";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 interface NavItem {
   label: string;
@@ -54,18 +55,19 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Tenants", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
-  { label: "Users & Access", href: "/dashboard/identity", icon: Users, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "cto"] },
-  { label: "Services", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
-  { label: "API Gateway & Keys", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
-  { label: "Workflows", href: "/dashboard/workflows", icon: GitBranch, section: "Operations", visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
-  { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
-  { label: "Payments", href: "/dashboard/payments", icon: CreditCard, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
-  { label: "Documents", href: "/dashboard/documents", icon: File },
-  { label: "AI & Prompt Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
-  { label: "Audit & Compliance", href: "/dashboard/audit", icon: FileText, section: "Compliance", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
+  { label: "Tenant Management", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
+  { label: "User Management", href: "/dashboard/identity", icon: Users, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "cto"] },
+  { label: "Role & Permission Management", href: "/dashboard/roles", icon: Shield, visibleTo: ["super_admin", "tenant_admin"] },
+  { label: "Service Management", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
+  { label: "API & Developer Tools", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
+  { label: "Workflow Management", href: "/dashboard/workflows", icon: GitBranch, section: "Operations", visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
+  { label: "Notification Management", href: "/dashboard/notifications", icon: Bell },
+  { label: "Payment Management", href: "/dashboard/payments", icon: CreditCard, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
+  { label: "Document Management", href: "/dashboard/documents", icon: File },
+  { label: "AI Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
+  { label: "Audit & Logs", href: "/dashboard/audit", icon: FileText, section: "Compliance", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
   { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
-  { label: "Configuration", href: "/dashboard/configuration", icon: Settings, section: "System", visibleTo: ["super_admin", "platform_engineering_lead"] },
+  { label: "Settings", href: "/dashboard/configuration", icon: Settings, section: "System", visibleTo: ["super_admin", "platform_engineering_lead"] },
   { label: "Developer Tools", href: "/dashboard/developer-tools", icon: Code2, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "ai_prompt_owner"] },
   { label: "Reports & Analytics", href: "/dashboard/analytics", icon: BarChart3, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
 ];
@@ -355,7 +357,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* ========== PAGE CONTENT (only this scrolls) ========== */}
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          <AuthGuard>{children}</AuthGuard>
+        </main>
       </div>
 
       {/* Search Modal */}

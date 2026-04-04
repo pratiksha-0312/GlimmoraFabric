@@ -73,7 +73,6 @@ interface Service {
 }
 
 const SERVICES: Service[] = [
-  { name: "Identity & Access", calls: 892000, uptime: 99.99, avgLatency: 45 },
   { name: "Notification Hub", calls: 654000, uptime: 99.95, avgLatency: 82 },
   { name: "Payment Orchestration", calls: 341000, uptime: 99.98, avgLatency: 128 },
   { name: "Workflow Engine", calls: 278000, uptime: 99.92, avgLatency: 210 },

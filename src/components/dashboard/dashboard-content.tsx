@@ -29,7 +29,6 @@ const stats = [
 type HealthStatus = "Operational" | "Degraded" | "Down";
 
 const serviceHealth: { name: string; status: HealthStatus; uptime: string; latency: string }[] = [
-  { name: "Identity & Auth", status: "Operational", uptime: "99.99%", latency: "45ms" },
   { name: "Payment Service", status: "Operational", uptime: "99.99%", latency: "230ms" },
   { name: "Notification Hub", status: "Operational", uptime: "99.95%", latency: "120ms" },
   { name: "Workflow Engine", status: "Operational", uptime: "99.92%", latency: "85ms" },
@@ -47,11 +46,11 @@ const healthColors: Record<HealthStatus, string> = {
 
 const recentActivities = [
   { action: "Tenant 'VerifAI' subscription upgraded to Enterprise", user: "System", time: "5 min ago", icon: Building2 },
-  { action: "New user invited: priya@techvault.com", user: "Ishan Yadav", time: "12 min ago", icon: Users },
+  { action: "New user invited: user1@techvault.com", user: "Super Admin", time: "12 min ago", icon: Users },
   { action: "Payment gateway failover triggered (Stripe → Adyen)", user: "System", time: "28 min ago", icon: CreditCard },
-  { action: "Workflow 'vendor-onboarding-v2' deployed to production", user: "Rahul Verma", time: "1 hr ago", icon: GitBranch },
-  { action: "AI model routing updated: Claude Opus 4.6 set as primary", user: "Arjun Mehta", time: "2 hr ago", icon: Brain },
-  { action: "Audit compliance report generated for Q1 2026", user: "Vikram Singh", time: "3 hr ago", icon: FileText },
+  { action: "Workflow 'vendor-onboarding-v2' deployed to production", user: "Super Admin", time: "1 hr ago", icon: GitBranch },
+  { action: "AI model routing updated: Claude Opus 4.6 set as primary", user: "Super Admin", time: "2 hr ago", icon: Brain },
+  { action: "Audit compliance report generated for Q1 2026", user: "Super Admin", time: "3 hr ago", icon: FileText },
 ];
 
 const alerts = [

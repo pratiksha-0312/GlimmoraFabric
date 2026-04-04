@@ -110,25 +110,18 @@ const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--g
 
 const INITIAL_SERVICES: Service[] = [
   {
-    id: "s1", name: "Identity & Access", description: "SSO, RBAC, MFA, OAuth2/OIDC, API tokens and session management",
-    icon: "Shield", status: "Running", version: "2.4.1", endpoints: 18, uptime: "99.98%", latency: "45ms",
-    href: "/dashboard/identity", category: "Core", lastDeployed: "2026-03-28 14:30",
-    healthCheckUrl: "https://identity.glimmora.internal/health", healthCheckInterval: "30s", autoRestart: true,
-    cpu: 34, memory: 52, dependencies: ["Database", "Redis Cache"],
-  },
-  {
     id: "s2", name: "Notification Hub", description: "Email, SMS, Push, In-app and webhook notifications",
     icon: "Bell", status: "Running", version: "1.7.0", endpoints: 12, uptime: "99.95%", latency: "120ms",
     href: "/dashboard/notifications", category: "Core", lastDeployed: "2026-03-25 09:15",
     healthCheckUrl: "https://notifications.glimmora.internal/health", healthCheckInterval: "30s", autoRestart: true,
-    cpu: 22, memory: 38, dependencies: ["Identity & Access", "Kafka"],
+    cpu: 22, memory: 38, dependencies: ["Kafka"],
   },
   {
     id: "s3", name: "Payment Service", description: "Multi-gateway payments via Stripe, Razorpay and Adyen",
     icon: "CreditCard", status: "Running", version: "3.1.2", endpoints: 14, uptime: "99.99%", latency: "230ms",
     href: "/dashboard/payments", category: "Core", lastDeployed: "2026-03-30 11:00",
     healthCheckUrl: "https://payments.glimmora.internal/health", healthCheckInterval: "15s", autoRestart: true,
-    cpu: 41, memory: 60, dependencies: ["Identity & Access", "Database", "Audit Service"],
+    cpu: 41, memory: 60, dependencies: ["Database", "Audit Service"],
   },
   {
     id: "s4", name: "Audit Service", description: "Immutable audit trail, compliance reports and change tracking",
@@ -142,28 +135,28 @@ const INITIAL_SERVICES: Service[] = [
     icon: "GitBranch", status: "Degraded", version: "2.0.4", endpoints: 11, uptime: "98.70%", latency: "310ms",
     href: "/dashboard/workflows", category: "Platform", lastDeployed: "2026-03-22 08:30",
     healthCheckUrl: "https://workflows.glimmora.internal/health", healthCheckInterval: "30s", autoRestart: true,
-    cpu: 78, memory: 85, dependencies: ["Identity & Access", "Notification Hub", "Database"],
+    cpu: 78, memory: 85, dependencies: ["Notification Hub", "Database"],
   },
   {
     id: "s6", name: "Document Service", description: "PDF generation, contract templates and e-signatures",
     icon: "File", status: "Running", version: "1.1.0", endpoints: 9, uptime: "99.90%", latency: "180ms",
     href: "/dashboard/documents", category: "Integration", lastDeployed: "2026-03-18 13:20",
     healthCheckUrl: "https://documents.glimmora.internal/health", healthCheckInterval: "30s", autoRestart: true,
-    cpu: 28, memory: 45, dependencies: ["Identity & Access", "Storage"],
+    cpu: 28, memory: 45, dependencies: ["Storage"],
   },
   {
     id: "s7", name: "AI Platform", description: "Model hosting, prompt management and inference APIs",
     icon: "Cpu", status: "Running", version: "0.9.3", endpoints: 15, uptime: "99.85%", latency: "290ms",
     href: "/dashboard/ai-platform", category: "Platform", lastDeployed: "2026-03-29 10:00",
     healthCheckUrl: "https://ai.glimmora.internal/health", healthCheckInterval: "15s", autoRestart: true,
-    cpu: 65, memory: 72, dependencies: ["Identity & Access", "GPU Cluster", "Redis Cache"],
+    cpu: 65, memory: 72, dependencies: ["GPU Cluster", "Redis Cache"],
   },
   {
     id: "s8", name: "API Gateway", description: "Rate limiting, request routing, auth proxy and analytics",
     icon: "Globe", status: "Down", version: "2.2.0", endpoints: 6, uptime: "95.40%", latency: "—",
     href: "/dashboard/api-gateway", category: "Infrastructure", lastDeployed: "2026-03-27 17:00",
     healthCheckUrl: "https://gateway.glimmora.internal/health", healthCheckInterval: "10s", autoRestart: true,
-    cpu: 0, memory: 0, dependencies: ["Identity & Access", "Redis Cache", "Load Balancer"],
+    cpu: 0, memory: 0, dependencies: ["Redis Cache", "Load Balancer"],
   },
 ];
 
@@ -269,7 +262,7 @@ function ServiceDetailModal({ service, onClose, onEdit, onRestart, onToggleMaint
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Identity */}
+          {/* Service info */}
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--gf-bg-elevated)", color: "var(--gf-accent)" }}>
               <ServiceIcon iconName={service.icon} className="h-7 w-7" />

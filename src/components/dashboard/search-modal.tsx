@@ -7,7 +7,6 @@ import {
   Zap,
   Users,
   Settings,
-  Shield,
   Bell,
   CreditCard,
   GitBranch,
@@ -46,26 +45,23 @@ interface SearchModalProps {
 const SEARCHABLE_ITEMS: SearchItem[] = [
   // Pages
   { name: "Dashboard", category: "Pages", icon: LayoutDashboard },
-  { name: "Tenants", category: "Pages", icon: Building2 },
-  { name: "Users & Access", category: "Pages", icon: Users },
-  { name: "Services", category: "Pages", icon: Activity },
-  { name: "API Gateway & Keys", category: "Pages", icon: Key },
-  { name: "Configuration", category: "Pages", icon: Settings },
+  { name: "Tenant Management", category: "Pages", icon: Building2 },
+  { name: "User Management", category: "Pages", icon: Users },
+  { name: "Role & Permission Management", category: "Pages", icon: Settings },
+  { name: "Service Management", category: "Pages", icon: Activity },
+  { name: "API & Developer Tools", category: "Pages", icon: Key },
+  { name: "Workflow Management", category: "Pages", icon: GitBranch },
+  { name: "Notification Management", category: "Pages", icon: Bell },
+  { name: "Payment Management", category: "Pages", icon: CreditCard },
+  { name: "Document Management", category: "Pages", icon: File },
+  { name: "AI Platform", category: "Pages", icon: Brain },
+  { name: "Audit & Logs", category: "Pages", icon: FileText },
+  { name: "Monitoring & Logs", category: "Pages", icon: MonitorDot },
+  { name: "Settings", category: "Pages", icon: Settings },
   { name: "Developer Tools", category: "Pages", icon: Code2 },
   { name: "Reports & Analytics", category: "Pages", icon: BarChart3 },
 
-  // Services
-  { name: "Notification Hub", category: "Services", icon: Bell },
-  { name: "Payment Orchestration", category: "Services", icon: CreditCard },
-  { name: "Audit & Compliance", category: "Services", icon: FileText },
-  { name: "Workflow Engine", category: "Services", icon: GitBranch },
-  { name: "Document Service", category: "Services", icon: File },
-  { name: "AI & Prompt Platform", category: "Services", icon: Brain },
-  { name: "Monitoring & Logs", category: "Services", icon: MonitorDot },
-
   // Actions
-  { name: "Create User", category: "Actions", icon: Users },
-  { name: "Manage Roles", category: "Actions", icon: Shield },
   { name: "View Audit Logs", category: "Actions", icon: FileText },
   { name: "Generate Report", category: "Actions", icon: Zap },
 
