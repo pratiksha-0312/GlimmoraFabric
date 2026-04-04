@@ -7,9 +7,6 @@ import {
   KeyRound,
   ShieldCheck,
   UserPlus,
-  Lock,
-  Clock,
-  ShieldAlert,
   Search,
   Filter,
   MoreHorizontal,
@@ -55,16 +52,7 @@ export interface PlatformUser {
 // ---------------------------------------------------------------------------
 
 const INITIAL_USERS: PlatformUser[] = [
-  { id: "u1", name: "Ishan Yadav", email: "ishan@glimmora.com", role: "super_admin", status: "Active", mfa: true, lastLogin: "2 min ago", tenant: "Glimmora HQ", joinedDate: "2025-11-01" },
-  { id: "u2", name: "Priya Sharma", email: "priya@glimmora.com", role: "platform_engineering_lead", status: "Active", mfa: true, lastLogin: "15 min ago", tenant: "Glimmora HQ", joinedDate: "2025-12-10" },
-  { id: "u3", name: "Rahul Verma", email: "rahul@glimmora.com", role: "developer", status: "Active", mfa: true, lastLogin: "1 hr ago", tenant: "Glimmora HQ", joinedDate: "2026-01-05" },
-  { id: "u4", name: "Anita Desai", email: "anita@glimmora.com", role: "qa_engineer", status: "Active", mfa: false, lastLogin: "3 hr ago", tenant: "VerifAI", joinedDate: "2026-01-12" },
-  { id: "u5", name: "Vikram Singh", email: "vikram@glimmora.com", role: "cto", status: "Active", mfa: true, lastLogin: "1 day ago", tenant: "Glimmora HQ", joinedDate: "2025-12-20" },
-  { id: "u6", name: "Neha Gupta", email: "neha@glimmora.com", role: "product_lead", status: "Active", mfa: false, lastLogin: "2 hr ago", tenant: "Diamond Corp", joinedDate: "2026-02-01" },
-  { id: "u7", name: "Arjun Mehta", email: "arjun@glimmora.com", role: "ai_prompt_owner", status: "Active", mfa: true, lastLogin: "30 min ago", tenant: "Glimmora HQ", joinedDate: "2026-01-22" },
-  { id: "u8", name: "Dev Patel", email: "dev@glimmora.com", role: "tenant_admin", status: "Active", mfa: true, lastLogin: "5 hr ago", tenant: "Tax Solutions", joinedDate: "2026-02-10" },
-  { id: "u9", name: "Sara Khan", email: "sara@techvault.com", role: "developer", status: "Invited", mfa: false, lastLogin: "—", tenant: "VerifAI", joinedDate: "2026-03-20" },
-  { id: "u10", name: "Ravi Kumar", email: "ravi@glimmora.com", role: "qa_engineer", status: "Inactive", mfa: false, lastLogin: "14 days ago", tenant: "Hospitality Co", joinedDate: "2026-01-30" },
+  { id: "u1", name: "Super Admin", email: "superadmin@glimmora.com", role: "super_admin", status: "Active", mfa: true, lastLogin: "2 min ago", tenant: "Glimmora HQ", joinedDate: "2025-11-01" },
 ];
 
 const STATUS_COLORS: Record<PlatformUser["status"], string> = {
@@ -73,29 +61,20 @@ const STATUS_COLORS: Record<PlatformUser["status"], string> = {
   Invited: "#f59e0b",
 };
 
-const ALL_ROLES: UserRole[] = [
-  "super_admin", "tenant_admin", "developer", "platform_engineering_lead",
-  "qa_engineer", "product_lead", "cto", "ai_prompt_owner",
+const END_USER_ROLES: UserRole[] = [
+  "super_admin", "tenant_admin", "auditor", "workflow_manager", "billing_admin",
+  "developer", "tenant_member", "guest_viewer",
 ];
+
+const INTERNAL_SYSTEM_ROLES: UserRole[] = [
+  "cto", "platform_engineering_lead", "product_lead", "senior_backend_engineer",
+  "frontend_engineer", "qa_engineer", "sdk_dx_engineer", "ai_prompt_owner",
+  "product_fullstack_dev", "product_designer", "product_developer",
+];
+
+const ALL_ROLES: UserRole[] = [...END_USER_ROLES, ...INTERNAL_SYSTEM_ROLES];
 
 const STATUSES: PlatformUser["status"][] = ["Active", "Inactive", "Invited"];
-
-const ROLE_PERMISSIONS: { role: string; permissions: string[] }[] = [
-  { role: "Super Admin", permissions: ["All Modules", "User Management", "Configuration", "Tenant CRUD"] },
-  { role: "Tenant Admin", permissions: ["Own Tenant", "Users (own)", "Payments", "Workflows", "Documents"] },
-  { role: "Developer", permissions: ["Services", "API Gateway", "Dev Tools", "AI Platform", "Documents"] },
-  { role: "Platform Engineer", permissions: ["All Services", "Monitoring", "Config", "API Gateway", "Deployment"] },
-  { role: "QA Engineer", permissions: ["Services", "Monitoring", "Dev Tools", "Audit Logs", "Analytics"] },
-  { role: "Product Manager", permissions: ["Analytics", "Services", "Workflows", "Payments", "Tenants"] },
-  { role: "Governance Admin", permissions: ["Audit", "Monitoring", "Compliance", "Users", "Tenants"] },
-  { role: "AI Prompt Owner", permissions: ["AI Platform", "Prompt Registry", "Dev Tools", "Documents"] },
-];
-
-const SECURITY_POLICIES = [
-  { title: "Password Policy", description: "Min 12 chars, uppercase, number, special", icon: Lock },
-  { title: "Session Timeout", description: "30 min inactive, max 8 hr", icon: Clock },
-  { title: "MFA Enforcement", description: "Required for Admin & Engineer roles", icon: ShieldAlert },
-];
 
 const PAGE_SIZE = 5;
 
@@ -198,6 +177,23 @@ function StatusChangeModal({ user, action, onConfirm, onCancel }: { user: Platfo
 // Invite / Edit User Modal
 // ---------------------------------------------------------------------------
 
+const LANGUAGES = [
+  "English, United States", "English, United Kingdom", "Spanish", "French",
+  "German", "Portuguese", "Japanese", "Chinese (Simplified)", "Arabic", "Hindi",
+];
+
+const TIMEZONES = [
+  "Asia/Kolkata", "Asia/Qatar", "Asia/Dubai", "Asia/Tokyo", "Asia/Shanghai",
+  "America/New_York", "America/Chicago", "America/Los_Angeles",
+  "Europe/London", "Europe/Berlin", "Europe/Paris", "Pacific/Auckland",
+];
+
+let userCodeCounter = 100;
+function generateUserCode() {
+  userCodeCounter++;
+  return `USR-${String(userCodeCounter).padStart(4, "0")}`;
+}
+
 function UserFormModal({
   user,
   onSave,
@@ -208,26 +204,50 @@ function UserFormModal({
   onCancel: () => void;
 }) {
   const isEdit = !!user;
+  const defaultUserType = user ? (INTERNAL_SYSTEM_ROLES.includes(user.role) ? "internal" : "end-user") : "end-user";
+  const [userCode] = useState(() => isEdit ? user!.id : generateUserCode());
+  const [userType, setUserType] = useState<"end-user" | "internal">(defaultUserType);
   const [name, setName] = useState(user?.name ?? "");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState(user?.email ?? "");
   const [role, setRole] = useState<UserRole>(user?.role ?? "developer");
   const [status, setStatus] = useState<PlatformUser["status"]>(user?.status ?? "Invited");
   const [mfa, setMfa] = useState(user?.mfa ?? false);
   const [tenant, setTenant] = useState(user?.tenant ?? "Glimmora HQ");
+  const [language, setLanguage] = useState("English, United States");
+  const [timezone, setTimezone] = useState("Asia/Kolkata");
+  const [blocked, setBlocked] = useState(false);
+  const [active, setActive] = useState(true);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const availableRoles = userType === "end-user" ? END_USER_ROLES : INTERNAL_SYSTEM_ROLES;
+
+  const handleUserTypeChange = (type: "end-user" | "internal") => {
+    setUserType(type);
+    const defaultRole = type === "end-user" ? "developer" : "frontend_engineer";
+    setRole(defaultRole);
+  };
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = "Full name is required";
+    if (!isEdit && !username.trim()) e.username = "Username is required";
     if (!email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Invalid email address";
     if (!tenant.trim()) e.tenant = "Tenant is required";
+    if (!isEdit) {
+      if (!password) e.password = "Password is required";
+      else if (password.length < 8) e.password = "Password must be at least 8 characters";
+      if (password !== confirmPassword) e.confirmPassword = "Passwords do not match";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (ev: React.FormEvent) => {
+    ev.preventDefault();
     if (!validate()) return;
     onSave({ name, email, role, status, mfa, tenant });
   };
@@ -237,6 +257,22 @@ function UserFormModal({
     borderColor: "var(--gf-border)",
     color: "var(--gf-text-primary)",
   };
+
+  const RadioGroup = ({ label, radioName, value, onChange }: { label: string; radioName: string; value: boolean; onChange: (v: boolean) => void }) => (
+    <div>
+      <span className="block text-xs font-medium mb-2" style={{ color: "var(--gf-text-secondary)" }}>{label}</span>
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name={radioName} checked={value === true} onChange={() => onChange(true)} className="accent-[var(--gf-accent)]" />
+          <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>Yes</span>
+        </label>
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name={radioName} checked={value === false} onChange={() => onChange(false)} className="accent-[var(--gf-accent)]" />
+          <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>No</span>
+        </label>
+      </div>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel}>
@@ -248,7 +284,7 @@ function UserFormModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
           <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>
-            {isEdit ? "Edit User" : "Invite New User"}
+            {isEdit ? "Edit User" : "Create User"}
           </h2>
           <button onClick={onCancel} className="rounded-lg p-1 transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
             <X className="h-5 w-5" />
@@ -257,91 +293,145 @@ function UserFormModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Row 1: Name + Email */}
+          {/* ── ACCOUNT INFORMATION ── */}
+          <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--gf-text-muted)" }}>Account Information</h3>
+
+          {/* User Code + User Type */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>User Code</label>
+              <input type="text" value={userCode} readOnly
+                className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed"
+                style={fieldStyle} />
+              <p className="mt-1 text-[11px]" style={{ color: "var(--gf-text-muted)" }}>System-generated</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>User Type</label>
+              <select value={userType} onChange={(e) => handleUserTypeChange(e.target.value as "end-user" | "internal")}
+                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                style={fieldStyle}>
+                <option value="end-user">End User</option>
+                <option value="internal">Internal System User</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Full Name + Username */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Full Name *</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. John Doe"
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. John Doe"
                 className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              />
+                style={fieldStyle} />
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Email Address *</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="user@company.com"
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Username *</label>
+              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. johndoe"
                 className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              />
-              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+                style={fieldStyle} />
+              {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username}</p>}
             </div>
           </div>
 
-          {/* Row 2: Role + Tenant */}
+          {/* Email + Role */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Email Address *</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@company.com"
                 className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              >
-                {ALL_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                style={fieldStyle} />
+              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Role</label>
+              <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
+                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                style={fieldStyle}>
+                {availableRoles.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Tenant */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Tenant *</label>
+            <input type="text" value={tenant} onChange={(e) => setTenant(e.target.value)} placeholder="e.g. Glimmora HQ"
+              className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+              style={fieldStyle} />
+            {errors.tenant && <p className="text-xs text-red-500 mt-1">{errors.tenant}</p>}
+          </div>
+
+          {/* ── SETTINGS ── */}
+          <h3 className="text-xs font-semibold uppercase tracking-wide pt-2" style={{ color: "var(--gf-text-muted)" }}>Settings</h3>
+
+          {/* Language + Timezone */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Language</label>
+              <select value={language} onChange={(e) => setLanguage(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                style={fieldStyle}>
+                {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Tenant *</label>
-              <input
-                type="text"
-                value={tenant}
-                onChange={(e) => setTenant(e.target.value)}
-                placeholder="e.g. Glimmora HQ"
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Time Zone</label>
+              <select value={timezone} onChange={(e) => setTimezone(e.target.value)}
                 className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              />
-              {errors.tenant && <p className="text-xs text-red-500 mt-1">{errors.tenant}</p>}
+                style={fieldStyle}>
+                {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+              </select>
             </div>
           </div>
 
-          {/* Row 3: Status (edit only) + MFA */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Blocked + Active + MFA */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <RadioGroup label="Blocked" radioName="user-blocked" value={blocked} onChange={setBlocked} />
+            <RadioGroup label="Active" radioName="user-active" value={active} onChange={setActive} />
+            <div>
+              <label className="block text-xs font-medium mb-2" style={{ color: "var(--gf-text-secondary)" }}>MFA</label>
+              <button type="button" onClick={() => setMfa(!mfa)} className="flex items-center gap-2">
+                <div className={`relative h-5 w-9 rounded-full transition-colors ${mfa ? "bg-green-500" : "bg-gray-600"}`}>
+                  <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${mfa ? "translate-x-4" : "translate-x-0.5"}`} />
+                </div>
+                <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>{mfa ? "On" : "Off"}</span>
+              </button>
+            </div>
             {isEdit && (
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as PlatformUser["status"])}
+                <select value={status} onChange={(e) => setStatus(e.target.value as PlatformUser["status"])}
                   className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                  style={fieldStyle}
-                >
+                  style={fieldStyle}>
                   {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             )}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Multi-Factor Authentication</label>
-              <button
-                type="button"
-                onClick={() => setMfa(!mfa)}
-                className="flex items-center gap-3 w-full rounded-lg border px-3 py-2 text-sm transition-colors"
-                style={fieldStyle}
-              >
-                <div className={`relative h-5 w-9 rounded-full transition-colors ${mfa ? "bg-green-500" : "bg-gray-600"}`}>
-                  <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${mfa ? "translate-x-4" : "translate-x-0.5"}`} />
-                </div>
-                <span>{mfa ? "Enabled" : "Disabled"}</span>
-              </button>
-            </div>
           </div>
+
+          {/* ── PASSWORD (create only) ── */}
+          {!isEdit && (
+            <>
+              <h3 className="text-xs font-semibold uppercase tracking-wide pt-2" style={{ color: "var(--gf-text-muted)" }}>Password</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>New Password *</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password"
+                    className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                    style={fieldStyle} />
+                  {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Confirm Password *</label>
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password"
+                    className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                    style={fieldStyle} />
+                  {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
@@ -349,7 +439,7 @@ function UserFormModal({
               Cancel
             </button>
             <button type="submit" className="rounded-lg px-5 py-2 text-sm font-semibold text-white transition-colors" style={{ backgroundColor: "var(--gf-accent)" }}>
-              {isEdit ? "Save Changes" : "Send Invite"}
+              {isEdit ? "Save Changes" : "Create User"}
             </button>
           </div>
         </form>
@@ -467,15 +557,13 @@ function UserDetail({ user, onClose, onEdit }: { user: PlatformUser; onClose: ()
             ))}
           </div>
 
-          {/* Permissions */}
+          {/* Role Info */}
           <div>
-            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>Permissions</h4>
-            <div className="flex flex-wrap gap-1.5">
-              {(ROLE_PERMISSIONS.find((rp) => rp.role === ROLE_LABELS[user.role])?.permissions ?? []).map((p) => (
-                <span key={p} className="text-[11px] px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }}>
-                  {p}
-                </span>
-              ))}
+            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--gf-text-primary)" }}>Assigned Role</h4>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-medium px-3 py-1 rounded-full ${ROLE_COLORS[user.role].bg} ${ROLE_COLORS[user.role].text}`}>
+                {ROLE_LABELS[user.role]}
+              </span>
             </div>
           </div>
 
@@ -547,9 +635,6 @@ export function IdentityContent() {
 
   // Action dropdown
   const [openActionId, setOpenActionId] = useState<string | null>(null);
-
-  // Tab state
-  const [activeTab, setActiveTab] = useState<"users" | "roles" | "security">("users");
 
   // ---------------------------------------------------------------------------
   // Derived data
@@ -662,9 +747,9 @@ export function IdentityContent() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Users &amp; Access</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>User Management</h1>
           <p className="text-sm mt-1" style={{ color: "var(--gf-text-secondary)" }}>
-            User management, RBAC roles, permissions, and security policies
+            Manage users, invitations, roles, and access controls
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -677,12 +762,20 @@ export function IdentityContent() {
             Export
           </button>
           <button
+            onClick={() => router.push("/dashboard/identity/import")}
+            className="flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+            style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
+          >
+            <Download className="h-4 w-4" />
+            Bulk Import
+          </button>
+          <button
             onClick={() => setFormModal({ open: true, user: null })}
             className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors"
             style={{ backgroundColor: "var(--gf-accent)" }}
           >
             <UserPlus className="h-4 w-4" />
-            Invite User
+            Create User
           </button>
         </div>
       </div>
@@ -695,24 +788,8 @@ export function IdentityContent() {
         <StatCard icon={<UserPlus className="h-5 w-5" />} label="Pending Invites" value={pendingInvites} />
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 rounded-lg p-1" style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}>
-        {(["users", "roles", "security"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab ? "text-white" : ""}`}
-            style={activeTab === tab ? { backgroundColor: "var(--gf-accent)" } : { color: "var(--gf-text-secondary)" }}
-          >
-            {tab === "users" ? "User List" : tab === "roles" ? "Roles & Permissions" : "Security Policies"}
-          </button>
-        ))}
-      </div>
-
-      {/* ===================== USERS TAB ===================== */}
-      {activeTab === "users" && (
-        <>
-          {/* Search & Filter Bar */}
+      {/* ===================== USER LIST ===================== */}
+      {/* Search & Filter Bar */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--gf-text-muted)" }} />
@@ -780,8 +857,8 @@ export function IdentityContent() {
           )}
 
           {/* Users Table */}
-          <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
-            <div className="overflow-x-auto">
+          <div className="rounded-xl border" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
+            <div className="overflow-x-auto overflow-y-visible">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: "var(--gf-bg-elevated)" }}>
@@ -878,9 +955,12 @@ export function IdentityContent() {
 
                           {/* Actions */}
                           <td className="px-5 py-3">
-                            <div className="relative">
+                            <div className="relative" ref={(el) => { if (el && openActionId === u.id) el.dataset.open = "true"; }}>
                               <button
-                                onClick={() => setOpenActionId(openActionId === u.id ? null : u.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenActionId(openActionId === u.id ? null : u.id);
+                                }}
                                 className="rounded-lg p-1.5 transition-colors hover:opacity-70"
                                 style={{ color: "var(--gf-text-secondary)" }}
                               >
@@ -891,8 +971,27 @@ export function IdentityContent() {
                                 <>
                                   <div className="fixed inset-0 z-40" onClick={() => setOpenActionId(null)} />
                                   <div
-                                    className="absolute right-0 top-8 z-50 w-48 rounded-xl border py-1 shadow-xl"
-                                    style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }}
+                                    className="fixed z-50 w-48 rounded-xl border py-1 shadow-xl"
+                                    style={{
+                                      backgroundColor: "var(--gf-bg-surface)",
+                                      borderColor: "var(--gf-border)",
+                                      top: "auto",
+                                      right: "auto",
+                                    }}
+                                    ref={(el) => {
+                                      if (!el) return;
+                                      const btn = el.parentElement?.querySelector("button");
+                                      if (!btn) return;
+                                      const rect = btn.getBoundingClientRect();
+                                      const spaceBelow = window.innerHeight - rect.bottom;
+                                      const menuHeight = el.offsetHeight;
+                                      if (spaceBelow < menuHeight + 8) {
+                                        el.style.top = `${rect.top - menuHeight - 4}px`;
+                                      } else {
+                                        el.style.top = `${rect.bottom + 4}px`;
+                                      }
+                                      el.style.left = `${Math.max(8, rect.right - el.offsetWidth)}px`;
+                                    }}
                                   >
                                     <button
                                       onClick={() => { setViewUser(u); setOpenActionId(null); }}
@@ -982,123 +1081,6 @@ export function IdentityContent() {
               </div>
             )}
           </div>
-        </>
-      )}
-
-      {/* ===================== ROLES TAB ===================== */}
-      {activeTab === "roles" && (
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}>
-          <div className="p-5 pb-3">
-            <h2 className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>Role &amp; Permission Mapping</h2>
-            <p className="text-xs mt-1" style={{ color: "var(--gf-text-muted)" }}>8 system roles with predefined permission sets</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--gf-border)" }}>
-                  {["Role", "Users", "Permissions"].map((h) => (
-                    <th key={h} className="text-left px-5 py-2 text-xs font-medium" style={{ color: "var(--gf-text-secondary)" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {ROLE_PERMISSIONS.map((rp) => {
-                  const roleKey = ALL_ROLES.find((r) => ROLE_LABELS[r] === rp.role);
-                  const count = roleKey ? users.filter((u) => u.role === roleKey).length : 0;
-                  const rc = roleKey ? ROLE_COLORS[roleKey] : null;
-
-                  return (
-                    <tr key={rp.role} style={{ borderBottom: "1px solid var(--gf-border)" }}>
-                      <td className="px-5 py-3">
-                        {rc ? (
-                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${rc.bg} ${rc.text}`}>{rp.role}</span>
-                        ) : (
-                          <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{rp.role}</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="text-sm font-medium" style={{ color: "var(--gf-text-primary)" }}>{count}</span>
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {rp.permissions.map((p) => (
-                            <span key={p} className="text-[11px] px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }}>{p}</span>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ===================== SECURITY TAB ===================== */}
-      {activeTab === "security" && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-xl p-5" style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}>
-            <h2 className="text-sm font-semibold mb-4" style={{ color: "var(--gf-text-primary)" }}>Security Policies</h2>
-            <div className="space-y-4">
-              {SECURITY_POLICIES.map((policy) => (
-                <div key={policy.title} className="rounded-lg p-4" style={{ border: "1px solid var(--gf-border)" }}>
-                  <div className="flex items-center gap-3">
-                    <policy.icon className="h-5 w-5" style={{ color: "var(--gf-accent)" }} />
-                    <div>
-                      <h3 className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>{policy.title}</h3>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--gf-text-secondary)" }}>{policy.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-xl p-5" style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}>
-            <h2 className="text-sm font-semibold mb-4" style={{ color: "var(--gf-text-primary)" }}>MFA Coverage</h2>
-            <div className="space-y-4">
-              <div className="text-center py-4">
-                <p className="text-4xl font-bold" style={{ color: "var(--gf-accent)" }}>{mfaEnabled}%</p>
-                <p className="text-sm mt-1" style={{ color: "var(--gf-text-secondary)" }}>of users have MFA enabled</p>
-              </div>
-              <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: "var(--gf-bg-elevated)" }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${mfaEnabled}%`, backgroundColor: mfaEnabled > 80 ? "#22c55e" : mfaEnabled > 50 ? "#f59e0b" : "#ef4444" }} />
-              </div>
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <div className="rounded-lg border p-3 text-center" style={{ borderColor: "var(--gf-border)" }}>
-                  <p className="text-lg font-bold" style={{ color: "#22c55e" }}>{users.filter((u) => u.mfa).length}</p>
-                  <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>MFA Enabled</p>
-                </div>
-                <div className="rounded-lg border p-3 text-center" style={{ borderColor: "var(--gf-border)" }}>
-                  <p className="text-lg font-bold" style={{ color: "#ef4444" }}>{users.filter((u) => !u.mfa).length}</p>
-                  <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>MFA Disabled</p>
-                </div>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold mb-2" style={{ color: "var(--gf-text-secondary)" }}>Users Without MFA</h4>
-                <div className="space-y-1.5">
-                  {users.filter((u) => !u.mfa).map((u) => (
-                    <div key={u.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg" style={{ backgroundColor: "var(--gf-bg-base)" }}>
-                      <div>
-                        <p className="text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>{u.name}</p>
-                        <p className="text-[10px]" style={{ color: "var(--gf-text-muted)" }}>{ROLE_LABELS[u.role]}</p>
-                      </div>
-                      <button
-                        onClick={() => handleToggleMfa(u.id)}
-                        className="text-[10px] font-medium px-2 py-1 rounded-md transition-colors hover:opacity-80"
-                        style={{ backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" }}
-                      >
-                        Enable
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ---- Modals ---- */}
 

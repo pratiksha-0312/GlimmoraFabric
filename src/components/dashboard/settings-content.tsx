@@ -1,67 +1,67 @@
 "use client";
 
-import { Settings, Shield, Key } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
+import type { UserRole } from "@/lib/roles";
+import {
+  User, Shield, Building2, Monitor, Key, Lock, Bell, CreditCard, ChevronRight,
+} from "lucide-react";
 
-// ---------------------------------------------------------------------------
-// Settings sections
-// ---------------------------------------------------------------------------
+interface SettingsSection {
+  title: string;
+  description: string;
+  icon: typeof User;
+  href: string;
+  visibleTo?: UserRole[]; // undefined = all authenticated users
+}
 
-const sections = [
-  {
-    title: "General",
-    description: "Platform name, timezone, and default preferences",
-    icon: Settings,
-  },
-  {
-    title: "Security",
-    description: "Password policies, MFA enforcement, session limits",
-    icon: Shield,
-  },
-  {
-    title: "API Keys",
-    description: "Manage API keys and webhook endpoints",
-    icon: Key,
-  },
+const sections: SettingsSection[] = [
+  { title: "Profile", description: "Update your name, avatar, and personal details", icon: User, href: "/settings/profile" },
+  { title: "Security", description: "Password, MFA, and security preferences", icon: Shield, href: "/settings/security" },
+  { title: "Billing & Subscription", description: "Manage plan, payment methods, and invoices", icon: CreditCard, href: "/settings/billing", visibleTo: ["billing_admin", "tenant_admin"] },
+  { title: "Organization", description: "Manage organization details and members", icon: Building2, href: "/settings/organization", visibleTo: ["tenant_admin"] },
+  { title: "Active Sessions", description: "View and manage your logged-in devices", icon: Monitor, href: "/settings/sessions" },
+  { title: "API Tokens", description: "Generate and manage personal API tokens", icon: Key, href: "/settings/api-tokens", visibleTo: ["developer", "tenant_admin"] },
+  { title: "SSO Configuration", description: "Configure Single Sign-On providers", icon: Lock, href: "/settings/sso", visibleTo: ["tenant_admin", "super_admin"] },
+  { title: "Notifications", description: "Manage notification preferences", icon: Bell, href: "/dashboard/notifications" },
 ];
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export function SettingsContent() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const userRole = user?.role;
+
+  const visibleSections = sections.filter(
+    (s) => !s.visibleTo || (userRole && s.visibleTo.includes(userRole)),
+  );
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Platform Settings</h1>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Settings</h1>
         <p className="text-sm mt-1" style={{ color: "var(--gf-text-secondary)" }}>
-          Only Super Admins can access platform settings.
+          Manage your account and platform preferences
         </p>
       </div>
 
-      <div className="space-y-4">
-        {sections.map((section) => (
-          <div
-            key={section.title}
-            className="rounded-xl border p-5"
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {visibleSections.map((s) => (
+          <button
+            key={s.title}
+            onClick={() => router.push(s.href)}
+            className="flex items-center gap-4 rounded-xl border p-5 text-left transition-colors hover:border-[var(--gf-accent)]"
             style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <section.icon className="h-5 w-5" style={{ color: "var(--gf-text-muted)" }} />
-                <div>
-                  <h3 className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>
-                    {section.title}
-                  </h3>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--gf-text-secondary)" }}>
-                    {section.description}
-                  </p>
-                </div>
-              </div>
-              <span className="rounded-full border px-3 py-1 text-xs" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-elevated)", color: "var(--gf-text-secondary)" }}>
-                Coming soon
-              </span>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+              style={{ backgroundColor: "var(--gf-bg-elevated)" }}>
+              <s.icon className="h-5 w-5" style={{ color: "var(--gf-accent)" }} />
             </div>
-          </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>{s.title}</h3>
+              <p className="text-xs mt-0.5 truncate" style={{ color: "var(--gf-text-secondary)" }}>{s.description}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0" style={{ color: "var(--gf-text-muted)" }} />
+          </button>
         ))}
       </div>
     </div>

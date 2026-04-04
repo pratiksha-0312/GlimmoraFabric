@@ -22,16 +22,16 @@ interface PlatformUser {
 }
 
 const ALL_USERS: PlatformUser[] = [
-  { id: "u1", name: "Ishan Yadav", email: "ishan@glimmora.com", role: "super_admin", status: "Active", mfa: true, lastLogin: "2 min ago", tenant: "Glimmora HQ", joinedDate: "2025-11-01" },
-  { id: "u2", name: "Priya Sharma", email: "priya@glimmora.com", role: "platform_engineering_lead", status: "Active", mfa: true, lastLogin: "15 min ago", tenant: "Glimmora HQ", joinedDate: "2025-12-10" },
-  { id: "u3", name: "Rahul Verma", email: "rahul@glimmora.com", role: "developer", status: "Active", mfa: true, lastLogin: "1 hr ago", tenant: "Glimmora HQ", joinedDate: "2026-01-05" },
-  { id: "u4", name: "Anita Desai", email: "anita@glimmora.com", role: "qa_engineer", status: "Active", mfa: false, lastLogin: "3 hr ago", tenant: "VerifAI", joinedDate: "2026-01-12" },
-  { id: "u5", name: "Vikram Singh", email: "vikram@glimmora.com", role: "cto", status: "Active", mfa: true, lastLogin: "1 day ago", tenant: "Glimmora HQ", joinedDate: "2025-12-20" },
-  { id: "u6", name: "Neha Gupta", email: "neha@glimmora.com", role: "product_lead", status: "Active", mfa: false, lastLogin: "2 hr ago", tenant: "Diamond Corp", joinedDate: "2026-02-01" },
-  { id: "u7", name: "Arjun Mehta", email: "arjun@glimmora.com", role: "ai_prompt_owner", status: "Active", mfa: true, lastLogin: "30 min ago", tenant: "Glimmora HQ", joinedDate: "2026-01-22" },
-  { id: "u8", name: "Dev Patel", email: "dev@glimmora.com", role: "tenant_admin", status: "Active", mfa: true, lastLogin: "5 hr ago", tenant: "Tax Solutions", joinedDate: "2026-02-10" },
-  { id: "u9", name: "Sara Khan", email: "sara@techvault.com", role: "developer", status: "Invited", mfa: false, lastLogin: "—", tenant: "VerifAI", joinedDate: "2026-03-20" },
-  { id: "u10", name: "Ravi Kumar", email: "ravi@glimmora.com", role: "qa_engineer", status: "Inactive", mfa: false, lastLogin: "14 days ago", tenant: "Hospitality Co", joinedDate: "2026-01-30" },
+  { id: "u1", name: "Super Admin", email: "superadmin@glimmora.com", role: "super_admin", status: "Active", mfa: true, lastLogin: "2 min ago", tenant: "Glimmora HQ", joinedDate: "2025-11-01" },
+  { id: "u2", name: "User 1", email: "user1@glimmora.com", role: "platform_engineering_lead", status: "Active", mfa: true, lastLogin: "15 min ago", tenant: "Glimmora HQ", joinedDate: "2025-12-10" },
+  { id: "u3", name: "User 2", email: "user2@glimmora.com", role: "developer", status: "Active", mfa: true, lastLogin: "1 hr ago", tenant: "Glimmora HQ", joinedDate: "2026-01-05" },
+  { id: "u4", name: "User 3", email: "user3@glimmora.com", role: "qa_engineer", status: "Active", mfa: false, lastLogin: "3 hr ago", tenant: "VerifAI", joinedDate: "2026-01-12" },
+  { id: "u5", name: "User 4", email: "user4@glimmora.com", role: "cto", status: "Active", mfa: true, lastLogin: "1 day ago", tenant: "Glimmora HQ", joinedDate: "2025-12-20" },
+  { id: "u6", name: "User 5", email: "user5@glimmora.com", role: "product_lead", status: "Active", mfa: false, lastLogin: "2 hr ago", tenant: "Diamond Corp", joinedDate: "2026-02-01" },
+  { id: "u7", name: "User 6", email: "user6@glimmora.com", role: "ai_prompt_owner", status: "Active", mfa: true, lastLogin: "30 min ago", tenant: "Glimmora HQ", joinedDate: "2026-01-22" },
+  { id: "u8", name: "User 7", email: "user7@glimmora.com", role: "tenant_admin", status: "Active", mfa: true, lastLogin: "5 hr ago", tenant: "Tax Solutions", joinedDate: "2026-02-10" },
+  { id: "u9", name: "User 8", email: "user8@glimmora.com", role: "developer", status: "Invited", mfa: false, lastLogin: "—", tenant: "VerifAI", joinedDate: "2026-03-20" },
+  { id: "u10", name: "User 9", email: "user9@glimmora.com", role: "qa_engineer", status: "Inactive", mfa: false, lastLogin: "14 days ago", tenant: "Hospitality Co", joinedDate: "2026-01-30" },
 ];
 
 const ALL_ROLES: UserRole[] = [

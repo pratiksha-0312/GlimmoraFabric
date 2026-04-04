@@ -67,7 +67,7 @@ const navItems: NavItem[] = [
   { label: "AI Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
   { label: "Audit & Logs", href: "/dashboard/audit", icon: FileText, section: "Compliance", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
   { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
-  { label: "Settings", href: "/dashboard/configuration", icon: Settings, section: "System", visibleTo: ["super_admin", "platform_engineering_lead"] },
+  { label: "Settings", href: "/settings", icon: Settings, section: "System", visibleTo: ["super_admin", "platform_engineering_lead"] },
   { label: "Developer Tools", href: "/dashboard/developer-tools", icon: Code2, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "ai_prompt_owner"] },
   { label: "Reports & Analytics", href: "/dashboard/analytics", icon: BarChart3, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
 ];

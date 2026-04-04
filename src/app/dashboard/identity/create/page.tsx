@@ -3,15 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, UserPlus, Send } from "lucide-react";
-import { ROLE_LABELS, type UserRole } from "@/lib/roles";
+import { ROLE_LABELS, isInternalTeam, type UserRole } from "@/lib/roles";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const ALL_ROLES: UserRole[] = [
-  "super_admin", "tenant_admin", "developer", "platform_engineering_lead",
-  "qa_engineer", "product_lead", "cto", "ai_prompt_owner",
+const END_USER_ROLES: UserRole[] = [
+  "super_admin", "tenant_admin", "auditor", "workflow_manager",
+  "billing_admin", "developer", "tenant_member", "guest_viewer",
+];
+
+const INTERNAL_SYSTEM_ROLES: UserRole[] = [
+  "cto", "platform_engineering_lead", "product_lead", "senior_backend_engineer",
+  "frontend_engineer", "qa_engineer", "sdk_dx_engineer", "ai_prompt_owner",
+  "product_fullstack_dev", "product_designer", "product_developer",
 ];
 
 const TENANTS = ["Glimmora HQ", "VerifAI", "Diamond Corp", "Hospitality Co", "Tax Solutions", "Aero Systems"];
@@ -26,6 +32,8 @@ export default function InviteUserPage() {
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const [userType, setUserType] = useState<"end-user" | "internal">("end-user");
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -34,6 +42,14 @@ export default function InviteUserPage() {
     mfa: false,
     message: "",
   });
+
+  const availableRoles = userType === "end-user" ? END_USER_ROLES : INTERNAL_SYSTEM_ROLES;
+
+  const handleUserTypeChange = (type: "end-user" | "internal") => {
+    setUserType(type);
+    const defaultRole = type === "end-user" ? "developer" : "frontend_engineer";
+    setForm((prev) => ({ ...prev, role: defaultRole }));
+  };
 
   const update = (key: string, value: string | boolean) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -114,11 +130,18 @@ export default function InviteUserPage() {
         {/* Role & Tenant */}
         <div>
           <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--gf-text-primary)" }}>Access Configuration</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>User Type</label>
+              <select value={userType} onChange={(e) => handleUserTypeChange(e.target.value as "end-user" | "internal")} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle}>
+                <option value="end-user">End User</option>
+                <option value="internal">Internal System User</option>
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Role</label>
               <select value={form.role} onChange={(e) => update("role", e.target.value)} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle}>
-                {ALL_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                {availableRoles.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
               </select>
             </div>
             <div>
