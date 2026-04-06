@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { useAuth } from "@/context/auth-context";
 import {
   ArrowLeft, Lock, ShieldCheck, ShieldOff, Eye, EyeOff,
   CheckCircle2, AlertTriangle, Monitor, Smartphone, Mail, MessageSquare, KeyRound,
@@ -106,23 +107,27 @@ const MFA_METHODS: MfaMethod[] = [
 // ---------------------------------------------------------------------------
 // Security Settings Page
 // ---------------------------------------------------------------------------
-const MFA_STORAGE_KEY = "glimmora_mfa_methods";
+function getMfaKey(email: string) {
+  return `glimmora_mfa_methods_${email}`;
+}
 
-function loadMfaState(): { methods: Record<string, boolean>; recoveryCodes: boolean } {
+function loadMfaState(email: string): { methods: Record<string, boolean>; recoveryCodes: boolean } {
   if (typeof window === "undefined") return { methods: { email: false, sms: false, authenticator: false }, recoveryCodes: false };
   try {
-    const stored = localStorage.getItem(MFA_STORAGE_KEY);
+    const stored = localStorage.getItem(getMfaKey(email));
     if (stored) return JSON.parse(stored);
   } catch { /* ignore */ }
   return { methods: { email: false, sms: false, authenticator: false }, recoveryCodes: false };
 }
 
-function saveMfaState(methods: Record<string, boolean>, recoveryCodes: boolean) {
-  localStorage.setItem(MFA_STORAGE_KEY, JSON.stringify({ methods, recoveryCodes }));
+function saveMfaState(email: string, methods: Record<string, boolean>, recoveryCodes: boolean) {
+  localStorage.setItem(getMfaKey(email), JSON.stringify({ methods, recoveryCodes }));
 }
 
 export default function SecuritySettingsPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const userEmail = user?.email ?? "";
   const [section, setSection] = useState<"overview" | "change-password">("overview");
   const [enabledMethods, setEnabledMethods] = useState<Record<string, boolean>>({
     email: false,
@@ -132,22 +137,23 @@ export default function SecuritySettingsPage() {
   const [hasRecoveryCodes, setHasRecoveryCodes] = useState(false);
   const [disablingMethod, setDisablingMethod] = useState<string | null>(null);
 
-  // Load persisted MFA state on mount
+  // Load persisted MFA state on mount (per user)
   useEffect(() => {
-    const state = loadMfaState();
+    if (!userEmail) return;
+    const state = loadMfaState(userEmail);
     setEnabledMethods(state.methods);
     setHasRecoveryCodes(state.recoveryCodes);
-  }, []);
+  }, [userEmail]);
 
   // Persist MFA state whenever it changes
   const updateMethods = useCallback((updater: (prev: Record<string, boolean>) => Record<string, boolean>) => {
     setEnabledMethods((prev) => {
       const next = updater(prev);
       const anyEnabled = Object.values(next).some(Boolean);
-      saveMfaState(next, anyEnabled ? hasRecoveryCodes : false);
+      saveMfaState(userEmail, next, anyEnabled ? hasRecoveryCodes : false);
       return next;
     });
-  }, [hasRecoveryCodes]);
+  }, [hasRecoveryCodes, userEmail]);
 
   // Password form
   const [currentPw, setCurrentPw] = useState("");
@@ -184,7 +190,7 @@ export default function SecuritySettingsPage() {
       const next = { ...prev, [methodId]: false };
       const anyRemaining = Object.values(next).some(Boolean);
       if (!anyRemaining) setHasRecoveryCodes(false);
-      saveMfaState(next, anyRemaining ? hasRecoveryCodes : false);
+      saveMfaState(userEmail, next, anyRemaining ? hasRecoveryCodes : false);
       return next;
     });
     setDisablingMethod(null);

@@ -8,8 +8,7 @@ import {
   CheckCircle2, Smartphone, Mail, MessageSquare, KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
-
-const MFA_STORAGE_KEY = "glimmora_mfa_methods";
+import { useAuth } from "@/context/auth-context";
 const MANUAL_KEY = "GLMR-F4BK-7X2P-QN9W";
 const RECOVERY_CODES = [
   "a4f2-9c1e-b7d3", "k8m5-p3r7-t2x6", "h1j4-w6y9-v5n8", "d3g7-s2f6-q9l1",
@@ -38,6 +37,8 @@ const METHOD_CONFIG: Record<MfaMethodId, { label: string; icon: React.ReactNode;
 
 export default function MfaEnrollmentPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const MFA_STORAGE_KEY = `glimmora_mfa_methods_${user?.email ?? ""}`;
   const searchParams = useSearchParams();
   const preselected = searchParams.get("method") as MfaMethodId | null;
 

@@ -53,11 +53,10 @@ export function LoginForm() {
 
       const cred = { fullName: result.fullName, email: result.email, role: result.role as UserRole, tenantId: result.tenantId };
 
-      // Check if user has MFA enabled in settings
-      const MFA_STORAGE_KEY = "glimmora_mfa_methods";
+      // Check if user has MFA enabled in settings (per-user key)
       let hasMfaEnabled = false;
       try {
-        const stored = localStorage.getItem(MFA_STORAGE_KEY);
+        const stored = localStorage.getItem(`glimmora_mfa_methods_${cred.email}`);
         if (stored) {
           const state = JSON.parse(stored);
           hasMfaEnabled = Object.values(state.methods ?? {}).some(Boolean);
