@@ -28,10 +28,10 @@ const TIMEZONES = [
 // Auto-generate customer code
 // ---------------------------------------------------------------------------
 
-let codeCounter = 6;
+let codeCounter = 0;
 function generateCode() {
   codeCounter++;
-  return `GRC_${String(codeCounter).padStart(3, "0")}`;
+  return `TEN_${String(codeCounter).padStart(3, "0")}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,10 +96,6 @@ export default function CreateTenantPage() {
     if (!form.username.trim()) e.username = "Username is required";
     if (!form.email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Invalid email address";
-    if (!form.password) e.password = "Password is required";
-    else if (form.password.length < 8) e.password = "Password must be at least 8 characters";
-    if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match";
-    if (!form.domain.trim()) e.domain = "Domain is required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };

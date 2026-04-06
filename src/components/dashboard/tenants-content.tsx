@@ -77,11 +77,6 @@ const TIMEZONES = [
   "Europe/London", "Europe/Berlin", "Europe/Paris", "Pacific/Auckland",
 ];
 
-let tenantCodeCounter = 0;
-function generateTenantCode() {
-  tenantCodeCounter++;
-  return `TEN_${String(tenantCodeCounter).padStart(3, "0")}`;
-}
 const PAGE_SIZE = 5;
 
 // ---------------------------------------------------------------------------
@@ -205,14 +200,16 @@ function TenantFormModal({
   tenant,
   onSave,
   onCancel,
+  tenantCount,
 }: {
   tenant?: Tenant | null;
   onSave: (data: Omit<Tenant, "id" | "apiCalls" | "created">) => void;
   onCancel: () => void;
+  tenantCount: number;
 }) {
   const isEdit = !!tenant;
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [customerCode] = useState(() => isEdit ? "" : generateTenantCode());
+  const [customerCode] = useState(() => isEdit ? "" : `TEN_${String(tenantCount + 1).padStart(3, "0")}`);
   const [name, setName] = useState(tenant?.name ?? "");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState(tenant?.email ?? "");
@@ -252,12 +249,6 @@ function TenantFormModal({
     if (!isEdit && !username.trim()) e.username = "Username is required";
     if (!email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Invalid email address";
-    if (!isEdit) {
-      if (!password) e.password = "Password is required";
-      else if (password.length < 8) e.password = "Password must be at least 8 characters";
-      if (password !== confirmPassword) e.confirmPassword = "Passwords do not match";
-    }
-    if (!domain.trim()) e.domain = "Domain is required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -981,9 +972,6 @@ export function TenantsContent() {
                   { key: "plan" as SortKey, label: "Plan" },
                   { key: "users" as SortKey, label: "Users" },
                   { key: "region" as SortKey, label: "Region" },
-                  { key: null, label: "Domain" },
-                  { key: null, label: "API Calls" },
-                  { key: "status" as SortKey, label: "Status" },
                   { key: "created" as SortKey, label: "Created" },
                   { key: null, label: "Actions" },
                 ] as const).map((col, i) => (
@@ -1003,7 +991,7 @@ export function TenantsContent() {
             <tbody>
               {paged.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <Building2 className="h-10 w-10 mx-auto mb-3 opacity-30" style={{ color: "var(--gf-text-muted)" }} />
                     <p className="text-sm font-medium" style={{ color: "var(--gf-text-secondary)" }}>No tenants found</p>
                     <p className="text-xs mt-1" style={{ color: "var(--gf-text-muted)" }}>
@@ -1056,20 +1044,6 @@ export function TenantsContent() {
                       {/* Region */}
                       <td className="px-6 py-4 text-sm" style={{ color: "var(--gf-text-secondary)" }}>{tenant.region}</td>
 
-                      {/* Domain */}
-                      <td className="px-6 py-4 text-xs font-mono" style={{ color: "var(--gf-text-secondary)" }}>{tenant.domain}</td>
-
-                      {/* API Calls */}
-                      <td className="px-6 py-4 text-sm" style={{ color: "var(--gf-text-secondary)" }}>{tenant.apiCalls}</td>
-
-                      {/* Status */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: statusColor }} />
-                          <span className="text-sm" style={{ color: "var(--gf-text-secondary)" }}>{tenant.status}</span>
-                        </div>
-                      </td>
-
                       {/* Created */}
                       <td className="px-6 py-4 text-sm" style={{ color: "var(--gf-text-secondary)" }}>{tenant.created}</td>
 
@@ -1088,8 +1062,22 @@ export function TenantsContent() {
                             <>
                               <div className="fixed inset-0 z-40" onClick={() => setOpenActionId(null)} />
                               <div
-                                className="absolute right-0 top-8 z-50 w-44 rounded-xl border py-1 shadow-xl"
+                                className="fixed z-50 w-44 rounded-xl border py-1 shadow-xl"
                                 style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }}
+                                ref={(el) => {
+                                  if (!el) return;
+                                  const btn = el.parentElement?.querySelector("button");
+                                  if (!btn) return;
+                                  const rect = btn.getBoundingClientRect();
+                                  const spaceBelow = window.innerHeight - rect.bottom;
+                                  const menuHeight = el.offsetHeight;
+                                  if (spaceBelow < menuHeight + 8) {
+                                    el.style.top = `${rect.top - menuHeight - 4}px`;
+                                  } else {
+                                    el.style.top = `${rect.bottom + 4}px`;
+                                  }
+                                  el.style.left = `${Math.max(8, rect.right - el.offsetWidth)}px`;
+                                }}
                               >
                                 <button
                                   onClick={() => { setViewTenant(tenant); setOpenActionId(null); }}
@@ -1196,6 +1184,7 @@ export function TenantsContent() {
           tenant={formModal.tenant}
           onSave={formModal.tenant ? handleEdit : handleCreate}
           onCancel={() => setFormModal({ open: false, tenant: null })}
+          tenantCount={tenants.length}
         />
       )}
 
