@@ -36,6 +36,7 @@ import {
   PanelLeftOpen,
   Layers,
   Flag,
+  Cpu,
   ChevronRight,
   Home,
 } from "lucide-react";
@@ -71,6 +72,7 @@ const navItems: NavItem[] = [
   { label: "Payment Management", href: "/dashboard/payments", icon: CreditCard, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
   { label: "Document Management", href: "/dashboard/documents", icon: File },
   { label: "AI Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
+  { label: "AI Config & Analytics", href: "/dashboard/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
   { label: "Audit & Logs", href: "/dashboard/audit", icon: FileText, section: "Compliance", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
   { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
   { label: "Settings", href: "/settings", icon: Settings, section: "System", visibleTo: ["super_admin", "platform_engineering_lead"] },
