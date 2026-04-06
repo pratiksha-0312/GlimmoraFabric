@@ -45,7 +45,20 @@
       "Bash(node:*)",
       "Bash(grep:*)",
       "Bash(git stash:*)",
-      "Bash(find C:\\\\GlimmoraFabric\\\\GlimmoraFabric:*)"
+      "Bash(find C:\\\\GlimmoraFabric\\\\GlimmoraFabric:*)",
+      "Bash(find /c/GlimmoraFabric/GlimmoraFabric/src -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) -exec wc -l {} +)",
+      "Bash(mkdir -p /c/GlimmoraFabric/GlimmoraFabric/src/app/\\\\\\(auth\\\\\\)/verify-email)",
+      "Bash(mkdir -p /c/GlimmoraFabric/GlimmoraFabric/src/app/\\\\\\(auth\\\\\\)/login/mfa)",
+      "Bash(mkdir -p /c/GlimmoraFabric/GlimmoraFabric/src/app/\\\\\\(auth\\\\\\)/invite)",
+      "Bash(mkdir -p /c/GlimmoraFabric/GlimmoraFabric/src/app/dashboard/roles/\\\\[id\\\\])",
+      "Bash(mkdir -p /c/GlimmoraFabric/GlimmoraFabric/src/app/dashboard/roles/create)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill:*)",
+      "Bash(cmd:*)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(git rm:*)",
+      "Bash(disown)"
     ]
   }
 }

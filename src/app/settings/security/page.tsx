@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Lock, ShieldCheck, ShieldOff, Eye, EyeOff,
-  CheckCircle2, AlertTriangle, Monitor, Smartphone,
+  CheckCircle2, AlertTriangle, Monitor, Smartphone, Mail, MessageSquare, KeyRound,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ function StrengthBar({ password }: { password: string }) {
 // ---------------------------------------------------------------------------
 // MFA Disable Modal
 // ---------------------------------------------------------------------------
-function MfaDisableModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+function MfaDisableModal({ method, onConfirm, onCancel }: { method: string; onConfirm: () => void; onCancel: () => void }) {
   const [pw, setPw] = useState("");
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel}>
@@ -46,10 +46,10 @@ function MfaDisableModal({ onConfirm, onCancel }: { onConfirm: () => void; onCan
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/15">
             <AlertTriangle className="h-5 w-5 text-red-500" />
           </div>
-          <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Disable MFA</h2>
+          <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Disable {method}</h2>
         </div>
         <p className="text-sm mb-4" style={{ color: "var(--gf-text-secondary)" }}>
-          This will remove the extra layer of security from your account. Enter your password to confirm.
+          This will remove {method.toLowerCase()} as an authentication method. Enter your password to confirm.
         </p>
         <input type="password" placeholder="Current password" value={pw} onChange={(e) => setPw(e.target.value)}
           className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none mb-4"
@@ -59,7 +59,7 @@ function MfaDisableModal({ onConfirm, onCancel }: { onConfirm: () => void; onCan
             style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>Cancel</button>
           <button onClick={onConfirm} disabled={!pw}
             className="rounded-lg px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50">
-            Disable MFA
+            Disable
           </button>
         </div>
       </div>
@@ -68,13 +68,85 @@ function MfaDisableModal({ onConfirm, onCancel }: { onConfirm: () => void; onCan
 }
 
 // ---------------------------------------------------------------------------
+// MFA Method types
+// ---------------------------------------------------------------------------
+interface MfaMethod {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  detail: string;
+}
+
+const MFA_METHODS: MfaMethod[] = [
+  {
+    id: "email",
+    label: "Email OTP",
+    description: "Receive a verification code via email",
+    icon: <Mail className="h-5 w-5" />,
+    detail: "su***@glimmora.com",
+  },
+  {
+    id: "sms",
+    label: "SMS OTP",
+    description: "Receive a verification code via text message",
+    icon: <MessageSquare className="h-5 w-5" />,
+    detail: "+1 •••• •••• 42",
+  },
+  {
+    id: "authenticator",
+    label: "Authenticator App",
+    description: "Use Google Authenticator, Authy, or similar",
+    icon: <Smartphone className="h-5 w-5" />,
+    detail: "TOTP configured",
+  },
+];
+
+// ---------------------------------------------------------------------------
 // Security Settings Page
 // ---------------------------------------------------------------------------
+const MFA_STORAGE_KEY = "glimmora_mfa_methods";
+
+function loadMfaState(): { methods: Record<string, boolean>; recoveryCodes: boolean } {
+  if (typeof window === "undefined") return { methods: { email: false, sms: false, authenticator: false }, recoveryCodes: false };
+  try {
+    const stored = localStorage.getItem(MFA_STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch { /* ignore */ }
+  return { methods: { email: false, sms: false, authenticator: false }, recoveryCodes: false };
+}
+
+function saveMfaState(methods: Record<string, boolean>, recoveryCodes: boolean) {
+  localStorage.setItem(MFA_STORAGE_KEY, JSON.stringify({ methods, recoveryCodes }));
+}
+
 export default function SecuritySettingsPage() {
   const router = useRouter();
   const [section, setSection] = useState<"overview" | "change-password">("overview");
-  const [mfaEnabled, setMfaEnabled] = useState(false);
-  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [enabledMethods, setEnabledMethods] = useState<Record<string, boolean>>({
+    email: false,
+    sms: false,
+    authenticator: false,
+  });
+  const [hasRecoveryCodes, setHasRecoveryCodes] = useState(false);
+  const [disablingMethod, setDisablingMethod] = useState<string | null>(null);
+
+  // Load persisted MFA state on mount
+  useEffect(() => {
+    const state = loadMfaState();
+    setEnabledMethods(state.methods);
+    setHasRecoveryCodes(state.recoveryCodes);
+  }, []);
+
+  // Persist MFA state whenever it changes
+  const updateMethods = useCallback((updater: (prev: Record<string, boolean>) => Record<string, boolean>) => {
+    setEnabledMethods((prev) => {
+      const next = updater(prev);
+      const anyEnabled = Object.values(next).some(Boolean);
+      saveMfaState(next, anyEnabled ? hasRecoveryCodes : false);
+      return next;
+    });
+  }, [hasRecoveryCodes]);
 
   // Password form
   const [currentPw, setCurrentPw] = useState("");
@@ -85,6 +157,8 @@ export default function SecuritySettingsPage() {
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
+
+  const anyMfaEnabled = Object.values(enabledMethods).some(Boolean);
 
   const handleChangePassword = async () => {
     setPwError("");
@@ -102,6 +176,17 @@ export default function SecuritySettingsPage() {
     setPwSuccess(true);
     setCurrentPw(""); setNewPw(""); setConfirmPw("");
     setTimeout(() => { setPwSuccess(false); setSection("overview"); }, 2000);
+  };
+
+  const handleDisableMethod = (methodId: string) => {
+    updateMethods((prev) => {
+      const next = { ...prev, [methodId]: false };
+      const anyRemaining = Object.values(next).some(Boolean);
+      if (!anyRemaining) setHasRecoveryCodes(false);
+      saveMfaState(next, anyRemaining ? hasRecoveryCodes : false);
+      return next;
+    });
+    setDisablingMethod(null);
   };
 
   const fieldStyle = {
@@ -145,31 +230,95 @@ export default function SecuritySettingsPage() {
             </div>
           </div>
 
-          {/* MFA Card */}
-          <div className="rounded-xl border p-6" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
+          {/* MFA Section */}
+          <div className="rounded-xl border p-6 space-y-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: "var(--gf-bg-elevated)" }}>
-                  <ShieldCheck className="h-5 w-5" style={{ color: mfaEnabled ? "#22c55e" : "var(--gf-text-muted)" }} />
+                  <ShieldCheck className="h-5 w-5" style={{ color: anyMfaEnabled ? "#22c55e" : "var(--gf-text-muted)" }} />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>Two-Factor Authentication</h3>
-                  <p className="text-xs" style={{ color: mfaEnabled ? "#22c55e" : "var(--gf-text-muted)" }}>
-                    {mfaEnabled ? "Enabled — Authenticator app" : "Not enabled"}
+                  <p className="text-xs" style={{ color: anyMfaEnabled ? "#22c55e" : "var(--gf-text-muted)" }}>
+                    {anyMfaEnabled
+                      ? `${Object.values(enabledMethods).filter(Boolean).length} method${Object.values(enabledMethods).filter(Boolean).length > 1 ? "s" : ""} enabled`
+                      : "No methods enabled"}
                   </p>
                 </div>
               </div>
-              {mfaEnabled ? (
-                <button onClick={() => setShowDisableModal(true)}
-                  className="rounded-lg px-4 py-2 text-sm font-medium border border-red-500/30 text-red-400 hover:bg-red-500/10">
-                  <ShieldOff className="h-4 w-4 inline mr-1" /> Disable
+            </div>
+
+            {/* Individual MFA Methods */}
+            <div className="space-y-3 pt-2 border-t" style={{ borderColor: "var(--gf-border)" }}>
+              {MFA_METHODS.map((method) => {
+                const enabled = enabledMethods[method.id];
+                return (
+                  <div key={method.id} className="flex items-center justify-between rounded-lg border p-4"
+                    style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-base)" }}>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg"
+                        style={{ backgroundColor: enabled ? "rgba(34,197,94,0.12)" : "var(--gf-bg-elevated)", color: enabled ? "#22c55e" : "var(--gf-text-muted)" }}>
+                        {method.icon}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>{method.label}</p>
+                          {enabled && (
+                            <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-semibold text-green-400">Active</span>
+                          )}
+                        </div>
+                        <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>
+                          {enabled ? method.detail : method.description}
+                        </p>
+                      </div>
+                    </div>
+                    {enabled ? (
+                      <button onClick={() => setDisablingMethod(method.id)}
+                        className="rounded-lg px-3 py-1.5 text-xs font-medium border border-red-500/30 text-red-400 hover:bg-red-500/10">
+                        <ShieldOff className="h-3.5 w-3.5 inline mr-1" /> Disable
+                      </button>
+                    ) : (
+                      <button onClick={() => router.push(`/settings/security/mfa?method=${method.id}`)}
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                        style={{ backgroundColor: "var(--gf-accent)" }}>
+                        Set up
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Recovery Codes */}
+            <div className="flex items-center justify-between rounded-lg border p-4"
+              style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-base)" }}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: hasRecoveryCodes ? "rgba(34,197,94,0.12)" : "var(--gf-bg-elevated)", color: hasRecoveryCodes ? "#22c55e" : "var(--gf-text-muted)" }}>
+                  <KeyRound className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>Recovery Codes</p>
+                    {hasRecoveryCodes && (
+                      <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-semibold text-green-400">Saved</span>
+                    )}
+                  </div>
+                  <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>
+                    {hasRecoveryCodes ? "8 backup codes generated" : "One-time backup codes for account recovery"}
+                  </p>
+                </div>
+              </div>
+              {hasRecoveryCodes ? (
+                <button onClick={() => router.push("/settings/security/mfa?method=recovery&regenerate=true")}
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium border hover:opacity-80"
+                  style={{ borderColor: "var(--gf-border)", color: "var(--gf-accent)" }}>
+                  Regenerate
                 </button>
               ) : (
-                <button onClick={() => router.push("/settings/security/mfa")}
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-                  style={{ backgroundColor: "var(--gf-accent)" }}>
-                  Set up MFA
-                </button>
+                <span className="text-xs" style={{ color: "var(--gf-text-muted)" }}>
+                  {anyMfaEnabled ? "Generated during MFA setup" : "Enable MFA first"}
+                </span>
               )}
             </div>
           </div>
@@ -252,10 +401,11 @@ export default function SecuritySettingsPage() {
         </div>
       )}
 
-      {showDisableModal && (
+      {disablingMethod && (
         <MfaDisableModal
-          onCancel={() => setShowDisableModal(false)}
-          onConfirm={() => { setMfaEnabled(false); setShowDisableModal(false); }}
+          method={MFA_METHODS.find((m) => m.id === disablingMethod)?.label ?? "MFA"}
+          onCancel={() => setDisablingMethod(null)}
+          onConfirm={() => handleDisableMethod(disablingMethod)}
         />
       )}
     </div>

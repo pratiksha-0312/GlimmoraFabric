@@ -97,7 +97,7 @@ const initialWorkflowTemplates: WorkflowTemplate[] = [
 ];
 
 const initialApprovals: PendingApproval[] = [
-  { id: 1, workflow: "Invoice Approval", requestedBy: "Priya Sharma", currentStep: "Manager Review", slaDeadline: "4h remaining", slaStatus: "amber", status: "Pending", priority: "High", startedAt: "Apr 02, 2026 — 10:30 AM",
+  { id: 1, workflow: "Invoice Approval", requestedBy: "Super Admin", currentStep: "Manager Review", slaDeadline: "4h remaining", slaStatus: "amber", status: "Pending", priority: "High", startedAt: "Apr 02, 2026 — 10:30 AM",
     steps: [{ name: "Submitted", status: "Completed" }, { name: "Initial Review", status: "Completed" }, { name: "Manager Review", status: "In Progress" }, { name: "Final Approval", status: "Pending" }],
     comments: [{ by: "System", text: "Auto-routed to finance team", date: "10:30 AM" }] },
   { id: 2, workflow: "Access Request", requestedBy: "Jordan Lee", currentStep: "Security Review", slaDeadline: "12h remaining", slaStatus: "green", status: "Pending", priority: "Medium", startedAt: "Apr 02, 2026 — 09:15 AM",
@@ -109,7 +109,7 @@ const initialApprovals: PendingApproval[] = [
   { id: 4, workflow: "User Onboarding", requestedBy: "Alex Rivera", currentStep: "IT Provisioning", slaDeadline: "8h remaining", slaStatus: "green", status: "Pending", priority: "Low", startedAt: "Apr 02, 2026 — 08:00 AM",
     steps: [{ name: "Request", status: "Completed" }, { name: "HR Review", status: "Completed" }, { name: "IT Provisioning", status: "In Progress" }, { name: "Welcome Email", status: "Pending" }],
     comments: [] },
-  { id: 5, workflow: "Incident Response", requestedBy: "Rahul Verma", currentStep: "Triage", slaDeadline: "30m remaining", slaStatus: "red", status: "Urgent", priority: "Critical", startedAt: "Apr 02, 2026 — 11:45 AM",
+  { id: 5, workflow: "Incident Response", requestedBy: "User 2", currentStep: "Triage", slaDeadline: "30m remaining", slaStatus: "red", status: "Urgent", priority: "Critical", startedAt: "Apr 02, 2026 — 11:45 AM",
     steps: [{ name: "Alert", status: "Completed" }, { name: "Triage", status: "In Progress" }, { name: "Assign", status: "Pending" }, { name: "Investigate", status: "Pending" }, { name: "Resolve", status: "Pending" }],
     comments: [{ by: "System", text: "SLA breach imminent", date: "11:50 AM" }] },
 ];
@@ -130,9 +130,9 @@ const initialEscalationRules: EscalationRule[] = [
 
 const initialActiveWfs: ActiveWf[] = [
   { id: 1, name: "User Onboarding — Alex Rivera", triggeredBy: "Alex Rivera", started: "2 hours ago", currentStep: 3, totalSteps: 5, stepName: "IT Provisioning", status: "Running", steps: ["Request", "HR Review", "IT Provisioning", "Account Setup", "Welcome Email"] },
-  { id: 2, name: "Invoice Approval — Priya Sharma", triggeredBy: "Priya Sharma", started: "1 hour ago", currentStep: 3, totalSteps: 4, stepName: "Manager Review", status: "Running", steps: ["Submitted", "Initial Review", "Manager Review", "Final Approval"] },
+  { id: 2, name: "Invoice Approval — Super Admin", triggeredBy: "Super Admin", started: "1 hour ago", currentStep: 3, totalSteps: 4, stepName: "Manager Review", status: "Running", steps: ["Submitted", "Initial Review", "Manager Review", "Final Approval"] },
   { id: 3, name: "Vendor Registration — Mei Chen", triggeredBy: "Mei Chen", started: "3 hours ago", currentStep: 2, totalSteps: 6, stepName: "Document Verification", status: "Running", steps: ["Submission", "Doc Verification", "Compliance", "Screening", "Approval", "Registration"] },
-  { id: 4, name: "Incident Response — Rahul Verma", triggeredBy: "Rahul Verma", started: "30 min ago", currentStep: 2, totalSteps: 5, stepName: "Triage", status: "Running", steps: ["Alert", "Triage", "Assign", "Investigate", "Resolve"] },
+  { id: 4, name: "Incident Response — User 2", triggeredBy: "User 2", started: "30 min ago", currentStep: 2, totalSteps: 5, stepName: "Triage", status: "Running", steps: ["Alert", "Triage", "Assign", "Investigate", "Resolve"] },
   { id: 5, name: "Access Request — Jordan Lee", triggeredBy: "Jordan Lee", started: "45 min ago", currentStep: 2, totalSteps: 3, stepName: "Security Review", status: "Running", steps: ["Request Filed", "Security Review", "Provisioning"] },
   { id: 6, name: "Contract Renewal — Emily Chen", triggeredBy: "Emily Chen", started: "5 hours ago", currentStep: 3, totalSteps: 4, stepName: "Negotiation", status: "Running", steps: ["Notice", "Legal Review", "Negotiation", "Sign & Archive"] },
   { id: 7, name: "User Onboarding — Sara Wilson", triggeredBy: "Sara Wilson", started: "4 hours ago", currentStep: 4, totalSteps: 5, stepName: "Account Setup", status: "Running", steps: ["Request", "HR Review", "IT Provisioning", "Account Setup", "Welcome Email"] },
@@ -140,11 +140,11 @@ const initialActiveWfs: ActiveWf[] = [
 ];
 
 const historyData: HistoryRow[] = [
-  { workflow: "Invoice Approval", requestedBy: "Priya Sharma", action: "Approved", actionedBy: "Super Admin", date: "Apr 01, 2026", slaMet: true, comment: "Looks good" },
+  { workflow: "Invoice Approval", requestedBy: "Super Admin", action: "Approved", actionedBy: "Super Admin", date: "Apr 01, 2026", slaMet: true, comment: "Looks good" },
   { workflow: "Access Request", requestedBy: "Jordan Lee", action: "Rejected", actionedBy: "Admin", date: "Mar 31, 2026", slaMet: true, comment: "Missing docs" },
   { workflow: "User Onboarding", requestedBy: "Emma Davis", action: "Approved", actionedBy: "Super Admin", date: "Mar 30, 2026", slaMet: false, comment: "SLA breached" },
   { workflow: "Vendor Registration", requestedBy: "Mei Chen", action: "Rejected", actionedBy: "Admin", date: "Mar 29, 2026", slaMet: true, comment: "Incomplete info" },
-  { workflow: "Incident Response", requestedBy: "Rahul Verma", action: "Approved", actionedBy: "Super Admin", date: "Mar 28, 2026", slaMet: true, comment: "Critical — fast-tracked" },
+  { workflow: "Incident Response", requestedBy: "User 2", action: "Approved", actionedBy: "Super Admin", date: "Mar 28, 2026", slaMet: true, comment: "Critical — fast-tracked" },
   { workflow: "Contract Renewal", requestedBy: "Lisa Park", action: "Approved", actionedBy: "Admin", date: "Mar 27, 2026", slaMet: false, comment: "Delayed review" },
   { workflow: "Invoice Approval", requestedBy: "Tom Brown", action: "Rejected", actionedBy: "Manager", date: "Mar 26, 2026", slaMet: true, comment: "Duplicate submission" },
   { workflow: "Access Request", requestedBy: "Sara Wilson", action: "Approved", actionedBy: "Super Admin", date: "Mar 25, 2026", slaMet: true, comment: "Verified" },
@@ -158,7 +158,7 @@ const workflowLogs: WorkflowLog[] = [
   { timestamp: "10:15 AM", workflow: "Access Request", event: "Approval granted", actor: "Jordan Lee", result: "Success" },
   { timestamp: "09:58 AM", workflow: "Incident Response", event: "SLA breach: Triage exceeded 1h", actor: "System", result: "Failed" },
   { timestamp: "09:30 AM", workflow: "Vendor Registration", event: "Step completed: Document Upload", actor: "Mei Chen", result: "Success" },
-  { timestamp: "09:12 AM", workflow: "Contract Renewal", event: "Workflow started", actor: "Priya Sharma", result: "Success" },
+  { timestamp: "09:12 AM", workflow: "Contract Renewal", event: "Workflow started", actor: "Super Admin", result: "Success" },
 ];
 
 // ===========================================================================

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
@@ -23,6 +23,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Upload,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -47,14 +48,7 @@ export interface Tenant {
 // Initial mock data
 // ---------------------------------------------------------------------------
 
-const INITIAL_TENANTS: Tenant[] = [
-  { id: "t1", name: "Glimmora HQ", plan: "Enterprise", users: 120, region: "US-East", domain: "app.glimmora.com", status: "Active", apiCalls: "324K", created: "2026-01-10", email: "admin@glimmora.com", description: "Primary headquarters tenant" },
-  { id: "t2", name: "VerifAI", plan: "Pro", users: 85, region: "US-West", domain: "verifai.glimmora.io", status: "Active", apiCalls: "218K", created: "2026-01-18", email: "ops@verifai.com", description: "AI verification platform" },
-  { id: "t3", name: "Diamond Corp", plan: "Pro", users: 62, region: "EU-West", domain: "diamond.glimmora.io", status: "Active", apiCalls: "156K", created: "2026-02-05", email: "it@diamondcorp.com", description: "European diamond trading" },
-  { id: "t4", name: "Hospitality Co", plan: "Starter", users: 34, region: "AP-South", domain: "hospitality.glimmora.io", status: "Active", apiCalls: "89K", created: "2026-02-20", email: "tech@hospitality.co", description: "Hospitality management" },
-  { id: "t5", name: "Tax Solutions", plan: "Pro", users: 48, region: "US-East", domain: "tax.glimmora.io", status: "Active", apiCalls: "67K", created: "2026-03-01", email: "dev@taxsolutions.com", description: "Tax filing and compliance" },
-  { id: "t6", name: "Aero Systems", plan: "Enterprise", users: 133, region: "EU-Central", domain: "aero.glimmora.io", status: "Provisioning", apiCalls: "—", created: "2026-03-15", email: "platform@aerosys.io", description: "Aerospace systems integration" },
-];
+const INITIAL_TENANTS: Tenant[] = [];
 
 const PLAN_BADGE_STYLES: Record<Tenant["plan"], { bg: string; color: string }> = {
   Enterprise: { bg: "rgba(20, 184, 166, 0.15)", color: "#14b8a6" },
@@ -71,6 +65,23 @@ const STATUS_DOT_COLORS: Record<Tenant["status"], string> = {
 const REGIONS = ["US-East", "US-West", "EU-West", "EU-Central", "AP-South", "AP-East"];
 const PLANS: Tenant["plan"][] = ["Starter", "Pro", "Enterprise"];
 const STATUSES: Tenant["status"][] = ["Active", "Provisioning", "Suspended"];
+
+const DEFAULT_USER_ROLE = { value: "tenant_admin", label: "Tenant Admin" };
+const LANGUAGES = [
+  "English, United States", "English, United Kingdom", "Spanish", "French",
+  "German", "Portuguese", "Japanese", "Chinese (Simplified)", "Arabic", "Hindi",
+];
+const TIMEZONES = [
+  "Asia/Kolkata", "Asia/Qatar", "Asia/Dubai", "Asia/Tokyo", "Asia/Shanghai",
+  "America/New_York", "America/Chicago", "America/Los_Angeles",
+  "Europe/London", "Europe/Berlin", "Europe/Paris", "Pacific/Auckland",
+];
+
+let tenantCodeCounter = 0;
+function generateTenantCode() {
+  tenantCodeCounter++;
+  return `TEN_${String(tenantCodeCounter).padStart(3, "0")}`;
+}
 const PAGE_SIZE = 5;
 
 // ---------------------------------------------------------------------------
@@ -200,8 +211,18 @@ function TenantFormModal({
   onCancel: () => void;
 }) {
   const isEdit = !!tenant;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [customerCode] = useState(() => isEdit ? "" : generateTenantCode());
   const [name, setName] = useState(tenant?.name ?? "");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState(tenant?.email ?? "");
+  const [logoPreview, setLogoPreview] = useState("");
+  const [language, setLanguage] = useState("English, United States");
+  const [timezone, setTimezone] = useState("Asia/Kolkata");
+  const [blocked, setBlocked] = useState(false);
+  const [active, setActive] = useState(true);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [plan, setPlan] = useState<Tenant["plan"]>(tenant?.plan ?? "Starter");
   const [region, setRegion] = useState(tenant?.region ?? "US-East");
   const [domain, setDomain] = useState(tenant?.domain ?? "");
@@ -209,12 +230,33 @@ function TenantFormModal({
   const [status, setStatus] = useState<Tenant["status"]>(tenant?.status ?? "Provisioning");
   const [description, setDescription] = useState(tenant?.description ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showSubscription, setShowSubscription] = useState(false);
+  const [subscriptionSaved, setSubscriptionSaved] = useState(false);
+  const [subscription, setSubscription] = useState({
+    startDate: "",
+    expiryDate: "",
+    maxAccounts: 0,
+    status: "Active" as "Active" | "Inactive",
+  });
+
+  const handleLogoUpload = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) { setErrors((prev) => ({ ...prev, logo: "File must be under 5MB" })); return; }
+    if (!["image/png", "image/jpeg"].includes(file.type)) { setErrors((prev) => ({ ...prev, logo: "Only PNG and JPG supported" })); return; }
+    setErrors((prev) => { const { logo: _, ...rest } = prev; return rest; });
+    setLogoPreview(URL.createObjectURL(file));
+  };
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = "Tenant name is required";
+    if (!isEdit && !username.trim()) e.username = "Username is required";
     if (!email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Invalid email address";
+    if (!isEdit) {
+      if (!password) e.password = "Password is required";
+      else if (password.length < 8) e.password = "Password must be at least 8 characters";
+      if (password !== confirmPassword) e.confirmPassword = "Passwords do not match";
+    }
     if (!domain.trim()) e.domain = "Domain is required";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -231,6 +273,22 @@ function TenantFormModal({
     borderColor: "var(--gf-border)",
     color: "var(--gf-text-primary)",
   };
+
+  const RadioGroup = ({ label, rName, value, onChange }: { label: string; rName: string; value: boolean; onChange: (v: boolean) => void }) => (
+    <div>
+      <span className="block text-xs font-medium mb-2" style={{ color: "var(--gf-text-secondary)" }}>{label}</span>
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name={rName} checked={value} onChange={() => onChange(true)} className="accent-[var(--gf-accent)]" />
+          <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>Yes</span>
+        </label>
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name={rName} checked={!value} onChange={() => onChange(false)} className="accent-[var(--gf-accent)]" />
+          <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>No</span>
+        </label>
+      </div>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel}>
@@ -251,152 +309,264 @@ function TenantFormModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Row 1: Name + Email */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Tenant Name *
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Acme Corp"
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              />
-              {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Admin Email *
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@company.com"
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              />
-              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
-            </div>
-          </div>
+          {/* ── ACCOUNT INFORMATION ───────────────────────────── */}
+          <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--gf-text-secondary)" }}>Account Information</h3>
 
-          {/* Row 2: Plan + Region */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Plan
-              </label>
-              <select
-                value={plan}
-                onChange={(e) => setPlan(e.target.value as Tenant["plan"])}
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              >
-                {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Region
-              </label>
-              <select
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              >
-                {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Row 3: Domain + Users */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Domain *
-              </label>
-              <input
-                type="text"
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-                placeholder="company.glimmora.io"
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              />
-              {errors.domain && <p className="text-xs text-red-500 mt-1">{errors.domain}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Initial Users
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={users}
-                onChange={(e) => setUsers(Number(e.target.value))}
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}
-              />
-            </div>
-          </div>
-
-          {/* Row 4: Status (edit only) */}
-          {isEdit && (
+          {/* Tenant Code + User Role */}
+          {!isEdit && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                  Status
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as Tenant["status"])}
-                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                  style={fieldStyle}
-                >
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Tenant Code</label>
+                <input type="text" value={customerCode} readOnly className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed" style={fieldStyle} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>User Role</label>
+                <input type="text" value={DEFAULT_USER_ROLE.label} readOnly className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed" style={fieldStyle} />
               </div>
             </div>
           )}
 
-          {/* Description */}
+          {/* Tenant Name */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Brief description of the tenant..."
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none resize-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-              style={fieldStyle}
-            />
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Tenant Name *</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter tenant name" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
+            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
           </div>
 
+          {/* Username */}
+          {!isEdit && (
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Username *</label>
+              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter username" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
+              {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username}</p>}
+            </div>
+          )}
+
+          {/* Email */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Email *</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter email address" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
+            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+          </div>
+
+          {/* Upload Logo */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Upload Logo</label>
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files[0]) handleLogoUpload(e.dataTransfer.files[0]); }}
+              onClick={() => fileInputRef.current?.click()}
+              className="relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-6 cursor-pointer transition-colors hover:border-[var(--gf-accent)]"
+              style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-base)" }}
+            >
+              {logoPreview ? (
+                <div className="relative">
+                  <img src={logoPreview} alt="Logo preview" className="h-14 w-14 rounded-lg object-cover" />
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setLogoPreview(""); }} className="absolute -top-2 -right-2 rounded-full p-0.5 bg-red-500 text-white">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Upload className="h-6 w-6 mb-1.5" style={{ color: "var(--gf-text-muted)" }} />
+                  <p className="text-sm" style={{ color: "var(--gf-text-secondary)" }}>Drag and Drop or <span style={{ color: "var(--gf-accent)" }} className="font-medium">Click to upload</span></p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--gf-text-muted)" }}>Supported formats: PNG, JPG. Max Size: 5MB</p>
+                </>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleLogoUpload(e.target.files[0]); }} />
+            </div>
+            {errors.logo && <p className="text-xs text-red-500 mt-1">{errors.logo}</p>}
+          </div>
+
+          {/* ── SETTINGS ─────────────────────────────────────── */}
+          <h3 className="text-xs font-semibold uppercase tracking-wide pt-2" style={{ color: "var(--gf-text-secondary)" }}>Settings</h3>
+
+          {/* Language + Timezone */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Language</label>
+              <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle}>
+                {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Time Zone</label>
+              <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle}>
+                {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Radio toggles */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <RadioGroup label="Blocked" rName="modal-blocked" value={blocked} onChange={setBlocked} />
+            <RadioGroup label="Active" rName="modal-active" value={active} onChange={setActive} />
+          </div>
+
+          {/* ── PASSWORD ─────────────────────────────────────── */}
+          {!isEdit && (
+            <>
+              <h3 className="text-xs font-semibold uppercase tracking-wide pt-2" style={{ color: "var(--gf-text-secondary)" }}>Password</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>New Password *</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
+                  {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Confirm Password *</label>
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
+                  {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Subscription Summary (shown after saving) */}
+          {subscriptionSaved && (
+            <div className="rounded-lg border p-4" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-base)" }}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--gf-text-secondary)" }}>Subscription Plan</h3>
+                <button type="button" onClick={() => setShowSubscription(true)} className="text-xs font-medium transition-colors hover:opacity-70" style={{ color: "var(--gf-accent)" }}>
+                  Edit
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>Start Date</p>
+                  <p className="text-sm font-medium" style={{ color: "var(--gf-text-primary)" }}>{subscription.startDate || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>Expiry Date</p>
+                  <p className="text-sm font-medium" style={{ color: "var(--gf-text-primary)" }}>{subscription.expiryDate || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>Max Accounts</p>
+                  <p className="text-sm font-medium" style={{ color: "var(--gf-text-primary)" }}>{subscription.maxAccounts}</p>
+                </div>
+                <div>
+                  <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>Status</p>
+                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${subscription.status === "Active" ? "bg-green-500/15 text-green-400" : "bg-gray-500/15 text-gray-400"}`}>
+                    {subscription.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-between items-center pt-2">
             <button
               type="button"
-              onClick={onCancel}
+              onClick={() => setShowSubscription(true)}
               className="rounded-lg px-4 py-2 text-sm font-medium border transition-colors hover:opacity-80"
               style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
             >
-              Cancel
+              Subscription Plan
             </button>
-            <button
-              type="submit"
-              className="rounded-lg px-5 py-2 text-sm font-semibold text-white transition-colors"
-              style={{ backgroundColor: "var(--gf-accent)" }}
-            >
-              {isEdit ? "Save Changes" : "Create Tenant"}
-            </button>
+            <div className="flex gap-3">
+              <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm font-medium border transition-colors hover:opacity-80" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>
+                Cancel
+              </button>
+              <button type="submit" className="rounded-lg px-5 py-2 text-sm font-semibold text-white transition-colors" style={{ backgroundColor: "var(--gf-accent)" }}>
+                Save
+              </button>
+            </div>
           </div>
         </form>
+
+        {/* ── SUBSCRIPTION PLAN SUB-MODAL ───────────────────── */}
+        {showSubscription && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60" onClick={() => setShowSubscription(false)}>
+            <div
+              className="w-full max-w-md rounded-2xl border shadow-2xl"
+              style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
+                <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>New Subscription</h2>
+                <button onClick={() => setShowSubscription(false)} className="rounded-lg p-1 transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* Start Date */}
+                <div className="flex items-center gap-4">
+                  <label className="w-28 text-sm font-medium shrink-0" style={{ color: "var(--gf-text-secondary)" }}>Start date</label>
+                  <input
+                    type="date"
+                    value={subscription.startDate}
+                    onChange={(e) => setSubscription((s) => ({ ...s, startDate: e.target.value }))}
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                    style={fieldStyle}
+                  />
+                </div>
+
+                {/* Expiry Date */}
+                <div className="flex items-center gap-4">
+                  <label className="w-28 text-sm font-medium shrink-0" style={{ color: "var(--gf-text-secondary)" }}>Expiry date</label>
+                  <input
+                    type="date"
+                    value={subscription.expiryDate}
+                    onChange={(e) => setSubscription((s) => ({ ...s, expiryDate: e.target.value }))}
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                    style={fieldStyle}
+                  />
+                </div>
+
+                {/* Max Accounts */}
+                <div className="flex items-center gap-4">
+                  <label className="w-28 text-sm font-medium shrink-0" style={{ color: "var(--gf-text-secondary)" }}>Max accounts</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={subscription.maxAccounts}
+                    onChange={(e) => setSubscription((s) => ({ ...s, maxAccounts: Number(e.target.value) }))}
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                    style={fieldStyle}
+                  />
+                </div>
+
+                {/* Status */}
+                <div className="flex items-center gap-4">
+                  <label className="w-28 text-sm font-medium shrink-0" style={{ color: "var(--gf-text-secondary)" }}>Status</label>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input type="radio" name="sub-status" checked={subscription.status === "Active"} onChange={() => setSubscription((s) => ({ ...s, status: "Active" }))} className="accent-[var(--gf-accent)]" />
+                      <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>Active</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input type="radio" name="sub-status" checked={subscription.status === "Inactive"} onChange={() => setSubscription((s) => ({ ...s, status: "Inactive" }))} className="accent-[var(--gf-accent)]" />
+                      <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>Inactive</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: "var(--gf-border)" }}>
+                <button
+                  type="button"
+                  onClick={() => { setSubscriptionSaved(true); setShowSubscription(false); }}
+                  className="rounded-lg px-5 py-2 text-sm font-semibold text-white transition-colors"
+                  style={{ backgroundColor: "var(--gf-accent)" }}
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSubscription(false)}
+                  className="rounded-lg px-4 py-2 text-sm font-medium border transition-colors hover:opacity-80"
+                  style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

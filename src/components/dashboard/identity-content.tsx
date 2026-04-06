@@ -51,9 +51,7 @@ export interface PlatformUser {
 // Initial mock data
 // ---------------------------------------------------------------------------
 
-const INITIAL_USERS: PlatformUser[] = [
-  { id: "u1", name: "Super Admin", email: "superadmin@glimmora.com", role: "super_admin", status: "Active", mfa: true, lastLogin: "2 min ago", tenant: "Glimmora HQ", joinedDate: "2025-11-01" },
-];
+const INITIAL_USERS: PlatformUser[] = [];
 
 const STATUS_COLORS: Record<PlatformUser["status"], string> = {
   Active: "#22c55e",
@@ -62,7 +60,7 @@ const STATUS_COLORS: Record<PlatformUser["status"], string> = {
 };
 
 const END_USER_ROLES: UserRole[] = [
-  "super_admin", "tenant_admin", "auditor", "workflow_manager", "billing_admin",
+  "tenant_admin", "auditor", "workflow_manager", "billing_admin",
   "developer", "tenant_member", "guest_viewer",
 ];
 
@@ -188,32 +186,28 @@ const TIMEZONES = [
   "Europe/London", "Europe/Berlin", "Europe/Paris", "Pacific/Auckland",
 ];
 
-let userCodeCounter = 100;
-function generateUserCode() {
-  userCodeCounter++;
-  return `USR-${String(userCodeCounter).padStart(4, "0")}`;
-}
-
 function UserFormModal({
   user,
   onSave,
   onCancel,
+  userCount,
 }: {
   user?: PlatformUser | null;
   onSave: (data: Omit<PlatformUser, "id" | "lastLogin" | "joinedDate">) => void;
   onCancel: () => void;
+  userCount: number;
 }) {
   const isEdit = !!user;
   const defaultUserType = user ? (INTERNAL_SYSTEM_ROLES.includes(user.role) ? "internal" : "end-user") : "end-user";
-  const [userCode] = useState(() => isEdit ? user!.id : generateUserCode());
+  const [userCode] = useState(() => isEdit ? user!.id : `USR-${String(userCount + 1).padStart(4, "0")}`);
   const [userType, setUserType] = useState<"end-user" | "internal">(defaultUserType);
   const [name, setName] = useState(user?.name ?? "");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState(user?.email ?? "");
-  const [role, setRole] = useState<UserRole>(user?.role ?? "developer");
+  const [role, setRole] = useState<UserRole>(user?.role ?? "auditor");
   const [status, setStatus] = useState<PlatformUser["status"]>(user?.status ?? "Invited");
   const [mfa, setMfa] = useState(user?.mfa ?? false);
-  const [tenant, setTenant] = useState(user?.tenant ?? "Glimmora HQ");
+  const tenant = user?.tenant ?? "Glimmora HQ";
   const [language, setLanguage] = useState("English, United States");
   const [timezone, setTimezone] = useState("Asia/Kolkata");
   const [blocked, setBlocked] = useState(false);
@@ -222,7 +216,7 @@ function UserFormModal({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const availableRoles = userType === "end-user" ? END_USER_ROLES : INTERNAL_SYSTEM_ROLES;
+  const availableRoles: UserRole[] = ["auditor", "workflow_manager"];
 
   const handleUserTypeChange = (type: "end-user" | "internal") => {
     setUserType(type);
@@ -236,12 +230,7 @@ function UserFormModal({
     if (!isEdit && !username.trim()) e.username = "Username is required";
     if (!email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Invalid email address";
-    if (!tenant.trim()) e.tenant = "Tenant is required";
-    if (!isEdit) {
-      if (!password) e.password = "Password is required";
-      else if (password.length < 8) e.password = "Password must be at least 8 characters";
-      if (password !== confirmPassword) e.confirmPassword = "Passwords do not match";
-    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -307,12 +296,9 @@ function UserFormModal({
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>User Type</label>
-              <select value={userType} onChange={(e) => handleUserTypeChange(e.target.value as "end-user" | "internal")}
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                style={fieldStyle}>
-                <option value="end-user">End User</option>
-                <option value="internal">Internal System User</option>
-              </select>
+              <input type="text" value="End User" readOnly
+                className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed"
+                style={fieldStyle} />
             </div>
           </div>
 
@@ -353,14 +339,6 @@ function UserFormModal({
             </div>
           </div>
 
-          {/* Tenant */}
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Tenant *</label>
-            <input type="text" value={tenant} onChange={(e) => setTenant(e.target.value)} placeholder="e.g. Glimmora HQ"
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-              style={fieldStyle} />
-            {errors.tenant && <p className="text-xs text-red-500 mt-1">{errors.tenant}</p>}
-          </div>
 
           {/* ── SETTINGS ── */}
           <h3 className="text-xs font-semibold uppercase tracking-wide pt-2" style={{ color: "var(--gf-text-muted)" }}>Settings</h3>
@@ -385,19 +363,10 @@ function UserFormModal({
             </div>
           </div>
 
-          {/* Blocked + Active + MFA */}
+          {/* Blocked + Active */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <RadioGroup label="Blocked" radioName="user-blocked" value={blocked} onChange={setBlocked} />
             <RadioGroup label="Active" radioName="user-active" value={active} onChange={setActive} />
-            <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: "var(--gf-text-secondary)" }}>MFA</label>
-              <button type="button" onClick={() => setMfa(!mfa)} className="flex items-center gap-2">
-                <div className={`relative h-5 w-9 rounded-full transition-colors ${mfa ? "bg-green-500" : "bg-gray-600"}`}>
-                  <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${mfa ? "translate-x-4" : "translate-x-0.5"}`} />
-                </div>
-                <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>{mfa ? "On" : "Off"}</span>
-              </button>
-            </div>
             {isEdit && (
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Status</label>
@@ -762,7 +731,7 @@ export function IdentityContent() {
             Export
           </button>
           <button
-            onClick={() => router.push("/dashboard/identity/import")}
+            onClick={() => router.push("/admin/users/import")}
             className="flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors"
             style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
           >
@@ -866,8 +835,6 @@ export function IdentityContent() {
                       { key: "name" as SortKey, label: "User" },
                       { key: "role" as SortKey, label: "Role" },
                       { key: "status" as SortKey, label: "Status" },
-                      { key: null, label: "MFA" },
-                      { key: null, label: "Tenant" },
                       { key: "lastLogin" as SortKey, label: "Last Login" },
                       { key: null, label: "Actions" },
                     ] as const).map((col, i) => (
@@ -888,7 +855,7 @@ export function IdentityContent() {
                 <tbody>
                   {paged.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-12 text-center">
+                      <td colSpan={5} className="px-5 py-12 text-center">
                         <Users className="h-10 w-10 mx-auto mb-3 opacity-30" style={{ color: "var(--gf-text-muted)" }} />
                         <p className="text-sm font-medium" style={{ color: "var(--gf-text-secondary)" }}>No users found</p>
                         <p className="text-xs mt-1" style={{ color: "var(--gf-text-muted)" }}>
@@ -933,22 +900,6 @@ export function IdentityContent() {
                               {u.status}
                             </span>
                           </td>
-
-                          {/* MFA toggle */}
-                          <td className="px-5 py-3">
-                            <button
-                              onClick={() => handleToggleMfa(u.id)}
-                              className="relative"
-                              title={u.mfa ? "Disable MFA" : "Enable MFA"}
-                            >
-                              <div className={`h-5 w-9 rounded-full transition-colors ${u.mfa ? "bg-green-500" : "bg-gray-600"}`}>
-                                <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${u.mfa ? "translate-x-4" : "translate-x-0.5"}`} />
-                              </div>
-                            </button>
-                          </td>
-
-                          {/* Tenant */}
-                          <td className="px-5 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>{u.tenant}</td>
 
                           {/* Last Login */}
                           <td className="px-5 py-3 text-xs" style={{ color: "var(--gf-text-secondary)" }}>{u.lastLogin}</td>
@@ -1089,6 +1040,7 @@ export function IdentityContent() {
           user={formModal.user}
           onSave={formModal.user ? handleEdit : handleInvite}
           onCancel={() => setFormModal({ open: false, user: null })}
+          userCount={users.length}
         />
       )}
 

@@ -99,7 +99,7 @@ export default function EditUserPage() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsSubmitting(false);
     setSuccess(true);
-    setTimeout(() => router.push(`/dashboard/identity/${userId}`), 1500);
+    setTimeout(() => router.push(`/admin/users/${userId}`), 1500);
   };
 
   const fieldStyle = {
@@ -113,7 +113,7 @@ export default function EditUserPage() {
       <div className="flex flex-col items-center justify-center py-20">
         <Users className="h-12 w-12 mb-4 opacity-30" style={{ color: "var(--gf-text-muted)" }} />
         <p className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>User Not Found</p>
-        <button onClick={() => router.push("/dashboard/identity")} className="mt-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: "var(--gf-accent)" }}>
+        <button onClick={() => router.push("/admin/users")} className="mt-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: "var(--gf-accent)" }}>
           <ArrowLeft className="h-4 w-4" />Back to Users
         </button>
       </div>
@@ -137,7 +137,7 @@ export default function EditUserPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Back */}
-      <button onClick={() => router.push(`/dashboard/identity/${userId}`)} className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
+      <button onClick={() => router.push(`/admin/users/${userId}`)} className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
         <ArrowLeft className="h-4 w-4" />Back to User Details
       </button>
 
@@ -211,7 +211,7 @@ export default function EditUserPage() {
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-2 border-t" style={{ borderColor: "var(--gf-border)" }}>
-          <button type="button" onClick={() => router.push(`/dashboard/identity/${userId}`)} className="rounded-lg px-5 py-2.5 text-sm font-medium border transition-colors hover:opacity-80" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>
+          <button type="button" onClick={() => router.push(`/admin/users/${userId}`)} className="rounded-lg px-5 py-2.5 text-sm font-medium border transition-colors hover:opacity-80" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>
             Cancel
           </button>
           <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60" style={{ backgroundColor: "var(--gf-accent)" }}>

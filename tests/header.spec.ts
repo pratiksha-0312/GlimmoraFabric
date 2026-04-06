@@ -31,7 +31,7 @@ test("Super Admin – Full dashboard navigation & header test", async ({ page })
   // ── 2. NAVIGATE TO EACH PAGE ────────────────────────────────────
   const pages = [
     { label: "Overview", url: "/dashboard", heading: "Welcome" },
-    { label: "Identity & Access", url: "/dashboard/identity", heading: "Identity" },
+    { label: "Identity & Access", url: "/admin/users", heading: "Identity" },
     { label: "Services", url: "/dashboard/services", heading: "Service Health" },
     { label: "Notifications", url: "/dashboard/notifications", heading: "Notification" },
     { label: "Payments", url: "/dashboard/payments", heading: "Payment" },
@@ -113,12 +113,12 @@ test("Super Admin – Full dashboard navigation & header test", async ({ page })
   await page.waitForTimeout(1000);
 
   // Click Identity & Access card
-  const identityCard = page.locator('a[href="/dashboard/identity"]').first();
+  const identityCard = page.locator('a[href="/admin/users"]').first();
   if (await identityCard.isVisible()) {
     await identityCard.click();
     await page.waitForTimeout(1000);
     await expect(page).toHaveURL(/\/dashboard\/identity/);
-    console.log("  ✅ Identity card links to /dashboard/identity");
+    console.log("  ✅ Identity card links to /admin/users");
   }
 
   // Go back to Services

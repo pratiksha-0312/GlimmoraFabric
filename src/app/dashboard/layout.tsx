@@ -34,8 +34,10 @@ import {
   Code2,
   PanelLeftClose,
   PanelLeftOpen,
+  ChevronRight,
+  Home,
 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useTheme } from "@/context/theme-context";
 import { ROLE_LABELS, ROLE_COLORS, type UserRole } from "@/lib/roles";
@@ -56,7 +58,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Tenant Management", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
-  { label: "User Management", href: "/dashboard/identity", icon: Users, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "cto"] },
+  { label: "User Management", href: "/admin/users", icon: Users, visibleTo: ["super_admin", "tenant_admin"] },
   { label: "Role & Permission Management", href: "/dashboard/roles", icon: Shield, visibleTo: ["super_admin", "tenant_admin"] },
   { label: "Service Management", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
   { label: "API & Developer Tools", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
@@ -118,6 +120,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const filteredNavItems = navItems.filter((item) => !item.visibleTo || item.visibleTo.includes(userRole));
 
   const handleSignOut = () => { logout(); router.push("/login"); };
+
+  // Breadcrumb segments from pathname
+  const breadcrumbs = useMemo(() => {
+    const segments = pathname.split("/").filter(Boolean);
+    return segments.map((seg, i) => {
+      const href = "/" + segments.slice(0, i + 1).join("/");
+      const label = seg
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      return { label, href, isLast: i === segments.length - 1 };
+    });
+  }, [pathname]);
 
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
 
@@ -358,6 +372,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* ========== PAGE CONTENT (only this scrolls) ========== */}
         <main className="flex-1 overflow-y-auto p-6">
+          {/* Breadcrumb */}
+          {breadcrumbs.length > 1 && (
+            <nav className="flex items-center gap-1 mb-4 text-xs" aria-label="Breadcrumb">
+              <Link href="/dashboard" className="flex items-center gap-1 transition-colors hover:opacity-80" style={{ color: "var(--gf-text-muted)" }}>
+                <Home className="h-3.5 w-3.5" />
+              </Link>
+              {breadcrumbs.map((crumb) => (
+                <span key={crumb.href} className="flex items-center gap-1">
+                  <ChevronRight className="h-3 w-3" style={{ color: "var(--gf-text-muted)" }} />
+                  {crumb.isLast ? (
+                    <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{crumb.label}</span>
+                  ) : (
+                    <Link href={crumb.href} className="transition-colors hover:opacity-80" style={{ color: "var(--gf-text-muted)" }}>
+                      {crumb.label}
+                    </Link>
+                  )}
+                </span>
+              ))}
+            </nav>
+          )}
           <AuthGuard>{children}</AuthGuard>
         </main>
       </div>

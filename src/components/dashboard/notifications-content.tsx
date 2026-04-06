@@ -362,7 +362,7 @@ const optOutData: Record<string, OptOutUser[]> = {
   ],
   SMS: [
     { name: "Alex Rivera", contact: "+1 (555) 234-5678", date: "Mar 27, 2026", reason: "Too frequent" },
-    { name: "Priya Sharma", contact: "+91 98765 43210", date: "Mar 22, 2026", reason: "Not relevant" },
+    { name: "User 1", contact: "+91 98765 43210", date: "Mar 22, 2026", reason: "Not relevant" },
     { name: "Tom Brown", contact: "+1 (555) 876-5432", date: "Mar 15, 2026", reason: "Unsubscribed" },
   ],
   WhatsApp: [
@@ -371,7 +371,7 @@ const optOutData: Record<string, OptOutUser[]> = {
   ],
   Push: [
     { name: "Carlos Rivera", contact: "device_token_x92", date: "Mar 24, 2026", reason: "Battery drain" },
-    { name: "Rahul Gupta", contact: "device_token_a41", date: "Mar 19, 2026", reason: "Too frequent" },
+    { name: "User 2", contact: "device_token_a41", date: "Mar 19, 2026", reason: "Too frequent" },
     { name: "Jordan Lee", contact: "device_token_b73", date: "Mar 14, 2026", reason: "Not useful" },
   ],
 };

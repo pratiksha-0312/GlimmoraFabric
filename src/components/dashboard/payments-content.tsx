@@ -123,7 +123,7 @@ type Transaction = {
 
 const initialTransactions: Transaction[] = [
   { id: "TXN-001", amount: "$250.00", gateway: "Stripe", status: "Succeeded", time: "12 min ago", customerName: "John Doe", customerEmail: "john@example.com", cardType: "Visa •••• 4242", createdAt: "Mar 28, 2026 — 12:12 PM", description: "Subscription payment", metadata: '{ "plan": "pro", "cycle": "monthly" }' },
-  { id: "TXN-002", amount: "$1,200.00", gateway: "Razorpay", status: "Pending", time: "25 min ago", customerName: "Priya Sharma", customerEmail: "priya@example.com", cardType: "Mastercard •••• 8819", createdAt: "Mar 28, 2026 — 11:59 AM", description: "Invoice #INV-2026-118", metadata: '{ "plan": "enterprise", "cycle": "annual" }' },
+  { id: "TXN-002", amount: "$1,200.00", gateway: "Razorpay", status: "Pending", time: "25 min ago", customerName: "User 1", customerEmail: "user1@example.com", cardType: "Mastercard •••• 8819", createdAt: "Mar 28, 2026 — 11:59 AM", description: "Invoice #INV-2026-118", metadata: '{ "plan": "enterprise", "cycle": "annual" }' },
   { id: "TXN-003", amount: "$89.99", gateway: "Stripe", status: "Succeeded", time: "1 hr ago", customerName: "Alice Martin", customerEmail: "alice@example.com", cardType: "Visa •••• 1234", createdAt: "Mar 28, 2026 — 11:24 AM", description: "One-time purchase", metadata: '{ "product": "widget-x", "qty": 1 }' },
   { id: "TXN-004", amount: "$450.00", gateway: "Adyen", status: "Failed", time: "2 hr ago", customerName: "Carlos Rivera", customerEmail: "carlos@example.com", cardType: "Amex •••• 3782", createdAt: "Mar 28, 2026 — 10:31 AM", description: "Upgrade to Business plan", metadata: '{ "plan": "business", "prev_plan": "starter" }' },
   { id: "TXN-005", amount: "$175.50", gateway: "Stripe", status: "Refunded", time: "3 hr ago", customerName: "Emily Chen", customerEmail: "emily@example.com", cardType: "Visa •••• 9090", createdAt: "Mar 28, 2026 — 09:45 AM", description: "Subscription payment", metadata: '{ "plan": "pro", "cycle": "monthly" }' },
@@ -277,7 +277,7 @@ const initialRefunds: Refund[] = [
     { label: "Approved / Rejected", date: "—", done: false },
     { label: "Processed / Closed", date: "—", done: false },
   ]},
-  { transactionId: "TXN-034", customer: "Priya Sharma", amount: "$299.00", reason: "Duplicate charge", requestedOn: "Mar 28, 2026", status: "Pending", processedDate: "—", approvedBy: "—", timeline: [
+  { transactionId: "TXN-034", customer: "User 1", amount: "$299.00", reason: "Duplicate charge", requestedOn: "Mar 28, 2026", status: "Pending", processedDate: "—", approvedBy: "—", timeline: [
     { label: "Refund Requested", date: "Mar 28, 2026 — 02:00 PM", done: true },
     { label: "Under Review", date: "Mar 28, 2026 — 02:30 PM", done: true },
     { label: "Approved / Rejected", date: "—", done: false },
@@ -295,7 +295,7 @@ const initialRefunds: Refund[] = [
     { label: "Approved / Rejected", date: "—", done: false },
     { label: "Processed / Closed", date: "—", done: false },
   ]},
-  { transactionId: "TXN-005", customer: "Rahul Gupta", amount: "$175.50", reason: "Customer request", requestedOn: "Mar 25, 2026", status: "Approved", processedDate: "Mar 26, 2026", approvedBy: "Super Admin", timeline: [
+  { transactionId: "TXN-005", customer: "User 2", amount: "$175.50", reason: "Customer request", requestedOn: "Mar 25, 2026", status: "Approved", processedDate: "Mar 26, 2026", approvedBy: "Super Admin", timeline: [
     { label: "Refund Requested", date: "Mar 25, 2026 — 10:30 AM", done: true },
     { label: "Under Review", date: "Mar 25, 2026 — 11:00 AM", done: true },
     { label: "Approved / Rejected", date: "Mar 26, 2026 — 09:15 AM", done: true },

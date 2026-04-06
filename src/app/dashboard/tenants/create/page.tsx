@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Building2 } from "lucide-react";
+import { ArrowLeft, Building2, Upload, X } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -10,6 +10,29 @@ import { ArrowLeft, Building2 } from "lucide-react";
 
 const PLANS = ["Starter", "Pro", "Enterprise"] as const;
 const REGIONS = ["US-East", "US-West", "EU-West", "EU-Central", "AP-South", "AP-East"];
+
+const USER_ROLES = ["CustomerAdministrator", "TenantAdmin", "Auditor", "Developer", "Viewer"];
+
+const LANGUAGES = [
+  "English, United States", "English, United Kingdom", "Spanish", "French",
+  "German", "Portuguese", "Japanese", "Chinese (Simplified)", "Arabic", "Hindi",
+];
+
+const TIMEZONES = [
+  "Asia/Kolkata", "Asia/Qatar", "Asia/Dubai", "Asia/Tokyo", "Asia/Shanghai",
+  "America/New_York", "America/Chicago", "America/Los_Angeles",
+  "Europe/London", "Europe/Berlin", "Europe/Paris", "Pacific/Auckland",
+];
+
+// ---------------------------------------------------------------------------
+// Auto-generate customer code
+// ---------------------------------------------------------------------------
+
+let codeCounter = 6;
+function generateCode() {
+  codeCounter++;
+  return `GRC_${String(codeCounter).padStart(3, "0")}`;
+}
 
 // ---------------------------------------------------------------------------
 // Page Component
@@ -20,10 +43,23 @@ export default function CreateTenantPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
-    name: "",
+    customerCode: generateCode(),
+    userRole: "CustomerAdministrator",
+    customerName: "",
+    username: "",
     email: "",
+    logo: null as File | null,
+    logoPreview: "",
+    language: "English, United States",
+    timezone: "Asia/Kolkata",
+    blocked: false,
+    active: true,
+    password: "",
+    confirmPassword: "",
+    // existing fields
     plan: "Starter" as (typeof PLANS)[number],
     region: "US-East",
     domain: "",
@@ -31,13 +67,38 @@ export default function CreateTenantPage() {
     description: "",
   });
 
-  const update = (key: string, value: string | number) => setForm((prev) => ({ ...prev, [key]: value }));
+  const update = (key: string, value: string | number | boolean | File | null) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleLogoUpload = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, logo: "File must be under 5MB" }));
+      return;
+    }
+    if (!["image/png", "image/jpeg"].includes(file.type)) {
+      setErrors((prev) => ({ ...prev, logo: "Only PNG and JPG formats supported" }));
+      return;
+    }
+    setErrors((prev) => { const { logo: _, ...rest } = prev; return rest; });
+    update("logo", file);
+    update("logoPreview", URL.createObjectURL(file));
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleLogoUpload(file);
+  };
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.name.trim()) e.name = "Tenant name is required";
-    if (!form.email.trim()) e.email = "Admin email is required";
+    if (!form.customerName.trim()) e.customerName = "Customer name is required";
+    if (!form.username.trim()) e.username = "Username is required";
+    if (!form.email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Invalid email address";
+    if (!form.password) e.password = "Password is required";
+    else if (form.password.length < 8) e.password = "Password must be at least 8 characters";
+    if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match";
     if (!form.domain.trim()) e.domain = "Domain is required";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -48,12 +109,9 @@ export default function CreateTenantPage() {
     if (!validate()) return;
 
     setIsSubmitting(true);
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1200));
     setIsSubmitting(false);
     setSuccess(true);
-
-    // Redirect after showing success
     setTimeout(() => router.push("/dashboard/tenants"), 1500);
   };
 
@@ -71,11 +129,30 @@ export default function CreateTenantPage() {
         </div>
         <h2 className="text-xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Tenant Created!</h2>
         <p className="text-sm mt-2" style={{ color: "var(--gf-text-secondary)" }}>
-          <strong>{form.name}</strong> has been created and is now provisioning. Redirecting...
+          <strong>{form.customerName}</strong> has been created and is now provisioning. Redirecting...
         </p>
       </div>
     );
   }
+
+  // Radio button helper
+  const RadioGroup = ({ label, name, value, onChange }: { label: string; name: string; value: boolean; onChange: (v: boolean) => void }) => (
+    <div>
+      <span className="block text-xs font-medium mb-2" style={{ color: "var(--gf-text-secondary)" }}>{label}</span>
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name={name} checked={value === true} onChange={() => onChange(true)}
+            className="accent-[var(--gf-accent)]" />
+          <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>Yes</span>
+        </label>
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name={name} checked={value === false} onChange={() => onChange(false)}
+            className="accent-[var(--gf-accent)]" />
+          <span className="text-sm" style={{ color: "var(--gf-text-primary)" }}>No</span>
+        </label>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -93,7 +170,7 @@ export default function CreateTenantPage() {
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Create New Tenant</h1>
         <p className="mt-1 text-sm" style={{ color: "var(--gf-text-secondary)" }}>
-          Set up a new tenant with their plan, region, and configuration
+          Set up a new tenant account with their configuration and credentials
         </p>
       </div>
 
@@ -103,49 +180,201 @@ export default function CreateTenantPage() {
         className="rounded-xl border p-6 space-y-6"
         style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}
       >
-        {/* Section: Basic Info */}
+        {/* ── ACCOUNT INFORMATION ─────────────────────────────────── */}
         <div>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--gf-text-primary)" }}>Basic Information</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h3 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--gf-text-primary)" }}>
+            Account Information
+          </h3>
+
+          {/* Customer Code + User Role */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Tenant Name *
-              </label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Customer Code</label>
               <input
                 type="text"
-                value={form.name}
-                onChange={(e) => update("name", e.target.value)}
-                placeholder="e.g. Acme Corporation"
-                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                value={form.customerCode}
+                readOnly
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none opacity-70 cursor-not-allowed"
                 style={fieldStyle}
               />
-              {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Admin Email *
-              </label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>User Role</label>
+              <select
+                value={form.userRole}
+                onChange={(e) => update("userRole", e.target.value)}
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                style={fieldStyle}
+              >
+                {USER_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Customer Name */}
+          <div className="mb-4">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Customer Name *</label>
+            <input
+              type="text"
+              value={form.customerName}
+              onChange={(e) => update("customerName", e.target.value)}
+              placeholder="Enter customer name"
+              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+              style={fieldStyle}
+            />
+            {errors.customerName && <p className="text-xs text-red-500 mt-1">{errors.customerName}</p>}
+          </div>
+
+          {/* Username */}
+          <div className="mb-4">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Username *</label>
+            <input
+              type="text"
+              value={form.username}
+              onChange={(e) => update("username", e.target.value)}
+              placeholder="Enter username"
+              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+              style={fieldStyle}
+            />
+            {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username}</p>}
+          </div>
+
+          {/* Email */}
+          <div className="mb-4">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Email *</label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => update("email", e.target.value)}
+              placeholder="Enter email address"
+              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+              style={fieldStyle}
+            />
+            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+          </div>
+
+          {/* Upload Logo */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Upload Logo</label>
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className="relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 cursor-pointer transition-colors hover:border-[var(--gf-accent)]"
+              style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-base)" }}
+            >
+              {form.logoPreview ? (
+                <div className="relative">
+                  <img src={form.logoPreview} alt="Logo preview" className="h-16 w-16 rounded-lg object-cover" />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); update("logo", null); update("logoPreview", ""); }}
+                    className="absolute -top-2 -right-2 rounded-full p-0.5 bg-red-500 text-white"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Upload className="h-8 w-8 mb-2" style={{ color: "var(--gf-text-muted)" }} />
+                  <p className="text-sm" style={{ color: "var(--gf-text-secondary)" }}>
+                    Drag and Drop or <span style={{ color: "var(--gf-accent)" }} className="font-medium">Click to upload</span>
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "var(--gf-text-muted)" }}>Supported formats: PNG, JPG. Max Size: 5MB</p>
+                </>
+              )}
               <input
-                type="email"
-                value={form.email}
-                onChange={(e) => update("email", e.target.value)}
-                placeholder="admin@company.com"
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg"
+                className="hidden"
+                onChange={(e) => { if (e.target.files?.[0]) handleLogoUpload(e.target.files[0]); }}
+              />
+            </div>
+            {errors.logo && <p className="text-xs text-red-500 mt-1">{errors.logo}</p>}
+          </div>
+        </div>
+
+        {/* ── SETTINGS ────────────────────────────────────────────── */}
+        <div>
+          <h3 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--gf-text-primary)" }}>
+            Settings
+          </h3>
+
+          {/* Language + Timezone */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Language</label>
+              <select
+                value={form.language}
+                onChange={(e) => update("language", e.target.value)}
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                style={fieldStyle}
+              >
+                {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Time Zone</label>
+              <select
+                value={form.timezone}
+                onChange={(e) => update("timezone", e.target.value)}
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                style={fieldStyle}
+              >
+                {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Radio toggles */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <RadioGroup label="Blocked" name="blocked" value={form.blocked} onChange={(v) => update("blocked", v)} />
+            <RadioGroup label="Active" name="active" value={form.active} onChange={(v) => update("active", v)} />
+          </div>
+        </div>
+
+        {/* ── PASSWORD ────────────────────────────────────────────── */}
+        <div>
+          <h3 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--gf-text-primary)" }}>
+            Password
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>New Password *</label>
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => update("password", e.target.value)}
+                placeholder="Enter password"
                 className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
                 style={fieldStyle}
               />
-              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Confirm Password *</label>
+              <input
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e) => update("confirmPassword", e.target.value)}
+                placeholder="Confirm password"
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                style={fieldStyle}
+              />
+              {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
             </div>
           </div>
         </div>
 
-        {/* Section: Plan & Region */}
+        {/* ── PLAN & REGION ───────────────────────────────────────── */}
         <div>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--gf-text-primary)" }}>Plan & Region</h3>
+          <h3 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--gf-text-primary)" }}>
+            Subscription Plan & Region
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Plan
-              </label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Plan</label>
               <div className="grid grid-cols-3 gap-2">
                 {PLANS.map((p) => (
                   <button
@@ -170,9 +399,7 @@ export default function CreateTenantPage() {
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Region
-              </label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Region</label>
               <select
                 value={form.region}
                 onChange={(e) => update("region", e.target.value)}
@@ -188,14 +415,14 @@ export default function CreateTenantPage() {
           </div>
         </div>
 
-        {/* Section: Technical */}
+        {/* ── TECHNICAL CONFIG ────────────────────────────────────── */}
         <div>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--gf-text-primary)" }}>Technical Configuration</h3>
+          <h3 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--gf-text-primary)" }}>
+            Technical Configuration
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Domain *
-              </label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Domain *</label>
               <input
                 type="text"
                 value={form.domain}
@@ -207,9 +434,7 @@ export default function CreateTenantPage() {
               {errors.domain && <p className="text-xs text-red-500 mt-1">{errors.domain}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-                Initial User Seats
-              </label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Initial User Seats</label>
               <input
                 type="number"
                 min={0}
@@ -224,9 +449,7 @@ export default function CreateTenantPage() {
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-            Description
-          </label>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Description</label>
           <textarea
             value={form.description}
             onChange={(e) => update("description", e.target.value)}

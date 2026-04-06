@@ -108,7 +108,7 @@ export default function UserDetailPage() {
         <Users className="h-12 w-12 mb-4 opacity-30" style={{ color: "var(--gf-text-muted)" }} />
         <p className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>User Not Found</p>
         <p className="text-sm mt-1 mb-6" style={{ color: "var(--gf-text-secondary)" }}>The user you are looking for does not exist or has been removed.</p>
-        <button onClick={() => router.push("/dashboard/identity")} className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: "var(--gf-accent)" }}>
+        <button onClick={() => router.push("/admin/users")} className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: "var(--gf-accent)" }}>
           <ArrowLeft className="h-4 w-4" />Back to Users
         </button>
       </div>
@@ -122,7 +122,7 @@ export default function UserDetailPage() {
   return (
     <div className="space-y-6">
       {/* Back */}
-      <button onClick={() => router.push("/dashboard/identity")} className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
+      <button onClick={() => router.push("/admin/users")} className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
         <ArrowLeft className="h-4 w-4" />Back to Users &amp; Access
       </button>
 
@@ -151,7 +151,7 @@ export default function UserDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => router.push(`/dashboard/identity/${userId}/edit`)} className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:opacity-80" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>
+            <button onClick={() => router.push(`/admin/users/${userId}/edit`)} className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:opacity-80" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>
               <Pencil className="h-4 w-4" />Edit
             </button>
             {user.status === "Active" && (

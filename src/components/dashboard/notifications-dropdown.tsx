@@ -38,7 +38,7 @@ const initialNotifications: Notification[] = [
     id: 2,
     icon: Users,
     title: "Team Update",
-    description: "Priya Sharma accepted the invitation",
+    description: "A new user accepted the invitation",
     timeAgo: "15 min ago",
     unread: true,
   },

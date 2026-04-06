@@ -23,7 +23,7 @@ export interface AuthUser {
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (user: AuthUser) => void;
+  login: (user: AuthUser, remember?: boolean) => void;
   logout: () => void;
 }
 
@@ -43,27 +43,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  // Hydrate from localStorage on mount (client only)
+  // Hydrate from localStorage or sessionStorage on mount (client only)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      const stored =
+        localStorage.getItem(AUTH_STORAGE_KEY) ??
+        sessionStorage.getItem(AUTH_STORAGE_KEY);
       if (stored) {
         setUser(JSON.parse(stored) as AuthUser);
       }
     } catch {
       // If the stored value is corrupt, silently ignore
       localStorage.removeItem(AUTH_STORAGE_KEY);
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
     } finally {
       setIsReady(true);
     }
   }, []);
 
-  const login = useCallback((newUser: AuthUser) => {
+  const login = useCallback((newUser: AuthUser, remember = false) => {
     setUser(newUser);
     if (typeof window !== "undefined") {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newUser));
+      if (remember) {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newUser));
+        sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      } else {
+        sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newUser));
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      }
     }
   }, []);
 
@@ -71,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     if (typeof window !== "undefined") {
       localStorage.removeItem(AUTH_STORAGE_KEY);
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
     }
   }, []);
 
