@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users,
@@ -30,6 +30,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { ROLE_LABELS, ROLE_COLORS, ROLE_BADGE_CLASSES, type UserRole } from "@/lib/roles";
+import { useAuth } from "@/context/auth-context";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -71,6 +72,10 @@ const INTERNAL_SYSTEM_ROLES: UserRole[] = [
 ];
 
 const ALL_ROLES: UserRole[] = [...END_USER_ROLES, ...INTERNAL_SYSTEM_ROLES];
+
+const TENANT_ADMIN_ROLES: UserRole[] = [
+  "billing_admin", "developer", "tenant_member", "guest_viewer",
+];
 
 const STATUSES: PlatformUser["status"][] = ["Active", "Inactive", "Invited"];
 
@@ -191,11 +196,13 @@ function UserFormModal({
   onSave,
   onCancel,
   userCount,
+  roleOptions,
 }: {
   user?: PlatformUser | null;
   onSave: (data: Omit<PlatformUser, "id" | "lastLogin" | "joinedDate">) => void;
   onCancel: () => void;
   userCount: number;
+  roleOptions: UserRole[];
 }) {
   const isEdit = !!user;
   const defaultUserType = user ? (INTERNAL_SYSTEM_ROLES.includes(user.role) ? "internal" : "end-user") : "end-user";
@@ -216,11 +223,9 @@ function UserFormModal({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const availableRoles: UserRole[] = ["auditor", "workflow_manager"];
-
   const handleUserTypeChange = (type: "end-user" | "internal") => {
     setUserType(type);
-    const defaultRole = type === "end-user" ? "developer" : "frontend_engineer";
+    const defaultRole = type === "end-user" ? (roleOptions[0] ?? "developer") : "frontend_engineer";
     setRole(defaultRole);
   };
 
@@ -334,7 +339,7 @@ function UserFormModal({
               <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
                 className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
                 style={fieldStyle}>
-                {availableRoles.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                {roleOptions.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
               </select>
             </div>
           </div>
@@ -580,7 +585,21 @@ function sortUsers(list: PlatformUser[], key: SortKey, dir: SortDir): PlatformUs
 
 export function IdentityContent() {
   const router = useRouter();
-  const [users, setUsers] = useState<PlatformUser[]>(INITIAL_USERS);
+  const { user: authUser } = useAuth();
+  const isSuperAdmin = authUser?.role === "super_admin";
+  const SUPER_ADMIN_ROLES: UserRole[] = ["auditor", "workflow_manager"];
+  const roleOptions = isSuperAdmin ? SUPER_ADMIN_ROLES : TENANT_ADMIN_ROLES;
+  const [users, setUsers] = useState<PlatformUser[]>([]);
+
+  const refreshUsers = useCallback(() => {
+    fetch("/api/users")
+      .then((r) => r.json())
+      .then(setUsers);
+  }, []);
+
+  useEffect(() => {
+    refreshUsers();
+  }, [refreshUsers]);
 
   // Search & filter
   const [search, setSearch] = useState("");
@@ -634,36 +653,45 @@ export function IdentityContent() {
   // Handlers
   // ---------------------------------------------------------------------------
 
-  const handleInvite = (data: Omit<PlatformUser, "id" | "lastLogin" | "joinedDate">) => {
-    const newUser: PlatformUser = {
-      ...data,
-      id: `u${Date.now()}`,
-      status: "Invited",
-      lastLogin: "—",
-      joinedDate: new Date().toISOString().slice(0, 10),
-    };
-    setUsers((prev) => [newUser, ...prev]);
+  const handleInvite = async (data: Omit<PlatformUser, "id" | "lastLogin" | "joinedDate">) => {
+    await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    refreshUsers();
     setFormModal({ open: false, user: null });
   };
 
-  const handleEdit = (data: Omit<PlatformUser, "id" | "lastLogin" | "joinedDate">) => {
+  const handleEdit = async (data: Omit<PlatformUser, "id" | "lastLogin" | "joinedDate">) => {
     if (!formModal.user) return;
-    setUsers((prev) => prev.map((u) => (u.id === formModal.user!.id ? { ...u, ...data } : u)));
+    await fetch(`/api/users/${formModal.user.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    refreshUsers();
     setFormModal({ open: false, user: null });
     if (viewUser?.id === formModal.user.id) setViewUser((prev) => (prev ? { ...prev, ...data } : null));
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteModal) return;
-    setUsers((prev) => prev.filter((u) => u.id !== deleteModal.id));
+    await fetch(`/api/users/${deleteModal.id}`, { method: "DELETE" });
+    refreshUsers();
     setDeleteModal(null);
     if (viewUser?.id === deleteModal.id) setViewUser(null);
   };
 
-  const handleStatusChange = () => {
+  const handleStatusChange = async () => {
     if (!statusModal) return;
     const newStatus: PlatformUser["status"] = statusModal.action === "deactivate" ? "Inactive" : "Active";
-    setUsers((prev) => prev.map((u) => (u.id === statusModal.user.id ? { ...u, status: newStatus } : u)));
+    await fetch(`/api/users/${statusModal.user.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    refreshUsers();
     if (viewUser?.id === statusModal.user.id) setViewUser((prev) => (prev ? { ...prev, status: newStatus } : null));
     setStatusModal(null);
   };
@@ -689,8 +717,15 @@ export function IdentityContent() {
     URL.revokeObjectURL(url);
   };
 
-  const handleToggleMfa = (userId: string) => {
-    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, mfa: !u.mfa } : u)));
+  const handleToggleMfa = async (userId: string) => {
+    const user = users.find((u) => u.id === userId);
+    if (!user) return;
+    await fetch(`/api/users/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mfa: !user.mfa }),
+    });
+    refreshUsers();
   };
 
   const clearFilters = () => {
@@ -798,7 +833,7 @@ export function IdentityContent() {
                   style={{ backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
                 >
                   <option value="All">All Roles</option>
-                  {ALL_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                  {roleOptions.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
               <div>
@@ -1041,6 +1076,7 @@ export function IdentityContent() {
           onSave={formModal.user ? handleEdit : handleInvite}
           onCancel={() => setFormModal({ open: false, user: null })}
           userCount={users.length}
+          roleOptions={roleOptions}
         />
       )}
 

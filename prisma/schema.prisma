@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  code        String   @default("")
+  name        String
+  username    String
+  email       String
+  plan        String   @default("Starter")
+  users       Int      @default(0)
+  region      String   @default("US-East")
+  domain      String   @default("")
+  status      String   @default("Provisioning")
+  apiCalls    String   @default("—")
+  description String   @default("")
+  password    String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  platformUsers PlatformUser[]
+
+  @@map("tenants")
+}
+
+model PlatformUser {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  role       String   @default("tenant_member")
+  status     String   @default("Active")
+  mfa        Boolean  @default(false)
+  lastLogin  String   @default("—")
+  tenant     String   @default("")
+  tenantId    String?
+  tenantRef   Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  joinedDate  String   @default("")
+  inviteToken String?  @unique
+  phone       String   @default("")
+  jobTitle    String   @default("")
+  bio         String   @default("")
+  timezone    String   @default("Asia/Kolkata (IST, UTC+5:30)")
+  avatarUrl   String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessions  Session[]
+  apiTokens ApiToken[]
+
+  @@map("platform_users")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  type        String   @default("end_user")
+  description String   @default("")
+  status      String   @default("Active")
+  permissions String   @default("{}") // JSON string of module permissions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  user       PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device     String   @default("")
+  browser    String   @default("")
+  ip         String   @default("")
+  location   String   @default("")
+  isCurrent  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("sessions")
+}
+
+model ApiToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  token     String   @unique
+  scopes    String   @default("read")
+  expiresAt DateTime?
+  lastUsed  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("api_tokens")
+}
+
+model SsoConfig {
+  id         String  @id @default(cuid())
+  tenantId   String?
+  provider   String
+  enabled    Boolean @default(false)
+  config     String  @default("{}") // JSON string
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([provider, tenantId])
+  @@map("sso_configs")
+}

@@ -18,13 +18,6 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-const SUPER_ADMIN = {
-  email: process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL ?? "superadmin@glimmora.com",
-  password: process.env.NEXT_PUBLIC_SUPER_ADMIN_PASSWORD ?? "SuperAdmin@123",
-  fullName: process.env.NEXT_PUBLIC_SUPER_ADMIN_FULL_NAME ?? "Super Admin",
-  role: (process.env.NEXT_PUBLIC_SUPER_ADMIN_ROLE ?? "super_admin") as UserRole,
-};
-
 export function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
@@ -45,24 +38,20 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      // TODO: Replace with actual Identity & Access Service API call
-      // API: authenticate(email, password)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, password: data.password }),
+      });
 
-      if (data.email.toLowerCase() !== SUPER_ADMIN.email.toLowerCase()) {
-        toast.error("Account not found", {
-          description: "The username you entered doesn\u2019t match any account. Please check and try again.",
-        });
-        return;
-      }
-      if (data.password !== SUPER_ADMIN.password) {
-        toast.error("Incorrect password", {
-          description: "The password you entered is incorrect. Please try again or reset your password.",
-        });
+      const result = await res.json();
+
+      if (!res.ok) {
+        toast.error(result.error, { description: result.description });
         return;
       }
 
-      const cred = { fullName: SUPER_ADMIN.fullName, email: SUPER_ADMIN.email, role: SUPER_ADMIN.role };
+      const cred = { fullName: result.fullName, email: result.email, role: result.role as UserRole, tenantId: result.tenantId };
 
       // Check if user has MFA enabled in settings
       const MFA_STORAGE_KEY = "glimmora_mfa_methods";

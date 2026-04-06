@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AuthGuard } from "@/components/auth/auth-guard";
 import {
   ArrowLeft, ArrowRight, Check, Copy, Download,
   CheckCircle2, Smartphone, Mail, MessageSquare, KeyRound,
@@ -143,6 +144,7 @@ export default function MfaEnrollmentPage() {
   const totalSteps = 4;
 
   return (
+    <AuthGuard>
     <div className="space-y-6 max-w-2xl">
       <button onClick={() => router.push("/settings/security")}
         className="flex items-center gap-2 text-sm font-medium hover:opacity-70"
@@ -419,5 +421,6 @@ export default function MfaEnrollmentPage() {
         </div>
       )}
     </div>
+    </AuthGuard>
   );
 }

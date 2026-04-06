@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, XCircle, Loader2, Upload, Shield,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { useAuth } from "@/context/auth-context";
 import type { UserRole } from "@/lib/roles";
 
 interface Provider {
@@ -49,9 +51,11 @@ const INITIAL_PROVIDERS: Provider[] = [
 
 export default function SsoConfigPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [providers, setProviders] = useState(INITIAL_PROVIDERS);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ id: string; ok: boolean } | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
 
   const toggle = (id: string) => {
     setProviders((ps) => ps.map((p) => p.id === id ? { ...p, enabled: !p.enabled } : p));
@@ -70,6 +74,32 @@ export default function SsoConfigPage() {
     setTesting(null);
     setTestResult({ id, ok: Math.random() > 0.3 });
     setTimeout(() => setTestResult(null), 3000);
+  };
+
+  const saveProvider = async (provider: Provider) => {
+    setSaving(provider.id);
+    try {
+      const config: Record<string, string> = {};
+      for (const f of provider.fields) {
+        config[f.key] = f.value;
+      }
+      const res = await fetch("/api/auth/sso/configure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantId: user?.tenantId,
+          provider: provider.id,
+          enabled: provider.enabled,
+          config,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      toast.success("SSO configuration saved");
+    } catch {
+      toast.error("Failed to save SSO configuration");
+    } finally {
+      setSaving(null);
+    }
   };
 
   const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" };
@@ -138,8 +168,11 @@ export default function SsoConfigPage() {
                     {testing === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
                     {testing === p.id ? "Testing..." : "Test Connection"}
                   </button>
-                  <button className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-                    style={{ backgroundColor: "var(--gf-accent)" }}>Save</button>
+                  <button onClick={() => saveProvider(p)} disabled={saving === p.id}
+                    className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    style={{ backgroundColor: "var(--gf-accent)" }}>
+                    {saving === p.id ? "Saving..." : "Save"}
+                  </button>
                   {testResult?.id === p.id && (
                     <span className={`flex items-center gap-1 text-sm ${testResult.ok ? "text-green-400" : "text-red-400"}`}>
                       {testResult.ok ? <><CheckCircle2 className="h-4 w-4" /> Connected!</> : <><XCircle className="h-4 w-4" /> Failed</>}

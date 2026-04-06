@@ -1,35 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Monitor, Smartphone, Globe, Trash2, AlertTriangle, CheckCircle2,
 } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 interface Session {
   id: string; device: string; browser: string; ip: string; location: string;
   lastActive: string; isCurrent: boolean; icon: typeof Monitor;
 }
 
-const SESSIONS: Session[] = [
-  { id: "s1", device: "Windows 11", browser: "Chrome 124", ip: "192.168.1.105", location: "Mumbai, India", lastActive: "Now", isCurrent: true, icon: Monitor },
-  { id: "s2", device: "macOS 14", browser: "Safari 17", ip: "10.0.0.42", location: "Bangalore, India", lastActive: "2 hours ago", isCurrent: false, icon: Monitor },
-  { id: "s3", device: "iPhone 15", browser: "Safari Mobile", ip: "172.16.0.89", location: "Delhi, India", lastActive: "1 day ago", isCurrent: false, icon: Smartphone },
-];
+function mapDeviceToIcon(device: string): typeof Monitor {
+  const d = device.toLowerCase();
+  if (d.includes("phone") || d.includes("iphone") || d.includes("android")) return Smartphone;
+  return Monitor;
+}
+
+const FALLBACK_SESSION: Session = {
+  id: "current", device: "Current Device", browser: "Unknown", ip: "—",
+  location: "Unknown", lastActive: "Now", isCurrent: true, icon: Monitor,
+};
 
 export default function SessionsPage() {
   const router = useRouter();
-  const [sessions, setSessions] = useState(SESSIONS);
+  const { user } = useAuth();
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [showConfirm, setShowConfirm] = useState<string | null>(null);
   const [revokedAll, setRevokedAll] = useState(false);
 
-  const revoke = (id: string) => {
-    setSessions((s) => s.filter((x) => x.id !== id));
+  const fetchSessions = useCallback(async () => {
+    if (!user?.email) return;
+    try {
+      const res = await fetch("/api/sessions", {
+        headers: { "x-user-email": user.email },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const list: Session[] = (Array.isArray(data) ? data : []).map(
+        (s: { id: string; device: string; browser: string; ip: string; location: string; isCurrent: boolean; lastActive: string }) => ({
+          ...s,
+          icon: mapDeviceToIcon(s.device),
+        })
+      );
+      setSessions(list.length > 0 ? list : [FALLBACK_SESSION]);
+    } catch {
+      setSessions([FALLBACK_SESSION]);
+    }
+  }, [user?.email]);
+
+  useEffect(() => { fetchSessions(); }, [fetchSessions]);
+
+  const revoke = async (id: string) => {
+    if (!user?.email) return;
     setShowConfirm(null);
+    await fetch(`/api/sessions?id=${id}`, {
+      method: "DELETE",
+      headers: { "x-user-email": user.email },
+    });
+    await fetchSessions();
   };
 
-  const revokeAll = () => {
-    setSessions((s) => s.filter((x) => x.isCurrent));
+  const revokeAll = async () => {
+    if (!user?.email) return;
+    await fetch("/api/sessions", {
+      method: "DELETE",
+      headers: { "x-user-email": user.email },
+    });
+    await fetchSessions();
     setRevokedAll(true);
     setTimeout(() => setRevokedAll(false), 2000);
   };

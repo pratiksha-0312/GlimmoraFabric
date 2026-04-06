@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Shield, Search, Plus, Eye, Pencil,
+  Shield, Search, Eye, Pencil,
   ChevronLeft, ChevronRight, Users, Lock, UserCheck,
 } from "lucide-react";
 import {
   ROLE_LABELS, ROLE_COLORS,
   isInternalTeam, type UserRole,
 } from "@/lib/roles";
+import { useAuth } from "@/context/auth-context";
 
 // ---------------------------------------------------------------------------
-// Mock data
+// All roles from roles.ts
 // ---------------------------------------------------------------------------
 const ALL_ROLES: UserRole[] = [
   "super_admin","tenant_admin","auditor","workflow_manager","billing_admin",
@@ -22,41 +23,16 @@ const ALL_ROLES: UserRole[] = [
   "product_fullstack_dev","product_designer","product_developer",
 ];
 
-const MOCK_USERS_COUNT: Record<UserRole, number> = {
-  super_admin: 2, tenant_admin: 4, auditor: 2, workflow_manager: 3,
-  billing_admin: 2, developer: 12, tenant_member: 18, guest_viewer: 5,
-  cto: 1, platform_engineering_lead: 2, product_lead: 3, senior_backend_engineer: 4,
-  frontend_engineer: 5, qa_engineer: 3, sdk_dx_engineer: 2, ai_prompt_owner: 1,
-  product_fullstack_dev: 3, product_designer: 2, product_developer: 4,
-};
-
-const MOCK_PERMS_COUNT: Record<UserRole, number> = {
-  super_admin: 60, tenant_admin: 35, auditor: 12, workflow_manager: 18,
-  billing_admin: 15, developer: 22, tenant_member: 8, guest_viewer: 4,
-  cto: 55, platform_engineering_lead: 50, product_lead: 30, senior_backend_engineer: 40,
-  frontend_engineer: 28, qa_engineer: 25, sdk_dx_engineer: 22, ai_prompt_owner: 20,
-  product_fullstack_dev: 32, product_designer: 15, product_developer: 28,
-};
-
-// Mock role-user assignment data
-const MOCK_ROLE_USERS: { name: string; email: string; role: UserRole; status: "Active" | "Inactive" | "Invited"; assignedOn: string }[] = [
-  { name: "Ishan Verma", email: "ishan@glimmora.com", role: "super_admin", status: "Active", assignedOn: "2026-01-10" },
-  { name: "Pratiksha Yadav", email: "pratiksha@glimmora.com", role: "super_admin", status: "Active", assignedOn: "2026-01-10" },
-  { name: "Vanshika Singh", email: "vanshika@glimmora.com", role: "frontend_engineer", status: "Active", assignedOn: "2026-01-15" },
-  { name: "Arjun Mehta", email: "arjun@glimmora.com", role: "tenant_admin", status: "Active", assignedOn: "2026-01-20" },
-  { name: "Riya Kapoor", email: "riya@glimmora.com", role: "tenant_admin", status: "Active", assignedOn: "2026-02-01" },
-  { name: "Dev Sharma", email: "dev@glimmora.com", role: "developer", status: "Active", assignedOn: "2026-02-05" },
-  { name: "Priya Nair", email: "priya@glimmora.com", role: "developer", status: "Active", assignedOn: "2026-02-10" },
-  { name: "Karan Patel", email: "karan@glimmora.com", role: "developer", status: "Active", assignedOn: "2026-02-10" },
-  { name: "Sneha Joshi", email: "sneha@glimmora.com", role: "auditor", status: "Active", assignedOn: "2026-02-15" },
-  { name: "Rahul Gupta", email: "rahul@glimmora.com", role: "cto", status: "Active", assignedOn: "2026-01-05" },
-  { name: "Neha Reddy", email: "neha@glimmora.com", role: "platform_engineering_lead", status: "Active", assignedOn: "2026-01-08" },
-  { name: "Amit Tiwari", email: "amit@glimmora.com", role: "qa_engineer", status: "Active", assignedOn: "2026-02-20" },
-  { name: "Pooja Das", email: "pooja@glimmora.com", role: "billing_admin", status: "Active", assignedOn: "2026-03-01" },
-  { name: "Vikram Roy", email: "vikram@glimmora.com", role: "workflow_manager", status: "Invited", assignedOn: "2026-03-15" },
-  { name: "Ananya Iyer", email: "ananya@glimmora.com", role: "tenant_member", status: "Active", assignedOn: "2026-03-10" },
-  { name: "Rohan Mishra", email: "rohan@glimmora.com", role: "guest_viewer", status: "Inactive", assignedOn: "2026-02-28" },
+// Tenant admin can only see roles under them
+const TENANT_ADMIN_ROLES: UserRole[] = [
+  "tenant_admin","billing_admin",
+  "developer","tenant_member","guest_viewer",
 ];
+
+interface AssignedUser {
+  id: string; name: string; email: string; role: string;
+  status: string; joinedDate: string; tenant: string;
+}
 
 const ROLES_PAGE_SIZE = 5;
 const USERS_PAGE_SIZE = 8;
@@ -67,7 +43,12 @@ const USERS_PAGE_SIZE = 8;
 
 export default function RolesPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
+  const visibleRoles = isSuperAdmin ? ALL_ROLES : TENANT_ADMIN_ROLES;
+
   const [activeTab, setActiveTab] = useState<"roles" | "assignments">("roles");
+  const [allUsers, setAllUsers] = useState<AssignedUser[]>([]);
 
   // Roles tab state
   const [search, setSearch] = useState("");
@@ -79,9 +60,32 @@ export default function RolesPage() {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [userPage, setUserPage] = useState(1);
 
+  const fetchUsers = useCallback(async () => {
+    // Fetch platform users
+    const usersRes = await fetch("/api/users");
+    const platformUsers: AssignedUser[] = usersRes.ok ? await usersRes.json() : [];
+
+    // Fetch tenants (they are tenant admins)
+    const tenantsRes = await fetch("/api/tenants");
+    const tenants = tenantsRes.ok ? await tenantsRes.json() : [];
+    const tenantUsers: AssignedUser[] = tenants.map((t: Record<string, string>) => ({
+      id: `tenant-${t.id}`,
+      name: t.name,
+      email: t.email || t.username,
+      role: "Tenant Admin",
+      status: t.status === "Active" ? "Active" : t.status,
+      joinedDate: t.created || "",
+      tenant: t.name,
+    }));
+
+    setAllUsers([...tenantUsers, ...platformUsers]);
+  }, []);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
   // Roles filtering
   const filtered = useMemo(() => {
-    return ALL_ROLES.filter((r) => {
+    return visibleRoles.filter((r) => {
       const label = ROLE_LABELS[r].toLowerCase();
       if (search && !label.includes(search.toLowerCase())) return false;
       if (typeFilter === "end-user" && isInternalTeam(r)) return false;
@@ -92,12 +96,12 @@ export default function RolesPage() {
 
   const totalPages = Math.ceil(filtered.length / ROLES_PAGE_SIZE);
   const paged = filtered.slice((page - 1) * ROLES_PAGE_SIZE, page * ROLES_PAGE_SIZE);
-  const endUserCount = ALL_ROLES.filter((r) => !isInternalTeam(r)).length;
-  const internalCount = ALL_ROLES.filter((r) => isInternalTeam(r)).length;
+  const endUserCount = visibleRoles.filter((r) => !isInternalTeam(r)).length;
+  const internalCount = visibleRoles.filter((r) => isInternalTeam(r)).length;
 
   // Assignments filtering
   const filteredUsers = useMemo(() => {
-    return MOCK_ROLE_USERS.filter((u) => {
+    return allUsers.filter((u) => {
       if (userSearch) {
         const q = userSearch.toLowerCase();
         if (!u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
@@ -105,7 +109,7 @@ export default function RolesPage() {
       if (roleFilter !== "all" && u.role !== roleFilter) return false;
       return true;
     });
-  }, [userSearch, roleFilter]);
+  }, [allUsers, userSearch, roleFilter]);
 
   const userTotalPages = Math.ceil(filteredUsers.length / USERS_PAGE_SIZE);
   const pagedUsers = filteredUsers.slice((userPage - 1) * USERS_PAGE_SIZE, userPage * USERS_PAGE_SIZE);
@@ -113,25 +117,18 @@ export default function RolesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Role & Permission Management</h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--gf-text-secondary)" }}>Manage roles, permissions, and user assignments</p>
-        </div>
-        <button onClick={() => router.push("/dashboard/roles/create")}
-          className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white"
-          style={{ backgroundColor: "var(--gf-accent)" }}>
-          <Plus className="h-4 w-4" /> Add Role
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Role & Permission Management</h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--gf-text-secondary)" }}>Manage roles, permissions, and user assignments</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Roles", value: ALL_ROLES.length, icon: <Shield className="h-5 w-5" /> },
+          { label: "Total Roles", value: visibleRoles.length, icon: <Shield className="h-5 w-5" /> },
           { label: "End-User Roles", value: endUserCount, icon: <Users className="h-5 w-5" /> },
           { label: "Internal Roles", value: internalCount, icon: <Lock className="h-5 w-5" /> },
-          { label: "Total Assignments", value: MOCK_ROLE_USERS.length, icon: <UserCheck className="h-5 w-5" /> },
+          { label: "Total Assignments", value: allUsers.length, icon: <UserCheck className="h-5 w-5" /> },
         ].map((s) => (
           <div key={s.label} className="rounded-xl p-5" style={{ backgroundColor: "var(--gf-bg-surface)", border: "1px solid var(--gf-border)" }}>
             <div className="flex items-center justify-between">
@@ -150,14 +147,14 @@ export default function RolesPage() {
             activeTab === "roles" ? "border-[var(--gf-accent)]" : "border-transparent"
           }`}
           style={{ color: activeTab === "roles" ? "var(--gf-accent)" : "var(--gf-text-secondary)" }}>
-          <Shield className="h-4 w-4 inline mr-1.5" />Roles ({ALL_ROLES.length})
+          <Shield className="h-4 w-4 inline mr-1.5" />Roles ({visibleRoles.length})
         </button>
         <button onClick={() => setActiveTab("assignments")}
           className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
             activeTab === "assignments" ? "border-[var(--gf-accent)]" : "border-transparent"
           }`}
           style={{ color: activeTab === "assignments" ? "var(--gf-accent)" : "var(--gf-text-secondary)" }}>
-          <UserCheck className="h-4 w-4 inline mr-1.5" />Role-User Assignments ({MOCK_ROLE_USERS.length})
+          <UserCheck className="h-4 w-4 inline mr-1.5" />Role-User Assignments ({allUsers.length})
         </button>
       </div>
 
@@ -186,7 +183,7 @@ export default function RolesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ backgroundColor: "var(--gf-bg-elevated)" }}>
-                  {["Role Name", "Type", "Users", "Permissions", "Actions"].map((h) => (
+                  {["Role Name", "Type", "Permissions", "Actions"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--gf-text-muted)" }}>{h}</th>
                   ))}
                 </tr>
@@ -208,8 +205,11 @@ export default function RolesPage() {
                           internal ? "bg-purple-500/10 text-purple-400" : "bg-blue-500/10 text-blue-400"
                         }`}>{internal ? "Internal" : "End-User"}</span>
                       </td>
-                      <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>{MOCK_USERS_COUNT[r]}</td>
-                      <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>{MOCK_PERMS_COUNT[r]}</td>
+                      <td className="px-4 py-3">
+                        <button onClick={() => router.push(`/dashboard/roles/${r}`)}
+                          className="text-xs font-medium hover:underline"
+                          style={{ color: "var(--gf-accent)" }}>View Permissions</button>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
                           <button onClick={() => router.push(`/dashboard/roles/${r}`)} title="View"
@@ -261,8 +261,8 @@ export default function RolesPage() {
               className="rounded-lg border px-3 py-2 text-sm outline-none"
               style={{ backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>
               <option value="all">All Roles</option>
-              {ALL_ROLES.map((r) => (
-                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+              {visibleRoles.map((r) => (
+                <option key={r} value={ROLE_LABELS[r]}>{ROLE_LABELS[r]}</option>
               ))}
             </select>
           </div>
@@ -278,30 +278,28 @@ export default function RolesPage() {
                 </tr>
               </thead>
               <tbody>
-                {pagedUsers.map((u, i) => {
-                  const color = ROLE_COLORS[u.role];
-                  const internal = isInternalTeam(u.role);
+                {pagedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "var(--gf-text-muted)" }}>No assignments found</td>
+                  </tr>
+                ) : pagedUsers.map((u) => {
+                  const internal = false; // tenant/platform users are end-user roles
                   return (
-                    <tr key={i} className="border-t hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: "var(--gf-border)" }}>
+                    <tr key={u.id} className="border-t hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: "var(--gf-border)" }}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ backgroundColor: "var(--gf-accent)" }}>
-                            {u.name.split(" ").map((n) => n[0]).join("")}
+                            {u.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                           </div>
                           <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{u.name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>{u.email}</td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className={`h-2 w-2 rounded-full ${color.dot}`} />
-                          <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{ROLE_LABELS[u.role]}</span>
-                        </div>
+                        <span className="font-medium" style={{ color: "var(--gf-text-primary)" }}>{u.role}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          internal ? "bg-purple-500/10 text-purple-400" : "bg-blue-500/10 text-blue-400"
-                        }`}>{internal ? "Internal" : "End-User"}</span>
+                        <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-400">End-User</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -309,15 +307,10 @@ export default function RolesPage() {
                           u.status === "Invited" ? "bg-amber-500/10 text-amber-400" : "bg-gray-500/10 text-gray-400"
                         }`}>{u.status}</span>
                       </td>
-                      <td className="px-4 py-3" style={{ color: "var(--gf-text-muted)" }}>{u.assignedOn}</td>
+                      <td className="px-4 py-3" style={{ color: "var(--gf-text-muted)" }}>{u.joinedDate || "—"}</td>
                     </tr>
                   );
                 })}
-                {pagedUsers.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "var(--gf-text-muted)" }}>No assignments found</td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>

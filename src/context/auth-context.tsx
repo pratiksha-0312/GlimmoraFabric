@@ -18,6 +18,7 @@ export interface AuthUser {
   fullName: string;
   email: string;
   role: UserRole;
+  tenantId?: string;
 }
 
 interface AuthContextValue {

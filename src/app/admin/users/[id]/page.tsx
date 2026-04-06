@@ -21,6 +21,7 @@ import {
   Fingerprint,
 } from "lucide-react";
 import { ROLE_LABELS, ROLE_COLORS, type UserRole } from "@/lib/roles";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 // ---------------------------------------------------------------------------
 // Types & Data
@@ -120,6 +121,7 @@ export default function UserDetailPage() {
   const permissions = ROLE_PERMISSIONS[user.role] ?? [];
 
   return (
+    <AuthGuard allowedRoles={["tenant_admin", "super_admin"] as UserRole[]}>
     <div className="space-y-6">
       {/* Back */}
       <button onClick={() => router.push("/admin/users")} className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
@@ -251,5 +253,6 @@ export default function UserDetailPage() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }

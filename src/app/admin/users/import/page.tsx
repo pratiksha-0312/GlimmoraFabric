@@ -6,6 +6,8 @@ import {
   ArrowLeft, Upload, Download, FileText, CheckCircle2, XCircle,
   Loader2, AlertTriangle,
 } from "lucide-react";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import type { UserRole } from "@/lib/roles";
 
 interface ParsedRow {
   name: string; email: string; role: string; tenant: string;
@@ -65,6 +67,7 @@ export default function BulkImportPage() {
   const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" };
 
   return (
+    <AuthGuard allowedRoles={["super_admin"] as UserRole[]}>
     <div className="space-y-6 max-w-4xl">
       <button onClick={() => router.push("/admin/users")}
         className="flex items-center gap-2 text-sm font-medium hover:opacity-70"
@@ -182,5 +185,6 @@ export default function BulkImportPage() {
         </>
       )}
     </div>
+    </AuthGuard>
   );
 }

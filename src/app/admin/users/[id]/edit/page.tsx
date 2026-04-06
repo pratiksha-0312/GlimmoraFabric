@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Users, Save } from "lucide-react";
 import { ROLE_LABELS, type UserRole } from "@/lib/roles";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 // ---------------------------------------------------------------------------
 // Types & Data
@@ -135,6 +136,7 @@ export default function EditUserPage() {
   }
 
   return (
+    <AuthGuard allowedRoles={["tenant_admin", "super_admin"] as UserRole[]}>
     <div className="space-y-6 max-w-3xl">
       {/* Back */}
       <button onClick={() => router.push(`/admin/users/${userId}`)} className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
@@ -221,5 +223,6 @@ export default function EditUserPage() {
         </div>
       </form>
     </div>
+    </AuthGuard>
   );
 }

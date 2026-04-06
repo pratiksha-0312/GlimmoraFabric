@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Key, Plus, Copy, Check, Trash2, AlertTriangle, Eye, EyeOff, Shield,
 } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { useAuth } from "@/context/auth-context";
 import type { UserRole } from "@/lib/roles";
 
 interface Token {
@@ -13,15 +14,10 @@ interface Token {
   lastUsed: string; scopes: string[];
 }
 
-const MOCK_TOKENS: Token[] = [
-  { id: "t1", name: "CI/CD Pipeline", created: "2026-02-15", expires: "2026-05-15", lastUsed: "2 hours ago", scopes: ["read", "write"] },
-  { id: "t2", name: "Monitoring Script", created: "2026-03-01", expires: "2026-06-01", lastUsed: "1 day ago", scopes: ["read"] },
-  { id: "t3", name: "Admin CLI", created: "2026-01-10", expires: "Never", lastUsed: "5 days ago", scopes: ["read", "write", "admin"] },
-];
-
 export default function ApiTokensPage() {
   const router = useRouter();
-  const [tokens, setTokens] = useState(MOCK_TOKENS);
+  const { user } = useAuth();
+  const [tokens, setTokens] = useState<Token[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -34,15 +30,41 @@ export default function ApiTokensPage() {
 
   const toggleScope = (s: string) => setScopes((p) => ({ ...p, [s]: !p[s] }));
 
-  const handleGenerate = () => {
-    const fakeToken = `gfb_${Array.from({ length: 40 }, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]).join("")}`;
-    setNewToken(fakeToken);
-    setTokens((prev) => [{
-      id: `t${prev.length + 1}`, name: tokenName || "Untitled Token",
-      created: new Date().toISOString().split("T")[0],
-      expires: expiry === "never" ? "Never" : new Date(Date.now() + parseInt(expiry) * 86400000).toISOString().split("T")[0],
-      lastUsed: "Never", scopes: Object.keys(scopes).filter((k) => scopes[k]),
-    }, ...prev]);
+  const fetchTokens = useCallback(async () => {
+    if (!user?.email) return;
+    try {
+      const res = await fetch("/api/tokens", { headers: { "x-user-email": user.email } });
+      if (res.ok) {
+        const data = await res.json();
+        setTokens(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      // silently ignore fetch errors
+    }
+  }, [user?.email]);
+
+  useEffect(() => { fetchTokens(); }, [fetchTokens]);
+
+  const handleGenerate = async () => {
+    if (!user?.email) return;
+    try {
+      const res = await fetch("/api/tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-user-email": user.email },
+        body: JSON.stringify({
+          name: tokenName || "Untitled Token",
+          expiry,
+          scopes: (["read", "write", "admin"] as const).filter((k) => scopes[k]),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNewToken(data.token);
+        await fetchTokens();
+      }
+    } catch {
+      // silently ignore
+    }
   };
 
   const handleCopy = () => {
@@ -51,8 +73,19 @@ export default function ApiTokensPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleRevoke = (id: string) => {
-    setTokens((t) => t.filter((x) => x.id !== id));
+  const handleRevoke = async (id: string) => {
+    if (!user?.email) return;
+    try {
+      const res = await fetch(`/api/tokens?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { "x-user-email": user.email },
+      });
+      if (res.ok) {
+        await fetchTokens();
+      }
+    } catch {
+      // silently ignore
+    }
     setRevokeTarget(null);
   };
 

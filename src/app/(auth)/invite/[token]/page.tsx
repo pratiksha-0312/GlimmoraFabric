@@ -1,12 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Building2, CheckCircle2, Loader2 } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import type { UserRole } from "@/lib/roles";
 
 export default function AcceptInvitePage() {
   const router = useRouter();
+  const params = useParams();
+  const token = params.token as string;
+  const { login } = useAuth();
+
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -14,9 +20,7 @@ export default function AcceptInvitePage() {
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [hasAccount, setHasAccount] = useState(false);
-
-  const org = "Glimmora HQ";
-  const inviter = "Super Admin";
+  const [orgName, setOrgName] = useState("");
 
   const handleAccept = async () => {
     if (!hasAccount) {
@@ -26,9 +30,31 @@ export default function AcceptInvitePage() {
     }
     setError("");
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
+
+    const res = await fetch("/api/orgs/invite/accept", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, name, password }),
+    });
+    const data = await res.json();
     setIsLoading(false);
+
+    if (!res.ok) {
+      setError(data.error ?? "Something went wrong");
+      return;
+    }
+
+    setOrgName(data.orgName);
     setAccepted(true);
+
+    // Log the user in
+    login({
+      fullName: data.fullName,
+      email: data.email,
+      role: data.role as UserRole,
+      tenantId: data.tenantId,
+    });
+
     setTimeout(() => router.push("/dashboard"), 2000);
   };
 
@@ -38,7 +64,7 @@ export default function AcceptInvitePage() {
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-500/15">
           <CheckCircle2 className="h-10 w-10 text-green-400" />
         </div>
-        <h1 className="text-3xl font-bold text-white mb-2">You&apos;ve joined {org}!</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">You&apos;ve joined {orgName || "the organization"}!</h1>
         <p className="text-sm text-gray-400">Redirecting to dashboard...</p>
       </div>
     );
@@ -50,9 +76,9 @@ export default function AcceptInvitePage() {
         <Building2 className="h-8 w-8 text-teal-400" />
       </div>
 
-      <h1 className="text-3xl font-bold text-white mb-2">Join {org}</h1>
+      <h1 className="text-3xl font-bold text-white mb-2">Join Organization</h1>
       <p className="text-sm text-gray-400 mb-8">
-        <strong className="text-white">{inviter}</strong> has invited you to join their organization
+        You&apos;ve been invited to join an organization
       </p>
 
       {error && (

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { AuthGuard } from "@/components/auth/auth-guard";
 import {
   ArrowLeft, Lock, ShieldCheck, ShieldOff, Eye, EyeOff,
   CheckCircle2, AlertTriangle, Monitor, Smartphone, Mail, MessageSquare, KeyRound,
@@ -196,6 +197,7 @@ export default function SecuritySettingsPage() {
   };
 
   return (
+    <AuthGuard>
     <div className="space-y-6 max-w-3xl">
       <button onClick={() => router.push("/settings")}
         className="flex items-center gap-2 text-sm font-medium hover:opacity-70"
@@ -409,5 +411,6 @@ export default function SecuritySettingsPage() {
         />
       )}
     </div>
+    </AuthGuard>
   );
 }

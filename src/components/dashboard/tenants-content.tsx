@@ -247,7 +247,7 @@ function CreateTenantWizard({
   onCancel,
 }: {
   tenantCode: string;
-  onSave: (data: { name: string; username: string; plan: Tenant["plan"]; billingCycle: string; users: number; features: string[] }) => void;
+  onSave: (data: { name: string; username: string; password: string; plan: Tenant["plan"]; billingCycle: string; users: number; features: string[] }) => void;
   onCancel: () => void;
 }) {
   const [step, setStep] = useState(1);
@@ -256,6 +256,8 @@ function CreateTenantWizard({
   // Step 1 fields
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Step 2 fields
   const [plan, setPlan] = useState<Tenant["plan"]>("Starter");
@@ -296,6 +298,9 @@ function CreateTenantWizard({
     if (!name.trim()) e.name = "Tenant full name is required";
     if (!username.trim()) e.username = "Username is required";
     else if (!/^[a-z0-9_]+$/.test(username)) e.username = "Only lowercase letters, numbers, and underscore allowed";
+    if (!password.trim()) e.password = "Password is required";
+    if (!confirmPassword.trim()) e.confirmPassword = "Confirm password is required";
+    else if (password !== confirmPassword) e.confirmPassword = "Passwords do not match";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -320,7 +325,7 @@ function CreateTenantWizard({
   };
 
   const handleCreate = () => {
-    onSave({ name, username, plan, billingCycle, users: maxUsers, features: Array.from(features) });
+    onSave({ name, username, password, plan, billingCycle, users: maxUsers, features: Array.from(features) });
   };
 
   return (
@@ -421,6 +426,34 @@ function CreateTenantWizard({
                 className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none cursor-not-allowed"
                 style={readOnlyStyle}
               />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Password *</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                style={{ ...fieldStyle, ...(errors.password ? { borderColor: "#ef4444" } : {}) }}
+              />
+              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Confirm Password *</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm password"
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+                style={{ ...fieldStyle, ...(errors.confirmPassword ? { borderColor: "#ef4444" } : {}) }}
+              />
+              {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
             </div>
           </div>
         )}
@@ -857,7 +890,7 @@ function sortTenants(list: Tenant[], key: SortKey, dir: SortDir): Tenant[] {
 function nextTenantCode(tenants: Tenant[]): string {
   let maxNum = 0;
   for (const t of tenants) {
-    const m = t.code.match(/^TENT(\d+)$/);
+    const m = (t.code ?? "").match(/^TENT(\d+)$/);
     if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10));
   }
   return `TENT${String(maxNum + 1).padStart(3, "0")}`;
@@ -868,7 +901,16 @@ function nextTenantCode(tenants: Tenant[]): string {
 // ---------------------------------------------------------------------------
 
 export function TenantsContent() {
-  const [tenants, setTenants] = useState<Tenant[]>(INITIAL_TENANTS);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+
+  const refreshTenants = () =>
+    fetch("/api/tenants")
+      .then((r) => r.json())
+      .then(setTenants);
+
+  useEffect(() => {
+    refreshTenants();
+  }, []);
 
   // Search & filter
   const [search, setSearch] = useState("");
@@ -920,45 +962,61 @@ export function TenantsContent() {
   // Handlers
   // ---------------------------------------------------------------------------
 
-  const handleCreate = (data: { name: string; username: string; plan: Tenant["plan"]; billingCycle: string; users: number; features: string[] }) => {
+  const handleCreate = async (data: { name: string; username: string; password: string; plan: Tenant["plan"]; billingCycle: string; users: number; features: string[] }) => {
     const code = nextTenantCode(tenants);
-    const newTenant: Tenant = {
-      id: `t${Date.now()}`,
+    const newTenant = {
       code,
       name: data.name,
       username: data.username,
+      password: data.password,
       plan: data.plan,
       users: data.users,
-      status: "Provisioning",
+      status: "Provisioning" as const,
       apiCalls: "—",
       created: new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
       description: `${data.plan} plan • ${data.billingCycle} billing • ${data.features.join(", ")}`,
     };
-    setTenants((prev) => [newTenant, ...prev]);
+    await fetch("/api/tenants", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newTenant),
+    });
+    await refreshTenants();
     setShowCreate(false);
     toast.success(`Tenant ${code} created successfully ✓`);
   };
 
-  const handleDetailSave = (data: Partial<Tenant>) => {
+  const handleDetailSave = async (data: Partial<Tenant>) => {
     if (!viewTenant) return;
-    setTenants((prev) => prev.map((t) => (t.id === viewTenant.id ? { ...t, ...data } : t)));
+    await fetch(`/api/tenants/${viewTenant.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    await refreshTenants();
     setViewTenant((prev) => (prev ? { ...prev, ...data } : null));
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteModal) return;
     const name = deleteModal.name;
-    setTenants((prev) => prev.filter((t) => t.id !== deleteModal.id));
+    await fetch(`/api/tenants/${deleteModal.id}`, { method: "DELETE" });
+    await refreshTenants();
     setDeleteModal(null);
     if (viewTenant?.id === deleteModal.id) setViewTenant(null);
     toast.error("Tenant deleted ✓", { description: name });
   };
 
-  const handleStatusChange = () => {
+  const handleStatusChange = async () => {
     if (!statusModal) return;
     const isSuspend = statusModal.action === "suspend";
     const newStatus: Tenant["status"] = isSuspend ? "Suspended" : "Active";
-    setTenants((prev) => prev.map((t) => (t.id === statusModal.tenant.id ? { ...t, status: newStatus } : t)));
+    await fetch(`/api/tenants/${statusModal.tenant.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    await refreshTenants();
     if (viewTenant?.id === statusModal.tenant.id) {
       setViewTenant((prev) => (prev ? { ...prev, status: newStatus } : null));
     }

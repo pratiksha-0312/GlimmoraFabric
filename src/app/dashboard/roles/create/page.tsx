@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, CheckSquare } from "lucide-react";
+import { toast } from "sonner";
 import {
   ROLE_LABELS, isInternalTeam, type UserRole, type EndUserRole, type InternalSystemRole,
 } from "@/lib/roles";
@@ -86,8 +87,25 @@ export default function CreateRolePage() {
     if (!roleName) { setError("Please select a role name."); return; }
     setError("");
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1200));
+    const res = await fetch("/api/roles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: roleCode,
+        name: ROLE_LABELS[roleName as UserRole] ?? roleName,
+        type: userType === "end-user" ? "end_user" : "internal",
+        description,
+        status: status === "active" ? "Active" : "Inactive",
+        permissions: perms,
+      }),
+    });
     setIsSubmitting(false);
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error ?? "Failed to create role");
+      return;
+    }
+    toast.success("Role created successfully");
     router.push("/dashboard/roles");
   };
 

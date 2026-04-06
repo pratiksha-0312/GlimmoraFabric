@@ -1,29 +1,27 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Search, UserPlus, Users, UserCheck, Mail, UserX,
-  ChevronLeft, ChevronRight, MoreHorizontal, Pencil, Trash2,
-  AlertTriangle, X, Send, CheckCircle2,
+  ChevronLeft, ChevronRight, Pencil, Trash2,
+  AlertTriangle, X, Send, CheckCircle2, Copy,
 } from "lucide-react";
 import { ROLE_LABELS, ROLE_BADGE_CLASSES, type UserRole } from "@/lib/roles";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { useAuth } from "@/context/auth-context";
+import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
-// Types & Mock Data
+// Types
 // ---------------------------------------------------------------------------
 interface Member {
   id: string; name: string; email: string; role: UserRole;
-  status: "Active" | "Inactive" | "Invited"; joinedDate: string; lastActive: string;
+  status: "Active" | "Inactive" | "Invited"; joinedDate: string; lastLogin: string;
 }
 
-const MEMBERS: Member[] = [
-  { id: "m1", name: "Super Admin", email: "superadmin@glimmora.com", role: "super_admin", status: "Active", joinedDate: "2025-11-01", lastActive: "2 min ago" },
-];
-
 const END_USER_ROLES: UserRole[] = [
-  "super_admin", "tenant_admin", "auditor", "workflow_manager",
+  "tenant_admin", "auditor", "workflow_manager",
   "billing_admin", "developer", "tenant_member", "guest_viewer",
 ];
 
@@ -39,12 +37,29 @@ const STATUS_COLORS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 export default function MembersPage() {
   const router = useRouter();
-  const [members, setMembers] = useState(MEMBERS);
+  const { user } = useAuth();
+  const [members, setMembers] = useState<Member[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [showInvite, setShowInvite] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<Member | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const tenantId = user?.tenantId;
+
+  const fetchMembers = useCallback(async () => {
+    if (!tenantId) return;
+    const res = await fetch(`/api/orgs/${tenantId}/members`);
+    const data = await res.json();
+    setMembers(data.map((m: Record<string, string>) => ({
+      ...m,
+      lastActive: m.lastLogin ?? "—",
+    })));
+    setLoading(false);
+  }, [tenantId]);
+
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
   const filtered = useMemo(() => {
     return members.filter((m) => {
@@ -60,6 +75,19 @@ export default function MembersPage() {
   const invited = members.filter((m) => m.status === "Invited").length;
   const inactive = members.filter((m) => m.status === "Inactive").length;
 
+  const handleRemove = async () => {
+    if (!removeTarget || !tenantId) return;
+    await fetch(`/api/orgs/${tenantId}/members/${removeTarget.id}`, { method: "DELETE" });
+    setRemoveTarget(null);
+    toast.success("Member removed successfully");
+    fetchMembers();
+  };
+
+  const handleInvited = () => {
+    setShowInvite(false);
+    fetchMembers();
+  };
+
   return (
     <AuthGuard allowedRoles={["tenant_admin"] as UserRole[]}>
     <div className="space-y-6">
@@ -72,7 +100,7 @@ export default function MembersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Organization Members</h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--gf-text-secondary)" }}>Manage members of Glimmora HQ</p>
+          <p className="mt-1 text-sm" style={{ color: "var(--gf-text-secondary)" }}>Manage members of {user?.fullName ?? "your organization"}</p>
         </div>
         <button onClick={() => setShowInvite(true)}
           className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white"
@@ -128,17 +156,21 @@ export default function MembersPage() {
             </tr>
           </thead>
           <tbody>
-            {paged.map((m) => (
+            {loading ? (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "var(--gf-text-muted)" }}>Loading...</td></tr>
+            ) : paged.length === 0 ? (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "var(--gf-text-muted)" }}>No members found</td></tr>
+            ) : paged.map((m) => (
               <tr key={m.id} className="border-t hover:bg-black/5 dark:hover:bg-white/5" style={{ borderColor: "var(--gf-border)" }}>
                 <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>{m.name}</td>
                 <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>{m.email}</td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_BADGE_CLASSES[m.role]}`}>{ROLE_LABELS[m.role]}</span>
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_BADGE_CLASSES[m.role] ?? ""}`}>{ROLE_LABELS[m.role] ?? m.role}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[m.status]}`}>{m.status}</span>
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[m.status] ?? ""}`}>{m.status}</span>
                 </td>
-                <td className="px-4 py-3" style={{ color: "var(--gf-text-muted)" }}>{m.lastActive}</td>
+                <td className="px-4 py-3" style={{ color: "var(--gf-text-muted)" }}>{m.lastLogin ?? "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1">
                     <button title="Edit Role" className="rounded-lg p-1.5 hover:bg-black/10 dark:hover:bg-white/10"
@@ -171,12 +203,12 @@ export default function MembersPage() {
       )}
 
       {/* Invite Modal */}
-      {showInvite && <InviteModal onClose={() => setShowInvite(false)} />}
+      {showInvite && tenantId && <InviteModal tenantId={tenantId} onClose={() => setShowInvite(false)} onInvited={handleInvited} />}
 
       {/* Remove Modal */}
       {removeTarget && (
-        <RemoveModal member={removeTarget}
-          onConfirm={() => { setMembers((m) => m.filter((x) => x.id !== removeTarget.id)); setRemoveTarget(null); }}
+        <RemoveModal member={removeTarget} orgName={user?.fullName ?? "your organization"}
+          onConfirm={handleRemove}
           onCancel={() => setRemoveTarget(null)} />
       )}
     </div>
@@ -187,20 +219,38 @@ export default function MembersPage() {
 // ---------------------------------------------------------------------------
 // Invite Modal
 // ---------------------------------------------------------------------------
-function InviteModal({ onClose }: { onClose: () => void }) {
+function InviteModal({ tenantId, onClose, onInvited }: { tenantId: string; onClose: () => void; onInvited: () => void }) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<UserRole>("developer");
+  const [memberId, setMemberId] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState("");
 
   const handleSend = async () => {
     if (!email) return;
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
+    const res = await fetch(`/api/orgs/${tenantId}/invite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, message }),
+    });
+    const data = await res.json();
     setIsLoading(false);
+
+    if (!res.ok) {
+      toast.error(data.error);
+      return;
+    }
+
+    setInviteUrl(window.location.origin + data.inviteUrl);
     setSent(true);
-    setTimeout(onClose, 1500);
+    setTimeout(() => { onInvited(); }, 2000);
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success("Invite link copied!");
   };
 
   const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" };
@@ -215,6 +265,13 @@ function InviteModal({ onClose }: { onClose: () => void }) {
             <CheckCircle2 className="h-12 w-12 text-green-500 mb-3" />
             <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Invitation Sent!</h2>
             <p className="text-sm mt-1" style={{ color: "var(--gf-text-secondary)" }}>Sent to {email}</p>
+            {inviteUrl && (
+              <button onClick={copyLink}
+                className="mt-3 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium hover:opacity-80"
+                style={{ borderColor: "var(--gf-border)", color: "var(--gf-accent)" }}>
+                <Copy className="h-3 w-3" /> Copy Invite Link
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -229,11 +286,9 @@ function InviteModal({ onClose }: { onClose: () => void }) {
                   className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none" style={fieldStyle} />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Role</label>
-                <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
-                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none" style={fieldStyle}>
-                  {END_USER_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                </select>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Member ID</label>
+                <input type="text" value={memberId} onChange={(e) => setMemberId(e.target.value)} placeholder="e.g. MEM-001"
+                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none" style={fieldStyle} />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Message (optional)</label>
@@ -260,7 +315,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
 // ---------------------------------------------------------------------------
 // Remove Modal
 // ---------------------------------------------------------------------------
-function RemoveModal({ member, onConfirm, onCancel }: { member: Member; onConfirm: () => void; onCancel: () => void }) {
+function RemoveModal({ member, orgName, onConfirm, onCancel }: { member: Member; orgName: string; onConfirm: () => void; onCancel: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel}>
       <div className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
@@ -273,7 +328,7 @@ function RemoveModal({ member, onConfirm, onCancel }: { member: Member; onConfir
           <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Remove Member</h2>
         </div>
         <p className="text-sm mb-6" style={{ color: "var(--gf-text-secondary)" }}>
-          Are you sure you want to remove <strong style={{ color: "var(--gf-text-primary)" }}>{member.name}</strong> from Glimmora HQ?
+          Are you sure you want to remove <strong style={{ color: "var(--gf-text-primary)" }}>{member.name}</strong> from {orgName}?
           They will lose access to all organization resources immediately.
         </p>
         <div className="flex justify-end gap-3">

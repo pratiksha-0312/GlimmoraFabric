@@ -1,28 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Building2, Save, CheckCircle2, Upload } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { useAuth } from "@/context/auth-context";
 import type { UserRole } from "@/lib/roles";
 
 export default function OrganizationSettingsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [saved, setSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
-    name: "Glimmora HQ",
-    domain: "glimmora.com",
-    description: "Enterprise SaaS platform for multi-tenant operations",
+    name: "",
+    domain: "",
+    description: "",
     industry: "Technology",
-    website: "https://glimmora.com",
+    website: "",
   });
+
+  useEffect(() => {
+    if (!user?.tenantId) { setLoading(false); return; }
+    fetch(`/api/orgs/${user.tenantId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setForm({
+          name: data.name ?? "",
+          domain: data.domain ?? "",
+          description: data.description ?? "",
+          industry: "Technology",
+          website: "",
+        });
+      })
+      .finally(() => setLoading(false));
+  }, [user?.tenantId]);
 
   const update = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
 
   const handleSave = async () => {
+    if (!user?.tenantId) return;
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
+    await fetch(`/api/orgs/${user.tenantId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: form.name, domain: form.domain, description: form.description }),
+    });
     setIsLoading(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -57,6 +81,9 @@ export default function OrganizationSettingsPage() {
         </div>
       )}
 
+      {loading ? (
+        <div className="text-sm py-10 text-center" style={{ color: "var(--gf-text-muted)" }}>Loading...</div>
+      ) : (
       <div className="rounded-xl border p-6 space-y-6" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
         {/* Logo */}
         <div>
@@ -117,6 +144,7 @@ export default function OrganizationSettingsPage() {
           </button>
         </div>
       </div>
+      )}
     </div>
     </AuthGuard>
   );

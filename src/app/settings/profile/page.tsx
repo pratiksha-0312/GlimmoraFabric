@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Upload, Trash2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
@@ -17,6 +17,9 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const [saved, setSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     fullName: user?.fullName ?? "",
     email: user?.email ?? "",
@@ -30,11 +33,68 @@ export default function ProfilePage() {
   const initials = user?.fullName?.split(" ").map((n) => n[0]).join("").toUpperCase() ?? "U";
 
   const handleSave = async () => {
+    if (!user?.email) return;
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setIsLoading(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-user-email": user.email },
+        body: JSON.stringify({
+          name: form.fullName,
+          phone: form.phone,
+          jobTitle: form.jobTitle,
+          bio: form.bio,
+          timezone: form.timezone,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save profile");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.email) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/files/upload", { method: "POST", body: formData });
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      const { url } = await uploadRes.json();
+
+      const updateRes = await fetch("/api/users/me", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-user-email": user.email },
+        body: JSON.stringify({ avatarUrl: url }),
+      });
+      if (!updateRes.ok) throw new Error("Failed to update avatar");
+      setAvatarUrl(url);
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user?.email) return;
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-user-email": user.email },
+        body: JSON.stringify({ avatarUrl: null }),
+      });
+      if (!res.ok) throw new Error("Failed to remove avatar");
+      setAvatarUrl(null);
+    } catch (err) {
+      console.error("Remove avatar failed:", err);
+    }
   };
 
   const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" };
@@ -58,14 +118,20 @@ export default function ProfilePage() {
       <div className="rounded-xl border p-6 space-y-6" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
         {/* Avatar */}
         <div className="flex items-center gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold text-white"
-            style={{ backgroundColor: "var(--gf-accent)" }}>{initials}</div>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Avatar" className="h-20 w-20 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold text-white"
+              style={{ backgroundColor: "var(--gf-accent)" }}>{initials}</div>
+          )}
           <div className="space-y-2">
-            <button className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium hover:opacity-80"
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            <button onClick={() => fileInputRef.current?.click()} disabled={isUploading}
+              className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium hover:opacity-80 disabled:opacity-50"
               style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>
-              <Upload className="h-4 w-4" /> Upload Photo
+              <Upload className="h-4 w-4" /> {isUploading ? "Uploading..." : "Upload Photo"}
             </button>
-            <button className="flex items-center gap-2 text-xs hover:opacity-80" style={{ color: "var(--gf-text-muted)" }}>
+            <button onClick={handleRemoveAvatar} className="flex items-center gap-2 text-xs hover:opacity-80" style={{ color: "var(--gf-text-muted)" }}>
               <Trash2 className="h-3 w-3" /> Remove
             </button>
           </div>
