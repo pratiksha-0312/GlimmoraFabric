@@ -35,6 +35,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Layers,
+  Flag,
   ChevronRight,
   Home,
 } from "lucide-react";
@@ -61,6 +62,7 @@ const navItems: NavItem[] = [
   { label: "Tenant Management", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
   { label: "Plan Management", href: "/dashboard/plans", icon: Layers, visibleTo: ["super_admin"] },
   { label: "User Management", href: "/admin/users", icon: Users, visibleTo: ["super_admin", "tenant_admin"] },
+  { label: "Feature Flags", href: "/dashboard/feature-flags", icon: Flag, visibleTo: ["super_admin"] },
   { label: "Role & Permission Management", href: "/dashboard/roles", icon: Shield, visibleTo: ["super_admin", "tenant_admin"] },
   { label: "Service Management", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
   { label: "API & Developer Tools", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
