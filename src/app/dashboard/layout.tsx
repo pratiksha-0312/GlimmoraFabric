@@ -41,7 +41,7 @@ import {
   Home,
   ShoppingCart,
   RefreshCw,
-  Inbox,
+  ClipboardList,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -77,7 +77,7 @@ const navItems: NavItem[] = [
     { label: "Workflow Builder", href: "/admin/workflows", icon: Layers, visibleTo: ["workflow_manager", "super_admin"] },
     { label: "Active Instances", href: "/admin/workflows/instances", icon: Activity, visibleTo: ["workflow_manager"] },
     { label: "SLA Status", href: "/admin/workflows/sla", icon: Clock, visibleTo: ["workflow_manager", "super_admin"] },
-    { label: "Task Inbox", href: "/tasks", icon: Inbox },
+    { label: "Task Inbox", href: "/tasks", icon: ClipboardList },
   ]},
   { label: "Notification Management", href: "/dashboard/notifications", icon: Bell },
   { label: "Payment", href: "#payment", icon: CreditCard, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"], children: [
