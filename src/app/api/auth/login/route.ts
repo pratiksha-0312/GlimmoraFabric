@@ -27,22 +27,16 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Check platform user credentials (billing_admin, developer, tenant_member, etc.)
-  const platformUser = await prisma.platformUser.findFirst({
-    where: {
-      OR: [
-        { email: { equals: email, mode: "insensitive" } },
-        { name: { equals: email, mode: "insensitive" } },
-      ],
-    },
-  });
+  // Use raw query to ensure password field is always included (avoids stale Prisma client cache)
+  const platformUsers = await prisma.$queryRawUnsafe<
+    { id: string; name: string; email: string; password: string; role: string; status: string; tenantId: string | null }[]
+  >(
+    `SELECT id, name, email, password, role, status, "tenantId" FROM platform_users WHERE (LOWER(email) = LOWER($1) OR LOWER(name) = LOWER($1)) AND status = 'Active' LIMIT 1`,
+    email,
+  );
+  const platformUser = platformUsers[0] ?? null;
 
   if (platformUser) {
-    if (platformUser.status !== "Active") {
-      return NextResponse.json(
-        { error: "Account inactive", description: "Your account is not active. Please contact your administrator." },
-        { status: 403 },
-      );
-    }
     if (!platformUser.password || platformUser.password !== password) {
       return NextResponse.json(
         { error: "Incorrect password", description: "The password you entered is incorrect. Please try again or reset your password." },

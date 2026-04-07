@@ -41,6 +41,7 @@ import {
   Home,
   ShoppingCart,
   RefreshCw,
+  Inbox,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -71,7 +72,13 @@ const navItems: NavItem[] = [
   { label: "Role & Permission Management", href: "/dashboard/roles", icon: Shield, visibleTo: ["super_admin", "tenant_admin"] },
   { label: "Service Management", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
   { label: "API & Developer Tools", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
-  { label: "Workflow Management", href: "/dashboard/workflows", icon: GitBranch, section: "Operations", visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
+  { label: "Workflow", href: "#workflow", icon: GitBranch, section: "Operations", visibleTo: ["super_admin", "workflow_manager", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"], children: [
+    { label: "Overview", href: "/dashboard/workflows", icon: GitBranch, visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
+    { label: "Workflow Builder", href: "/admin/workflows", icon: Layers, visibleTo: ["workflow_manager", "super_admin"] },
+    { label: "Active Instances", href: "/admin/workflows/instances", icon: Activity, visibleTo: ["workflow_manager"] },
+    { label: "SLA Status", href: "/admin/workflows/sla", icon: Clock, visibleTo: ["workflow_manager", "super_admin"] },
+    { label: "Task Inbox", href: "/tasks", icon: Inbox },
+  ]},
   { label: "Notification Management", href: "/dashboard/notifications", icon: Bell },
   { label: "Payment", href: "#payment", icon: CreditCard, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"], children: [
     { label: "Checkout", href: "/checkout", icon: ShoppingCart, visibleTo: ["tenant_member"] },
