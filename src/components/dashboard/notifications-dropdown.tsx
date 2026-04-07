@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   Shield,
@@ -10,6 +10,8 @@ import {
   Bell,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
+import { notificationStore, type AppNotification } from "@/lib/notification-store";
 
 interface NotificationsDropdownProps {
   open: boolean;
@@ -17,79 +19,65 @@ interface NotificationsDropdownProps {
   onUnreadCountChange?: (count: number) => void;
 }
 
-interface Notification {
-  id: number;
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  timeAgo: string;
-  unread: boolean;
-}
-
-const initialNotifications: Notification[] = [
-  {
-    id: 1,
-    icon: Shield,
-    title: "Security Alert",
-    description: "New login detected from unknown device",
-    timeAgo: "2 min ago",
-    unread: true,
-  },
-  {
-    id: 2,
-    icon: Users,
-    title: "Team Update",
-    description: "A new user accepted the invitation",
-    timeAgo: "15 min ago",
-    unread: true,
-  },
-  {
-    id: 3,
-    icon: Activity,
-    title: "Service Deployed",
-    description: "auth-service v2.4.1 deployed successfully",
-    timeAgo: "1 hour ago",
-    unread: true,
-  },
-  {
-    id: 4,
-    icon: FileText,
-    title: "Report Ready",
-    description: "Monthly compliance report is ready",
-    timeAgo: "3 hours ago",
-    unread: false,
-  },
-  {
-    id: 5,
-    icon: Bell,
-    title: "System Update",
-    description: "Platform maintenance scheduled for Sunday",
-    timeAgo: "1 day ago",
-    unread: false,
-  },
+// Static seed notifications (shown immediately)
+const SEED: AppNotification[] = [
+  { id: 1, icon: Shield, title: "Security Alert", description: "New login detected from unknown device", timeAgo: "2 min ago", unread: true, timestamp: Date.now() - 120_000 },
+  { id: 2, icon: Users, title: "Team Update", description: "A new user accepted the invitation", timeAgo: "15 min ago", unread: true, timestamp: Date.now() - 900_000 },
+  { id: 3, icon: Activity, title: "Service Deployed", description: "auth-service v2.4.1 deployed successfully", timeAgo: "1 hour ago", unread: true, timestamp: Date.now() - 3_600_000 },
+  { id: 4, icon: FileText, title: "Report Ready", description: "Monthly compliance report is ready", timeAgo: "3 hours ago", unread: false, timestamp: Date.now() - 10_800_000 },
+  { id: 5, icon: Bell, title: "System Update", description: "Platform maintenance scheduled for Sunday", timeAgo: "1 day ago", unread: false, timestamp: Date.now() - 86_400_000 },
 ];
+
+let seeded = false;
 
 export function NotificationsDropdown({
   open,
   onClose,
   onUnreadCountChange,
 }: NotificationsDropdownProps) {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  // Subscribe to the global notification store
+  const storeNotifications = useSyncExternalStore(
+    notificationStore.subscribe,
+    notificationStore.getAll,
+    notificationStore.getAll,
+  );
+
+  // Merge seed + store
+  const notifications = storeNotifications.length > 0
+    ? [...storeNotifications, ...SEED.filter((s) => !storeNotifications.some((n) => n.id === s.id))]
+    : SEED;
 
   const unreadCount = notifications.filter((n) => n.unread).length;
+
+  // Start the simulated WS feed on mount
+  useEffect(() => {
+    notificationStore.start();
+  }, []);
+
+  // Show toast for real-time notifications
+  const [prevLen, setPrevLen] = useState(storeNotifications.length);
+  useEffect(() => {
+    if (storeNotifications.length > prevLen) {
+      const newest = storeNotifications[0];
+      if (newest) toast(newest.title, { description: newest.description });
+    }
+    setPrevLen(storeNotifications.length);
+  }, [storeNotifications.length, prevLen, storeNotifications]);
 
   useEffect(() => {
     onUnreadCountChange?.(unreadCount);
   }, [unreadCount, onUnreadCountChange]);
 
   const markAllRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    notificationStore.markAllRead();
+    // also mark seeds
+    SEED.forEach((s) => (s.unread = false));
   }, []);
 
   const markOneRead = useCallback((id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
+    notificationStore.markRead(id);
+    const s = SEED.find((n) => n.id === id);
+    if (s) s.unread = false;
   }, []);
 
   if (!open) return null;
@@ -110,12 +98,15 @@ export function NotificationsDropdown({
           className="flex items-center justify-between px-4 py-3"
           style={{ borderBottom: "1px solid var(--gf-border)" }}
         >
-          <h3
-            className="text-sm font-semibold"
-            style={{ color: "var(--gf-text-primary)" }}
-          >
-            Notifications
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3
+              className="text-sm font-semibold"
+              style={{ color: "var(--gf-text-primary)" }}
+            >
+              Notifications
+            </h3>
+            <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Live — connected" />
+          </div>
           {unreadCount > 0 && (
             <button
               className="text-xs font-medium text-teal-500 hover:text-teal-400 transition-colors"
@@ -159,7 +150,7 @@ function NotificationItem({
   notification,
   onRead,
 }: {
-  notification: Notification;
+  notification: AppNotification;
   onRead: (id: number) => void;
 }) {
   const Icon = notification.icon;

@@ -31,7 +31,6 @@ import {
   Key,
   MonitorDot,
   Wrench,
-  Code2,
   PanelLeftClose,
   PanelLeftOpen,
   Layers,
@@ -102,8 +101,6 @@ const navItems: NavItem[] = [
   ]},
   { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
   { label: "Settings", href: "/settings", icon: Settings, section: "System", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead"] },
-  { label: "Developer Tools", href: "/dashboard/developer-tools", icon: Code2, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "ai_prompt_owner"] },
-  { label: "Reports & Analytics", href: "/dashboard/analytics", icon: BarChart3, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
 ];
 
 const SIDEBAR_EXPANDED = 256;
