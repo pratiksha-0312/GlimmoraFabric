@@ -37,11 +37,11 @@ import {
   Layers,
   Flag,
   Cpu,
+  ClipboardList,
   ChevronRight,
   Home,
   ShoppingCart,
   RefreshCw,
-  ClipboardList,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -91,6 +91,7 @@ const navItems: NavItem[] = [
   { label: "AI Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
   { label: "AI Config & Analytics", href: "/dashboard/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
   { label: "Audit & Logs", href: "/dashboard/audit", icon: FileText, section: "Compliance", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
+  { label: "Audit Log Viewer", href: "/admin/audit-logs", icon: ClipboardList, visibleTo: ["super_admin", "auditor", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
   { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
   { label: "Settings", href: "/settings", icon: Settings, section: "System", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead"] },
   { label: "Developer Tools", href: "/dashboard/developer-tools", icon: Code2, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "ai_prompt_owner"] },

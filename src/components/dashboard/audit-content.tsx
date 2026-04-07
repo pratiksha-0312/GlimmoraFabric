@@ -31,6 +31,7 @@ import {
   Globe,
   Monitor,
   User,
+  ChevronDown,
 } from "lucide-react";
 
 // ============================================================================
@@ -138,6 +139,41 @@ const SEC_ICONS: Record<SecurityEvent["type"], typeof LogIn> = {
 
 const PAGE_SIZE = 6;
 const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" };
+
+function CustomSelect({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: { label: string; value: string }[]; placeholder?: string }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-sm min-w-[140px] outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+        style={{ backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
+      >
+        <span className="truncate">{selected?.label ?? placeholder ?? value}</span>
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} style={{ color: "var(--gf-text-muted)" }} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-[calc(100%+4px)] z-50 w-full min-w-[160px] max-h-[240px] overflow-y-auto rounded-xl border py-1 shadow-xl" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }}>
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`flex w-full items-center px-3 py-2 text-sm hover:bg-white/5 transition-colors ${opt.value === value ? "font-medium" : ""}`}
+                style={{ color: opt.value === value ? "var(--gf-accent)" : "var(--gf-text-primary)" }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 // ============================================================================
 // AUDIT EVENT DETAIL SLIDE-OVER
@@ -307,9 +343,7 @@ function GenerateReportModal({ onGenerate, onCancel }: { onGenerate: (type: Comp
           </div>
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Report Type</label>
-            <select value={type} onChange={(e) => setType(e.target.value as ComplianceReport["type"])} className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle}>
-              {REPORT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <CustomSelect value={type} onChange={(v) => setType(v as ComplianceReport["type"])} options={REPORT_TYPES.map((t) => ({ label: t, value: t }))} />
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm font-medium border hover:opacity-80" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>Cancel</button>
@@ -581,28 +615,20 @@ export function AuditContent() {
           </div>
 
           {showAuditFilters && (
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border p-4" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
+            <div className="flex flex-wrap items-end gap-3 rounded-xl border p-4" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: "var(--gf-text-muted)" }}>Actor</label>
-                <select value={auditActor} onChange={(e) => { setAuditActor(e.target.value); setAuditPage(1); }} className="rounded-lg border px-3 py-1.5 text-sm outline-none" style={fieldStyle}>
-                  <option value="All">All Actors</option>
-                  {ACTORS.map((a) => <option key={a} value={a}>{a}</option>)}
-                </select>
+                <CustomSelect value={auditActor} onChange={(v) => { setAuditActor(v); setAuditPage(1); }} options={[{ label: "All Actors", value: "All" }, ...ACTORS.map((a) => ({ label: a, value: a }))]} />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: "var(--gf-text-muted)" }}>Action</label>
-                <select value={auditAction} onChange={(e) => { setAuditAction(e.target.value); setAuditPage(1); }} className="rounded-lg border px-3 py-1.5 text-sm outline-none" style={fieldStyle}>
-                  <option value="All">All Actions</option>
-                  {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-                </select>
+                <CustomSelect value={auditAction} onChange={(v) => { setAuditAction(v); setAuditPage(1); }} options={[{ label: "All Actions", value: "All" }, ...ACTIONS.map((a) => ({ label: a, value: a }))]} />
               </div>
-              <div className="flex items-end">
-                <button onClick={() => { setAuditCriticalOnly(!auditCriticalOnly); setAuditPage(1); }} className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium ${auditCriticalOnly ? "ring-2 ring-red-500/40" : ""}`} style={{ borderColor: auditCriticalOnly ? "#ef4444" : "var(--gf-border)", color: auditCriticalOnly ? "#ef4444" : "var(--gf-text-primary)", backgroundColor: auditCriticalOnly ? "rgba(239,68,68,0.1)" : "var(--gf-bg-base)" }}>
-                  <AlertTriangle className="h-3.5 w-3.5" />Critical Only
-                </button>
-              </div>
+              <button onClick={() => { setAuditCriticalOnly(!auditCriticalOnly); setAuditPage(1); }} className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium ${auditCriticalOnly ? "ring-2 ring-red-500/40" : ""}`} style={{ borderColor: auditCriticalOnly ? "#ef4444" : "var(--gf-border)", color: auditCriticalOnly ? "#ef4444" : "var(--gf-text-primary)", backgroundColor: auditCriticalOnly ? "rgba(239,68,68,0.1)" : "var(--gf-bg-base)" }}>
+                <AlertTriangle className="h-3.5 w-3.5" />Critical Only
+              </button>
               {hasAuditFilters && (
-                <button onClick={() => { setAuditSearch(""); setAuditActor("All"); setAuditAction("All"); setAuditCriticalOnly(false); setAuditPage(1); }} className="flex items-center gap-1 mt-4 text-xs font-medium text-red-500 hover:text-red-400"><X className="h-3 w-3" />Clear All</button>
+                <button onClick={() => { setAuditSearch(""); setAuditActor("All"); setAuditAction("All"); setAuditCriticalOnly(false); setAuditPage(1); }} className="flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-400"><X className="h-3 w-3" />Clear All</button>
               )}
             </div>
           )}
@@ -659,18 +685,9 @@ export function AuditContent() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--gf-text-muted)" }} />
               <input type="text" value={secSearch} onChange={(e) => { setSecSearch(e.target.value); setSecPage(1); }} placeholder="Search by actor or details..." className="w-full rounded-lg border pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }} />
             </div>
-            <select value={secType} onChange={(e) => { setSecType(e.target.value); setSecPage(1); }} className="rounded-lg border px-3 py-2 text-sm outline-none" style={fieldStyle}>
-              <option value="All">All Types</option>
-              {SEC_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <select value={secSeverity} onChange={(e) => { setSecSeverity(e.target.value); setSecPage(1); }} className="rounded-lg border px-3 py-2 text-sm outline-none" style={fieldStyle}>
-              <option value="All">All Severity</option>
-              {SEVERITIES.map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
-            </select>
-            <select value={secStatus} onChange={(e) => { setSecStatus(e.target.value); setSecPage(1); }} className="rounded-lg border px-3 py-2 text-sm outline-none" style={fieldStyle}>
-              <option value="All">All Status</option>
-              {SEC_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <CustomSelect value={secType} onChange={(v) => { setSecType(v); setSecPage(1); }} options={[{ label: "All Types", value: "All" }, ...SEC_TYPES.map((t) => ({ label: t, value: t }))]} />
+            <CustomSelect value={secSeverity} onChange={(v) => { setSecSeverity(v); setSecPage(1); }} options={[{ label: "All Severity", value: "All" }, ...SEVERITIES.map((s) => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))]} />
+            <CustomSelect value={secStatus} onChange={(v) => { setSecStatus(v); setSecPage(1); }} options={[{ label: "All Status", value: "All" }, ...SEC_STATUSES.map((s) => ({ label: s, value: s }))]} />
           </div>
 
           {hasSecFilters && <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>Showing {filteredSec.length} of {secEvents.length} events</p>}

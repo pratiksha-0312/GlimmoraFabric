@@ -172,3 +172,13 @@
     @apply font-sans;
   }
 }
+
+.dark select {
+  color-scheme: dark;
+}
+
+.dark select option {
+  background-color: #0d1120;
+  color: #ffffff;
+  padding: 6px 8px;
+}
