@@ -28,6 +28,7 @@ export type PlatformUserMinAggregateOutputType = {
   id: string | null
   name: string | null
   email: string | null
+  password: string | null
   role: string | null
   status: string | null
   mfa: boolean | null
@@ -49,6 +50,7 @@ export type PlatformUserMaxAggregateOutputType = {
   id: string | null
   name: string | null
   email: string | null
+  password: string | null
   role: string | null
   status: string | null
   mfa: boolean | null
@@ -70,6 +72,7 @@ export type PlatformUserCountAggregateOutputType = {
   id: number
   name: number
   email: number
+  password: number
   role: number
   status: number
   mfa: number
@@ -93,6 +96,7 @@ export type PlatformUserMinAggregateInputType = {
   id?: true
   name?: true
   email?: true
+  password?: true
   role?: true
   status?: true
   mfa?: true
@@ -114,6 +118,7 @@ export type PlatformUserMaxAggregateInputType = {
   id?: true
   name?: true
   email?: true
+  password?: true
   role?: true
   status?: true
   mfa?: true
@@ -135,6 +140,7 @@ export type PlatformUserCountAggregateInputType = {
   id?: true
   name?: true
   email?: true
+  password?: true
   role?: true
   status?: true
   mfa?: true
@@ -229,6 +235,7 @@ export type PlatformUserGroupByOutputType = {
   id: string
   name: string
   email: string
+  password: string
   role: string
   status: string
   mfa: boolean
@@ -271,6 +278,7 @@ export type PlatformUserWhereInput = {
   id?: Prisma.StringFilter<"PlatformUser"> | string
   name?: Prisma.StringFilter<"PlatformUser"> | string
   email?: Prisma.StringFilter<"PlatformUser"> | string
+  password?: Prisma.StringFilter<"PlatformUser"> | string
   role?: Prisma.StringFilter<"PlatformUser"> | string
   status?: Prisma.StringFilter<"PlatformUser"> | string
   mfa?: Prisma.BoolFilter<"PlatformUser"> | boolean
@@ -295,6 +303,7 @@ export type PlatformUserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   status?: Prisma.SortOrder
   mfa?: Prisma.SortOrder
@@ -323,6 +332,7 @@ export type PlatformUserWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.PlatformUserWhereInput | Prisma.PlatformUserWhereInput[]
   name?: Prisma.StringFilter<"PlatformUser"> | string
   email?: Prisma.StringFilter<"PlatformUser"> | string
+  password?: Prisma.StringFilter<"PlatformUser"> | string
   role?: Prisma.StringFilter<"PlatformUser"> | string
   status?: Prisma.StringFilter<"PlatformUser"> | string
   mfa?: Prisma.BoolFilter<"PlatformUser"> | boolean
@@ -346,6 +356,7 @@ export type PlatformUserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   status?: Prisma.SortOrder
   mfa?: Prisma.SortOrder
@@ -373,6 +384,7 @@ export type PlatformUserScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"PlatformUser"> | string
   name?: Prisma.StringWithAggregatesFilter<"PlatformUser"> | string
   email?: Prisma.StringWithAggregatesFilter<"PlatformUser"> | string
+  password?: Prisma.StringWithAggregatesFilter<"PlatformUser"> | string
   role?: Prisma.StringWithAggregatesFilter<"PlatformUser"> | string
   status?: Prisma.StringWithAggregatesFilter<"PlatformUser"> | string
   mfa?: Prisma.BoolWithAggregatesFilter<"PlatformUser"> | boolean
@@ -394,6 +406,7 @@ export type PlatformUserCreateInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -417,6 +430,7 @@ export type PlatformUserUncheckedCreateInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -440,6 +454,7 @@ export type PlatformUserUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -463,6 +478,7 @@ export type PlatformUserUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -486,6 +502,7 @@ export type PlatformUserCreateManyInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -507,6 +524,7 @@ export type PlatformUserUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -527,6 +545,7 @@ export type PlatformUserUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -558,6 +577,7 @@ export type PlatformUserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   status?: Prisma.SortOrder
   mfa?: Prisma.SortOrder
@@ -579,6 +599,7 @@ export type PlatformUserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   status?: Prisma.SortOrder
   mfa?: Prisma.SortOrder
@@ -600,6 +621,7 @@ export type PlatformUserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   status?: Prisma.SortOrder
   mfa?: Prisma.SortOrder
@@ -704,6 +726,7 @@ export type PlatformUserCreateWithoutTenantRefInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -726,6 +749,7 @@ export type PlatformUserUncheckedCreateWithoutTenantRefInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -777,6 +801,7 @@ export type PlatformUserScalarWhereInput = {
   id?: Prisma.StringFilter<"PlatformUser"> | string
   name?: Prisma.StringFilter<"PlatformUser"> | string
   email?: Prisma.StringFilter<"PlatformUser"> | string
+  password?: Prisma.StringFilter<"PlatformUser"> | string
   role?: Prisma.StringFilter<"PlatformUser"> | string
   status?: Prisma.StringFilter<"PlatformUser"> | string
   mfa?: Prisma.BoolFilter<"PlatformUser"> | boolean
@@ -798,6 +823,7 @@ export type PlatformUserCreateWithoutSessionsInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -820,6 +846,7 @@ export type PlatformUserUncheckedCreateWithoutSessionsInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -858,6 +885,7 @@ export type PlatformUserUpdateWithoutSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -880,6 +908,7 @@ export type PlatformUserUncheckedUpdateWithoutSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -902,6 +931,7 @@ export type PlatformUserCreateWithoutApiTokensInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -924,6 +954,7 @@ export type PlatformUserUncheckedCreateWithoutApiTokensInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -962,6 +993,7 @@ export type PlatformUserUpdateWithoutApiTokensInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -984,6 +1016,7 @@ export type PlatformUserUncheckedUpdateWithoutApiTokensInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1006,6 +1039,7 @@ export type PlatformUserCreateManyTenantRefInput = {
   id?: string
   name: string
   email: string
+  password?: string
   role?: string
   status?: string
   mfa?: boolean
@@ -1026,6 +1060,7 @@ export type PlatformUserUpdateWithoutTenantRefInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1048,6 +1083,7 @@ export type PlatformUserUncheckedUpdateWithoutTenantRefInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1070,6 +1106,7 @@ export type PlatformUserUncheckedUpdateManyWithoutTenantRefInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   mfa?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1130,6 +1167,7 @@ export type PlatformUserSelect<ExtArgs extends runtime.Types.Extensions.Internal
   id?: boolean
   name?: boolean
   email?: boolean
+  password?: boolean
   role?: boolean
   status?: boolean
   mfa?: boolean
@@ -1155,6 +1193,7 @@ export type PlatformUserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   id?: boolean
   name?: boolean
   email?: boolean
+  password?: boolean
   role?: boolean
   status?: boolean
   mfa?: boolean
@@ -1177,6 +1216,7 @@ export type PlatformUserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   id?: boolean
   name?: boolean
   email?: boolean
+  password?: boolean
   role?: boolean
   status?: boolean
   mfa?: boolean
@@ -1199,6 +1239,7 @@ export type PlatformUserSelectScalar = {
   id?: boolean
   name?: boolean
   email?: boolean
+  password?: boolean
   role?: boolean
   status?: boolean
   mfa?: boolean
@@ -1216,7 +1257,7 @@ export type PlatformUserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type PlatformUserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "role" | "status" | "mfa" | "lastLogin" | "tenant" | "tenantId" | "joinedDate" | "inviteToken" | "phone" | "jobTitle" | "bio" | "timezone" | "avatarUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["platformUser"]>
+export type PlatformUserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "password" | "role" | "status" | "mfa" | "lastLogin" | "tenant" | "tenantId" | "joinedDate" | "inviteToken" | "phone" | "jobTitle" | "bio" | "timezone" | "avatarUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["platformUser"]>
 export type PlatformUserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenantRef?: boolean | Prisma.PlatformUser$tenantRefArgs<ExtArgs>
   sessions?: boolean | Prisma.PlatformUser$sessionsArgs<ExtArgs>
@@ -1241,6 +1282,7 @@ export type $PlatformUserPayload<ExtArgs extends runtime.Types.Extensions.Intern
     id: string
     name: string
     email: string
+    password: string
     role: string
     status: string
     mfa: boolean
@@ -1685,6 +1727,7 @@ export interface PlatformUserFieldRefs {
   readonly id: Prisma.FieldRef<"PlatformUser", 'String'>
   readonly name: Prisma.FieldRef<"PlatformUser", 'String'>
   readonly email: Prisma.FieldRef<"PlatformUser", 'String'>
+  readonly password: Prisma.FieldRef<"PlatformUser", 'String'>
   readonly role: Prisma.FieldRef<"PlatformUser", 'String'>
   readonly status: Prisma.FieldRef<"PlatformUser", 'String'>
   readonly mfa: Prisma.FieldRef<"PlatformUser", 'Boolean'>

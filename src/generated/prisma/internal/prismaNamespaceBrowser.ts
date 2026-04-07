@@ -100,6 +100,7 @@ export const PlatformUserScalarFieldEnum = {
   id: 'id',
   name: 'name',
   email: 'email',
+  password: 'password',
   role: 'role',
   status: 'status',
   mfa: 'mfa',

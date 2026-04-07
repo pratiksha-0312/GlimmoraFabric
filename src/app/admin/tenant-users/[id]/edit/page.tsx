@@ -18,7 +18,9 @@ interface PlatformUser {
   joinedDate: string;
 }
 
-const SUPER_ADMIN_ROLES: UserRole[] = ["auditor", "workflow_manager"];
+const TENANT_ADMIN_ROLES: UserRole[] = [
+  "billing_admin", "developer", "tenant_member", "guest_viewer",
+];
 
 const LANGUAGES = [
   "English, United States", "English, United Kingdom", "Spanish", "French",
@@ -33,7 +35,7 @@ const TIMEZONES = [
 
 const STATUSES: PlatformUser["status"][] = ["Active", "Inactive", "Invited"];
 
-export default function SuperAdminUserEditPage() {
+export default function TenantUserEditPage() {
   const params = useParams();
   const router = useRouter();
   const userId = params.id as string;
@@ -43,7 +45,7 @@ export default function SuperAdminUserEditPage() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<UserRole>(SUPER_ADMIN_ROLES[0]);
+  const [role, setRole] = useState<UserRole>(TENANT_ADMIN_ROLES[0]);
   const [status, setStatus] = useState<PlatformUser["status"]>("Active");
   const [mfa, setMfa] = useState(false);
   const [language, setLanguage] = useState("English, United States");
@@ -112,7 +114,7 @@ export default function SuperAdminUserEditPage() {
       body: JSON.stringify({ name, email, role, status, mfa, tenant: user?.tenant }),
     });
     setSaving(false);
-    router.push("/admin/users");
+    router.push("/admin/tenant-users");
   };
 
   if (loading) {
@@ -128,7 +130,7 @@ export default function SuperAdminUserEditPage() {
       <div className="flex flex-col items-center justify-center py-20">
         <Users className="h-12 w-12 mb-4 opacity-30" style={{ color: "var(--gf-text-muted)" }} />
         <p className="text-lg font-semibold" style={{ color: "var(--gf-text-primary)" }}>User Not Found</p>
-        <button onClick={() => router.push("/admin/users")} className="mt-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: "var(--gf-accent)" }}>
+        <button onClick={() => router.push("/admin/tenant-users")} className="mt-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: "var(--gf-accent)" }}>
           <ArrowLeft className="h-4 w-4" />Back to Users
         </button>
       </div>
@@ -136,9 +138,9 @@ export default function SuperAdminUserEditPage() {
   }
 
   return (
-    <AuthGuard allowedRoles={["super_admin"] as UserRole[]}>
+    <AuthGuard allowedRoles={["tenant_admin"] as UserRole[]}>
       <div className="space-y-6 max-w-2xl">
-        <button onClick={() => router.push("/admin/users")} className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
+        <button onClick={() => router.push("/admin/tenant-users")} className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
           <ArrowLeft className="h-4 w-4" />Back to Users
         </button>
 
@@ -146,7 +148,7 @@ export default function SuperAdminUserEditPage() {
           {/* Header */}
           <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--gf-border)" }}>
             <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Edit User</h2>
-            <button onClick={() => router.push("/admin/users")} className="rounded-lg p-1 transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
+            <button onClick={() => router.push("/admin/tenant-users")} className="rounded-lg p-1 transition-colors hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -193,7 +195,7 @@ export default function SuperAdminUserEditPage() {
                 <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Role</label>
                 <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
                   className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle}>
-                  {SUPER_ADMIN_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                  {TENANT_ADMIN_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
             </div>
@@ -232,7 +234,7 @@ export default function SuperAdminUserEditPage() {
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={() => router.push("/admin/users")}
+              <button type="button" onClick={() => router.push("/admin/tenant-users")}
                 className="rounded-lg px-4 py-2 text-sm font-medium border transition-colors hover:opacity-80"
                 style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>
                 Cancel

@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
     data: {
       name: body.name,
       email: body.email ?? "",
+      password: body.password ?? "",
       role: body.role ?? "tenant_member",
       status: body.status ?? "Active",
       mfa: body.mfa ?? false,

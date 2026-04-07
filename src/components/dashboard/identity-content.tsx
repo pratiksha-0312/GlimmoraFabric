@@ -211,7 +211,7 @@ function UserFormModal({
   const [name, setName] = useState(user?.name ?? "");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState(user?.email ?? "");
-  const [role, setRole] = useState<UserRole>(user?.role ?? "auditor");
+  const [role, setRole] = useState<UserRole>(user?.role ?? roleOptions[0]);
   const [status, setStatus] = useState<PlatformUser["status"]>(user?.status ?? "Invited");
   const [mfa, setMfa] = useState(user?.mfa ?? false);
   const tenant = user?.tenant ?? "Glimmora HQ";
@@ -235,6 +235,10 @@ function UserFormModal({
     if (!isEdit && !username.trim()) e.username = "Username is required";
     if (!email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Invalid email address";
+    if (!isEdit) {
+      if (!password.trim()) e.password = "Password is required";
+      else if (password !== confirmPassword) e.confirmPassword = "Passwords do not match";
+    }
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -243,7 +247,7 @@ function UserFormModal({
   const handleSubmit = (ev: React.FormEvent) => {
     ev.preventDefault();
     if (!validate()) return;
-    onSave({ name, email, role, status, mfa, tenant });
+    onSave({ name, email, role, status, mfa, tenant, ...(isEdit ? {} : { password }) });
   };
 
   const fieldStyle = {
@@ -583,10 +587,9 @@ function sortUsers(list: PlatformUser[], key: SortKey, dir: SortDir): PlatformUs
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function IdentityContent() {
+export function IdentityContent({ mode }: { mode: "super_admin" | "tenant_admin" }) {
   const router = useRouter();
-  const { user: authUser } = useAuth();
-  const isSuperAdmin = authUser?.role === "super_admin";
+  const isSuperAdmin = mode === "super_admin";
   const SUPER_ADMIN_ROLES: UserRole[] = ["auditor", "workflow_manager"];
   const roleOptions = isSuperAdmin ? SUPER_ADMIN_ROLES : TENANT_ADMIN_ROLES;
   const [users, setUsers] = useState<PlatformUser[]>([]);
@@ -594,8 +597,14 @@ export function IdentityContent() {
   const refreshUsers = useCallback(() => {
     fetch("/api/users")
       .then((r) => r.json())
-      .then(setUsers);
-  }, []);
+      .then((data: PlatformUser[]) => {
+        if (isSuperAdmin) {
+          setUsers(data.filter((u) => SUPER_ADMIN_ROLES.includes(u.role)));
+        } else {
+          setUsers(data.filter((u) => TENANT_ADMIN_ROLES.includes(u.role)));
+        }
+      });
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     refreshUsers();
@@ -765,14 +774,16 @@ export function IdentityContent() {
             <Download className="h-4 w-4" />
             Export
           </button>
-          <button
-            onClick={() => router.push("/admin/users/import")}
-            className="flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors"
-            style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
-          >
-            <Download className="h-4 w-4" />
-            Bulk Import
-          </button>
+          {isSuperAdmin && (
+            <button
+              onClick={() => router.push("/admin/users/import")}
+              className="flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+              style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
+            >
+              <Download className="h-4 w-4" />
+              Bulk Import
+            </button>
+          )}
           <button
             onClick={() => setFormModal({ open: true, user: null })}
             className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors"
@@ -980,14 +991,20 @@ export function IdentityContent() {
                                     }}
                                   >
                                     <button
-                                      onClick={() => { setViewUser(u); setOpenActionId(null); }}
+                                      onClick={() => {
+                                        router.push(isSuperAdmin ? `/admin/users/${u.id}` : `/admin/tenant-users/${u.id}`);
+                                        setOpenActionId(null);
+                                      }}
                                       className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
                                       style={{ color: "var(--gf-text-primary)" }}
                                     >
                                       <Eye className="h-4 w-4" style={{ color: "var(--gf-text-secondary)" }} />View Details
                                     </button>
                                     <button
-                                      onClick={() => { setFormModal({ open: true, user: u }); setOpenActionId(null); }}
+                                      onClick={() => {
+                                        router.push(isSuperAdmin ? `/admin/users/${u.id}/edit` : `/admin/tenant-users/${u.id}/edit`);
+                                        setOpenActionId(null);
+                                      }}
                                       className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
                                       style={{ color: "var(--gf-text-primary)" }}
                                     >

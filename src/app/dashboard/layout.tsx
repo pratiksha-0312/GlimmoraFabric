@@ -39,6 +39,8 @@ import {
   Cpu,
   ChevronRight,
   Home,
+  ShoppingCart,
+  RefreshCw,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -56,20 +58,28 @@ interface NavItem {
   icon: typeof LayoutDashboard;
   visibleTo?: UserRole[];
   section?: string;
+  children?: NavItem[];
 }
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Tenant Management", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
+  { label: "Tenant Management", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "platform_engineering_lead", "product_lead", "cto"] },
   { label: "Plan Management", href: "/dashboard/plans", icon: Layers, visibleTo: ["super_admin"] },
-  { label: "User Management", href: "/admin/users", icon: Users, visibleTo: ["super_admin", "tenant_admin"] },
+  { label: "User Management", href: "/admin/users", icon: Users, visibleTo: ["super_admin"] },
+  { label: "User Management", href: "/admin/tenant-users", icon: Users, visibleTo: ["tenant_admin"] },
   { label: "Feature Flags", href: "/dashboard/feature-flags", icon: Flag, visibleTo: ["super_admin"] },
   { label: "Role & Permission Management", href: "/dashboard/roles", icon: Shield, visibleTo: ["super_admin", "tenant_admin"] },
   { label: "Service Management", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
   { label: "API & Developer Tools", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
   { label: "Workflow Management", href: "/dashboard/workflows", icon: GitBranch, section: "Operations", visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
   { label: "Notification Management", href: "/dashboard/notifications", icon: Bell },
-  { label: "Payment Management", href: "/dashboard/payments", icon: CreditCard, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "product_lead", "cto"] },
+  { label: "Payment", href: "#payment", icon: CreditCard, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"], children: [
+    { label: "Checkout", href: "/checkout", icon: ShoppingCart, visibleTo: ["tenant_member"] },
+    { label: "Revenue Analytics", href: "/admin/billing/dashboard", icon: BarChart3, visibleTo: ["super_admin", "billing_admin"] },
+    { label: "Refund Management", href: "/admin/billing/refunds", icon: RefreshCw, visibleTo: ["super_admin", "billing_admin"] },
+    { label: "Payment Gateways", href: "/admin/payment-gateways", icon: Shield, visibleTo: ["super_admin"] },
+    { label: "Pricing", href: "/pricing", icon: Layers, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"] },
+  ]},
   { label: "Document Management", href: "/dashboard/documents", icon: File },
   { label: "AI Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
   { label: "AI Config & Analytics", href: "/dashboard/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
@@ -90,6 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -123,7 +134,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const roleColor = ROLE_COLORS[userRole];
   const userInitial = user?.fullName?.charAt(0).toUpperCase() ?? "U";
 
-  const filteredNavItems = navItems.filter((item) => !item.visibleTo || item.visibleTo.includes(userRole));
+  const filteredNavItems = navItems
+    .filter((item) => !item.visibleTo || item.visibleTo.includes(userRole))
+    .map((item) => {
+      if (item.children) {
+        const filteredChildren = item.children.filter((c) => !c.visibleTo || c.visibleTo.includes(userRole));
+        if (filteredChildren.length === 0) return null;
+        return { ...item, children: filteredChildren };
+      }
+      return item;
+    })
+    .filter(Boolean) as NavItem[];
+
+  const toggleMenu = (label: string) => {
+    setExpandedMenus((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const isChildActive = (item: NavItem) => {
+    if (!item.children) return false;
+    return item.children.some((c) => pathname === c.href || pathname.startsWith(c.href + "/"));
+  };
 
   const handleSignOut = () => { logout(); router.push("/login"); };
 
@@ -180,34 +210,82 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Navigation (scrollable area) */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
           {filteredNavItems.map((item, idx) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             const showSection = item.section && filteredNavItems.findIndex((n) => n.section === item.section) === idx;
+            const hasChildren = item.children && item.children.length > 0;
+            const isExpanded = expandedMenus[item.label] || isChildActive(item);
+
             return (
-              <div key={item.href}>
+              <div key={item.href + item.label}>
                 {showSection && !sidebarCollapsed && (
                   <p className="mt-4 mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--gf-text-muted)" }}>
                     {item.section}
                   </p>
                 )}
                 {showSection && sidebarCollapsed && <div className="mt-3 mb-1 mx-3 border-t" style={{ borderColor: "var(--gf-border)" }} />}
-                <Link
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`group relative flex items-center rounded-lg text-sm font-medium transition-colors ${
-                    sidebarCollapsed ? "justify-center px-0 py-2.5 mx-1" : "gap-3 px-3 py-2"
-                  } ${isActive ? "" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
-                  style={isActive ? { backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" } : { color: "var(--gf-text-secondary)" }}
-                  title={sidebarCollapsed ? item.label : undefined}
-                >
-                  <item.icon className="h-[18px] w-[18px] shrink-0" />
-                  {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
-                  {/* Tooltip on hover when collapsed */}
-                  {sidebarCollapsed && (
-                    <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium shadow-lg group-hover:block z-[60]" style={{ backgroundColor: "var(--gf-bg-elevated)", color: "var(--gf-text-primary)", border: "1px solid var(--gf-border)" }}>
-                      {item.label}
-                    </span>
-                  )}
-                </Link>
+
+                {hasChildren ? (
+                  <>
+                    <button
+                      onClick={() => toggleMenu(item.label)}
+                      className={`group relative flex w-full items-center rounded-lg text-sm font-medium transition-colors ${
+                        sidebarCollapsed ? "justify-center px-0 py-2.5 mx-1" : "gap-3 px-3 py-2"
+                      } hover:bg-black/5 dark:hover:bg-white/5`}
+                      style={isChildActive(item) ? { color: "var(--gf-accent)" } : { color: "var(--gf-text-secondary)" }}
+                      title={sidebarCollapsed ? item.label : undefined}
+                    >
+                      <item.icon className="h-[18px] w-[18px] shrink-0" />
+                      {!sidebarCollapsed && (
+                        <>
+                          <span className="truncate flex-1 text-left">{item.label}</span>
+                          <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        </>
+                      )}
+                      {sidebarCollapsed && (
+                        <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium shadow-lg group-hover:block z-[60]" style={{ backgroundColor: "var(--gf-bg-elevated)", color: "var(--gf-text-primary)", border: "1px solid var(--gf-border)" }}>
+                          {item.label}
+                        </span>
+                      )}
+                    </button>
+                    {isExpanded && !sidebarCollapsed && (
+                      <div className="ml-5 pl-3 border-l" style={{ borderColor: "var(--gf-border)" }}>
+                        {item.children!.map((child) => {
+                          const childActive = pathname === child.href || pathname.startsWith(child.href + "/");
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`group relative flex items-center gap-3 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${childActive ? "" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
+                              style={childActive ? { backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" } : { color: "var(--gf-text-secondary)" }}
+                            >
+                              <child.icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{child.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`group relative flex items-center rounded-lg text-sm font-medium transition-colors ${
+                      sidebarCollapsed ? "justify-center px-0 py-2.5 mx-1" : "gap-3 px-3 py-2"
+                    } ${isActive ? "" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
+                    style={isActive ? { backgroundColor: "var(--gf-accent-bg)", color: "var(--gf-accent)" } : { color: "var(--gf-text-secondary)" }}
+                    title={sidebarCollapsed ? item.label : undefined}
+                  >
+                    <item.icon className="h-[18px] w-[18px] shrink-0" />
+                    {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+                    {sidebarCollapsed && (
+                      <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium shadow-lg group-hover:block z-[60]" style={{ backgroundColor: "var(--gf-bg-elevated)", color: "var(--gf-text-primary)", border: "1px solid var(--gf-border)" }}>
+                        {item.label}
+                      </span>
+                    )}
+                  </Link>
+                )}
               </div>
             );
           })}
