@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Shield,
   Users,
@@ -141,12 +142,13 @@ export function NotificationsDropdown({
           className="px-4 py-3 text-center"
           style={{ borderTop: "1px solid var(--gf-border)" }}
         >
-          <button
+          <Link
+            href="/notifications"
             className="text-xs font-medium text-teal-500 hover:text-teal-400 transition-colors"
             onClick={onClose}
           >
             View all notifications
-          </button>
+          </Link>
         </div>
       </div>
     </>
