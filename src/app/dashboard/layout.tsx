@@ -42,6 +42,9 @@ import {
   Home,
   ShoppingCart,
   RefreshCw,
+  ShieldCheck,
+  Database,
+  FileDown,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -90,8 +93,13 @@ const navItems: NavItem[] = [
   { label: "Document Management", href: "/dashboard/documents", icon: File },
   { label: "AI Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
   { label: "AI Config & Analytics", href: "/dashboard/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
-  { label: "Audit & Logs", href: "/dashboard/audit", icon: FileText, section: "Compliance", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
-  { label: "Audit Log Viewer", href: "/admin/audit-logs", icon: ClipboardList, visibleTo: ["super_admin", "auditor", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
+  { label: "Compliance", href: "#compliance", icon: ShieldCheck, section: "Compliance", visibleTo: ["super_admin", "auditor", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"], children: [
+    { label: "Audit & Logs", href: "/dashboard/audit", icon: FileText, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
+    { label: "Audit Log Viewer", href: "/admin/audit-logs", icon: ClipboardList, visibleTo: ["super_admin", "auditor", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
+    { label: "Compliance Reports", href: "/admin/compliance/reports", icon: Shield, visibleTo: ["super_admin", "auditor"] },
+    { label: "Retention Policy", href: "/admin/compliance/retention", icon: Database, visibleTo: ["super_admin"] },
+    { label: "Data Export", href: "/admin/compliance/data-export", icon: FileDown, visibleTo: ["super_admin", "auditor"] },
+  ]},
   { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
   { label: "Settings", href: "/settings", icon: Settings, section: "System", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead"] },
   { label: "Developer Tools", href: "/dashboard/developer-tools", icon: Code2, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "ai_prompt_owner"] },
