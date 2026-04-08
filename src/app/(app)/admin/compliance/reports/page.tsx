@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
-import { ComplianceReportsPage } from "@/components/admin/compliance-reports";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Compliance Reports - Glimmora Fabric",
-  description: "View, generate, and manage compliance reports",
-};
+import { ComplianceReportsPage } from "@/components/admin/compliance-reports";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import type { UserRole } from "@/lib/roles";
 
 export default function Page() {
-  return <ComplianceReportsPage />;
+  return (
+    <AuthGuard allowedRoles={["super_admin", "auditor"] as UserRole[]}>
+      <ComplianceReportsPage />
+    </AuthGuard>
+  );
 }

@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
-import { AuditLogViewer } from "@/components/admin/audit-log-viewer";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Audit Log Viewer - Glimmora Fabric",
-  description: "Browse, search, and export the immutable audit trail",
-};
+import { AuditLogViewer } from "@/components/admin/audit-log-viewer";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import type { UserRole } from "@/lib/roles";
 
 export default function AuditLogsPage() {
-  return <AuditLogViewer />;
+  return (
+    <AuthGuard allowedRoles={["super_admin", "auditor"] as UserRole[]}>
+      <AuditLogViewer />
+    </AuthGuard>
+  );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useAuth } from "@/context/auth-context";
 import {
   Search,
   Filter,
@@ -430,6 +431,8 @@ function Pagination({ current, total, onChange }: { current: number; total: numb
 // ============================================================================
 
 export function AuditLogViewer() {
+  const { user } = useAuth();
+  const userRole = user?.role ?? "tenant_member";
   const [view, setView] = useState<"table" | "timeline">("table");
 
   // Filters
@@ -545,7 +548,7 @@ export function AuditLogViewer() {
           <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Audit Log Viewer</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--gf-text-secondary)" }}>Browse, search, and export the complete audit trail</p>
         </div>
-        <ExportDropdown onExport={handleExport} />
+        {userRole === "auditor" && <ExportDropdown onExport={handleExport} />}
       </div>
 
       {/* Stats */}

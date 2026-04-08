@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
-import { DataExportPage } from "@/components/admin/data-export";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Data Export - Glimmora Fabric",
-  description: "Request and manage compliance data exports",
-};
+import { DataExportPage } from "@/components/admin/data-export";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import type { UserRole } from "@/lib/roles";
 
 export default function Page() {
-  return <DataExportPage />;
+  return (
+    <AuthGuard allowedRoles={["super_admin", "auditor"] as UserRole[]}>
+      <DataExportPage />
+    </AuthGuard>
+  );
 }

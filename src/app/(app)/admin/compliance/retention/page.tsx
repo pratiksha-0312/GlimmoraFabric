@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
-import { RetentionPolicySettings } from "@/components/admin/retention-policy";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Retention Policy - Glimmora Fabric",
-  description: "Configure data retention policies for compliance",
-};
+import { RetentionPolicySettings } from "@/components/admin/retention-policy";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import type { UserRole } from "@/lib/roles";
 
 export default function Page() {
-  return <RetentionPolicySettings />;
+  return (
+    <AuthGuard allowedRoles={["super_admin"] as UserRole[]}>
+      <RetentionPolicySettings />
+    </AuthGuard>
+  );
 }

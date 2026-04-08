@@ -83,11 +83,11 @@ const navItems: NavItem[] = [
     { label: "SLA Status", href: "/admin/workflows/sla", icon: Clock, visibleTo: ["workflow_manager", "super_admin"] },
     { label: "Task Inbox", href: "/tasks", icon: ClipboardList },
   ]},
-  { label: "Notification Management", href: "#notifications", icon: Bell, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead"], children: [
-    { label: "All Notifications", href: "/dashboard/notifications", icon: Bell },
-    { label: "Templates", href: "/admin/notification-templates", icon: Mail, visibleTo: ["super_admin"] },
-    { label: "Delivery Logs", href: "/admin/notifications/logs", icon: Send, visibleTo: ["super_admin"] },
-    { label: "Webhooks", href: "/admin/webhooks", icon: Globe, visibleTo: ["super_admin"] },
+  { label: "Notification Management", href: "#notifications", icon: Bell, visibleTo: ["super_admin", "auditor", "tenant_admin", "platform_engineering_lead"], children: [
+    { label: "All Notifications", href: "/dashboard/notifications", icon: Bell, visibleTo: ["super_admin", "auditor"] },
+    { label: "Templates", href: "/admin/notification-templates", icon: Mail, visibleTo: ["super_admin", "auditor"] },
+    { label: "Delivery Logs", href: "/admin/notifications/logs", icon: Send, visibleTo: ["super_admin", "auditor"] },
+    { label: "Webhooks", href: "/admin/webhooks", icon: Globe, visibleTo: ["super_admin", "auditor"] },
   ]},
   { label: "Payment", href: "#payment", icon: CreditCard, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"], children: [
     { label: "Checkout", href: "/checkout", icon: ShoppingCart, visibleTo: ["tenant_member"] },
@@ -99,9 +99,9 @@ const navItems: NavItem[] = [
   { label: "Document Management", href: "/dashboard/documents", icon: File },
   { label: "AI Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
   { label: "AI Config & Analytics", href: "/dashboard/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
-  { label: "Compliance", href: "#compliance", icon: ShieldCheck, section: "Compliance", visibleTo: ["super_admin", "auditor", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"], children: [
-    { label: "Audit & Logs", href: "/dashboard/audit", icon: FileText, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
-    { label: "Audit Log Viewer", href: "/admin/audit-logs", icon: ClipboardList, visibleTo: ["super_admin", "auditor", "tenant_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
+  { label: "Compliance", href: "#compliance", icon: ShieldCheck, section: "Compliance", visibleTo: ["super_admin", "auditor"], children: [
+    { label: "Audit & Logs", href: "/dashboard/audit", icon: FileText, visibleTo: ["super_admin", "auditor"] },
+    { label: "Audit Log Viewer", href: "/admin/audit-logs", icon: ClipboardList, visibleTo: ["super_admin", "auditor"] },
     { label: "Compliance Reports", href: "/admin/compliance/reports", icon: Shield, visibleTo: ["super_admin", "auditor"] },
     { label: "Retention Policy", href: "/admin/compliance/retention", icon: Database, visibleTo: ["super_admin"] },
     { label: "Data Export", href: "/admin/compliance/data-export", icon: FileDown, visibleTo: ["super_admin", "auditor"] },
