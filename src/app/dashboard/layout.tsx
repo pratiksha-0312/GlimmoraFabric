@@ -44,6 +44,9 @@ import {
   ShieldCheck,
   Database,
   FileDown,
+  Globe,
+  Mail,
+  Send,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -81,7 +84,12 @@ const navItems: NavItem[] = [
     { label: "SLA Status", href: "/admin/workflows/sla", icon: Clock, visibleTo: ["workflow_manager", "super_admin"] },
     { label: "Task Inbox", href: "/tasks", icon: ClipboardList },
   ]},
-  { label: "Notification Management", href: "/dashboard/notifications", icon: Bell },
+  { label: "Notification Management", href: "#notifications", icon: Bell, visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead"], children: [
+    { label: "All Notifications", href: "/dashboard/notifications", icon: Bell },
+    { label: "Templates", href: "/admin/notification-templates", icon: Mail, visibleTo: ["super_admin"] },
+    { label: "Delivery Logs", href: "/admin/notifications/logs", icon: Send, visibleTo: ["super_admin"] },
+    { label: "Webhooks", href: "/admin/webhooks", icon: Globe, visibleTo: ["super_admin"] },
+  ]},
   { label: "Payment", href: "#payment", icon: CreditCard, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"], children: [
     { label: "Checkout", href: "/checkout", icon: ShoppingCart, visibleTo: ["tenant_member"] },
     { label: "Revenue Analytics", href: "/admin/billing/dashboard", icon: BarChart3, visibleTo: ["super_admin", "billing_admin"] },
