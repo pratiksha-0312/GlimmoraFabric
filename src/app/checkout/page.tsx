@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { stripePromise } from "@/lib/stripe-client";
 import {
   Check,
   CreditCard,
@@ -13,7 +15,6 @@ import {
   Lock,
   AlertTriangle,
   RefreshCw,
-  X,
   Loader2,
 } from "lucide-react";
 
@@ -40,13 +41,6 @@ interface BillingInfo {
   state: string;
   zip: string;
   country: string;
-}
-
-interface CardInfo {
-  number: string;
-  expiry: string;
-  cvc: string;
-  name: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -341,37 +335,108 @@ function BillingDetails({
 }
 
 // ---------------------------------------------------------------------------
-// Step 3: Payment Method (Stripe Elements mock)
+// Step 3: Stripe Card Element (PCI-compliant)
 // ---------------------------------------------------------------------------
 
-function PaymentMethod({
-  card,
-  onChange,
-  errors,
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: "14px",
+      color: "#e2e8f0",
+      fontFamily: "ui-monospace, SFMono-Regular, monospace",
+      "::placeholder": { color: "#64748b" },
+    },
+    invalid: { color: "#ef4444" },
+  },
+};
+
+function StripePaymentForm({
+  plan,
+  billing,
+  onSuccess,
 }: {
-  card: CardInfo;
-  onChange: (c: CardInfo) => void;
-  errors: Record<string, string>;
+  plan: Plan;
+  billing: BillingInfo;
+  onSuccess: (paymentId: string) => void;
 }) {
-  const fieldStyle = {
-    backgroundColor: "var(--gf-bg-base)",
-    borderColor: "var(--gf-border)",
-    color: "var(--gf-text-primary)",
-  };
+  const stripeHook = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [cardComplete, setCardComplete] = useState(false);
 
-  const update = (key: keyof CardInfo, value: string) =>
-    onChange({ ...card, [key]: value });
+  const handleSubmitPayment = useCallback(async () => {
+    if (!stripeHook || !elements) return;
 
-  const formatCardNumber = (val: string) => {
-    const digits = val.replace(/\D/g, "").slice(0, 16);
-    return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
-  };
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) return;
 
-  const formatExpiry = (val: string) => {
-    const digits = val.replace(/\D/g, "").slice(0, 4);
-    if (digits.length > 2) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return digits;
-  };
+    setProcessing(true);
+    setPaymentError(null);
+
+    try {
+      // 1. Create PaymentIntent on the server
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: plan.id,
+          planName: plan.name,
+          amount: plan.price,
+          currency: plan.currency,
+          billing,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPaymentError(data.error ?? "Failed to create payment. Please try again.");
+        setProcessing(false);
+        return;
+      }
+
+      // 2. Confirm the payment on the client with Stripe.js
+      //    Stripe handles 3D Secure automatically here
+      const { error, paymentIntent } = await stripeHook.confirmCardPayment(
+        data.clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: billing.fullName,
+              email: billing.email,
+              address: {
+                line1: billing.address,
+                city: billing.city,
+                state: billing.state,
+                postal_code: billing.zip,
+                country: billing.country,
+              },
+            },
+          },
+        },
+      );
+
+      if (error) {
+        setPaymentError(
+          error.message ?? "Payment was declined. Please check your card details and try again.",
+        );
+        setProcessing(false);
+        return;
+      }
+
+      if (paymentIntent?.status === "succeeded") {
+        onSuccess(data.id);
+      } else {
+        setPaymentError("Payment could not be completed. Please try again.");
+        setProcessing(false);
+      }
+    } catch {
+      setPaymentError("An unexpected error occurred. Please try again.");
+      setProcessing(false);
+    }
+  }, [stripeHook, elements, plan, billing, onSuccess]);
 
   return (
     <div>
@@ -382,7 +447,7 @@ function PaymentMethod({
         Enter your card details securely
       </p>
 
-      {/* Stripe-style card form */}
+      {/* Stripe Card Element */}
       <div
         className="rounded-xl border p-5 space-y-4"
         style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}
@@ -405,68 +470,18 @@ function PaymentMethod({
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-            Card Number *
-          </label>
-          <input
-            type="text"
-            value={card.number}
-            onChange={(e) => update("number", formatCardNumber(e.target.value))}
-            placeholder="4242 4242 4242 4242"
-            maxLength={19}
-            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40 font-mono"
-            style={fieldStyle}
+        <div
+          className="rounded-lg border px-4 py-4"
+          style={{
+            backgroundColor: "var(--gf-bg-base)",
+            borderColor: "var(--gf-border)",
+            minHeight: "44px",
+          }}
+        >
+          <CardElement
+            options={CARD_ELEMENT_OPTIONS}
+            onChange={(e) => setCardComplete(e.complete)}
           />
-          {errors.number && <p className="text-xs text-red-500 mt-1">{errors.number}</p>}
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-            Cardholder Name *
-          </label>
-          <input
-            type="text"
-            value={card.name}
-            onChange={(e) => update("name", e.target.value)}
-            placeholder="John Doe"
-            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-            style={fieldStyle}
-          />
-          {errors.cardName && <p className="text-xs text-red-500 mt-1">{errors.cardName}</p>}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-              Expiry *
-            </label>
-            <input
-              type="text"
-              value={card.expiry}
-              onChange={(e) => update("expiry", formatExpiry(e.target.value))}
-              placeholder="MM/YY"
-              maxLength={5}
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40 font-mono"
-              style={fieldStyle}
-            />
-            {errors.expiry && <p className="text-xs text-red-500 mt-1">{errors.expiry}</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>
-              CVC *
-            </label>
-            <input
-              type="text"
-              value={card.cvc}
-              onChange={(e) => update("cvc", e.target.value.replace(/\D/g, "").slice(0, 4))}
-              placeholder="123"
-              maxLength={4}
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40 font-mono"
-              style={fieldStyle}
-            />
-            {errors.cvc && <p className="text-xs text-red-500 mt-1">{errors.cvc}</p>}
-          </div>
         </div>
       </div>
 
@@ -476,115 +491,47 @@ function PaymentMethod({
           Your payment information is encrypted and secure. We never store your card details.
         </span>
       </div>
-    </div>
-  );
-}
 
-// ---------------------------------------------------------------------------
-// 3D Secure Modal
-// ---------------------------------------------------------------------------
-
-function ThreeDSecureModal({
-  paymentId,
-  onSuccess,
-  onCancel,
-}: {
-  paymentId: string;
-  onSuccess: () => void;
-  onCancel: () => void;
-}) {
-  const [verifying, setVerifying] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      await fetch(`/api/payments/${paymentId}/3ds`, { method: "POST" });
-      setVerifying(false);
-      setTimeout(onSuccess, 800);
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, [paymentId, onSuccess]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel}>
-      <div
-        className="w-full max-w-sm rounded-2xl border p-6 shadow-2xl"
-        style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-sm font-bold" style={{ color: "var(--gf-text-primary)" }}>3D Secure Verification</h3>
-          <button onClick={onCancel} className="p-1 hover:opacity-70" style={{ color: "var(--gf-text-muted)" }}>
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="flex flex-col items-center py-6">
-          {verifying ? (
-            <>
-              <Loader2 className="h-10 w-10 animate-spin mb-4" style={{ color: "var(--gf-accent)" }} />
-              <p className="text-sm font-medium" style={{ color: "var(--gf-text-primary)" }}>
-                Verifying with your bank...
-              </p>
-              <p className="text-xs mt-1" style={{ color: "var(--gf-text-muted)" }}>
-                Please do not close this window
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/15 mb-4">
-                <Check className="h-6 w-6 text-green-500" />
+      {/* Payment Error */}
+      {paymentError && (
+        <div
+          className="rounded-xl border p-5 mt-4"
+          style={{ borderColor: "#ef444440", backgroundColor: "#ef444410" }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/15 mt-0.5">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-500">Payment Failed</p>
+              <p className="text-xs mt-1" style={{ color: "var(--gf-text-secondary)" }}>{paymentError}</p>
+              <div className="flex items-center gap-2 mt-3">
+                <button
+                  onClick={handleSubmitPayment}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+                >
+                  <RefreshCw className="h-3 w-3" />Retry Payment
+                </button>
               </div>
-              <p className="text-sm font-medium text-green-500">Verification Successful</p>
-              <p className="text-xs mt-1" style={{ color: "var(--gf-text-muted)" }}>Completing payment...</p>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Payment Error Component
-// ---------------------------------------------------------------------------
-
-function PaymentError({
-  message,
-  onRetry,
-  onCancel,
-}: {
-  message: string;
-  onRetry: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div
-      className="rounded-xl border p-5 mt-4"
-      style={{ borderColor: "#ef444440", backgroundColor: "#ef444410" }}
-    >
-      <div className="flex items-start gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/15 mt-0.5">
-          <AlertTriangle className="h-4 w-4 text-red-500" />
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-red-500">Payment Failed</p>
-          <p className="text-xs mt-1" style={{ color: "var(--gf-text-secondary)" }}>{message}</p>
-          <div className="flex items-center gap-2 mt-3">
-            <button
-              onClick={onRetry}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
-            >
-              <RefreshCw className="h-3 w-3" />Retry Payment
-            </button>
-            <button
-              onClick={onCancel}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors hover:opacity-80"
-              style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-secondary)" }}
-            >
-              Change Details
-            </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Pay Button */}
+      <div className="mt-6">
+        <button
+          onClick={handleSubmitPayment}
+          disabled={processing || !cardComplete || !stripeHook}
+          className="w-full flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60"
+          style={{ backgroundColor: "#22c55e" }}
+        >
+          {processing ? (
+            <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
+          ) : (
+            <><Lock className="h-4 w-4" />Pay ${plan.price}.00</>
+          )}
+        </button>
       </div>
     </div>
   );
@@ -635,7 +582,7 @@ function OrderSummary({ plan }: { plan: Plan | null }) {
 // Main Checkout Page
 // ---------------------------------------------------------------------------
 
-export default function CheckoutPage() {
+function CheckoutFlow() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -643,12 +590,7 @@ export default function CheckoutPage() {
   const [billing, setBilling] = useState<BillingInfo>({
     fullName: "", email: "", company: "", address: "", city: "", state: "", zip: "", country: "US",
   });
-  const [card, setCard] = useState<CardInfo>({ number: "", expiry: "", cvc: "", name: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [processing, setProcessing] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [show3ds, setShow3ds] = useState(false);
-  const [pendingPaymentId, setPendingPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/plans").then((r) => r.json()).then(setPlans);
@@ -666,17 +608,6 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0;
   };
 
-  const validateCard = () => {
-    const e: Record<string, string> = {};
-    const digits = card.number.replace(/\s/g, "");
-    if (digits.length < 13) e.number = "Invalid card number";
-    if (!card.name.trim()) e.cardName = "Required";
-    if (!/^\d{2}\/\d{2}$/.test(card.expiry)) e.expiry = "Invalid (MM/YY)";
-    if (card.cvc.length < 3) e.cvc = "Invalid CVC";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
   const handleNext = () => {
     if (step === 0 && !selectedPlan) return;
     if (step === 1 && !validateBilling()) return;
@@ -686,97 +617,51 @@ export default function CheckoutPage() {
 
   const handleBack = () => {
     setErrors({});
-    setPaymentError(null);
     setStep((s) => Math.max(0, s - 1));
   };
 
-  const handleSubmitPayment = async () => {
-    if (!validateCard() || !selectedPlan) return;
-    setProcessing(true);
-    setPaymentError(null);
-
-    try {
-      const res = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId: selectedPlan.id,
-          planName: selectedPlan.name,
-          amount: selectedPlan.price,
-          currency: selectedPlan.currency,
-          billing,
-          paymentMethod: "card",
-        }),
-      });
-
-      const payment = await res.json();
-
-      if (payment.requires3ds) {
-        setPendingPaymentId(payment.id);
-        setShow3ds(true);
-        setProcessing(false);
-        return;
-      }
-
-      if (payment.status === "succeeded") {
-        router.push(`/checkout/success?paymentId=${payment.id}`);
-      } else {
-        setPaymentError("Payment was declined. Please check your card details and try again.");
-        setProcessing(false);
-      }
-    } catch {
-      setPaymentError("An unexpected error occurred. Please try again.");
-      setProcessing(false);
-    }
-  };
-
-  const handle3dsSuccess = useCallback(() => {
-    setShow3ds(false);
-    if (pendingPaymentId) {
-      router.push(`/checkout/success?paymentId=${pendingPaymentId}`);
-    }
-  }, [pendingPaymentId, router]);
+  const handlePaymentSuccess = useCallback(
+    (paymentId: string) => {
+      router.push(`/checkout/success?paymentId=${paymentId}`);
+    },
+    [router],
+  );
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "var(--gf-bg-base)" }}>
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-2">
-          <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Checkout</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--gf-text-secondary)" }}>
-            Complete your subscription in a few simple steps
-          </p>
-        </div>
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      {/* Header */}
+      <div className="text-center mb-2">
+        <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Checkout</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--gf-text-secondary)" }}>
+          Complete your subscription in a few simple steps
+        </p>
+      </div>
 
-        <StepIndicator current={step} />
+      <StepIndicator current={step} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main content */}
-          <div className="lg:col-span-2">
-            <div
-              className="rounded-xl border p-6"
-              style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}
-            >
-              {step === 0 && (
-                <PlanSelection plans={plans} selectedPlan={selectedPlan} onSelect={setSelectedPlan} />
-              )}
-              {step === 1 && (
-                <BillingDetails billing={billing} onChange={setBilling} errors={errors} />
-              )}
-              {step === 2 && (
-                <>
-                  <PaymentMethod card={card} onChange={setCard} errors={errors} />
-                  {paymentError && (
-                    <PaymentError
-                      message={paymentError}
-                      onRetry={handleSubmitPayment}
-                      onCancel={() => { setPaymentError(null); setStep(2); }}
-                    />
-                  )}
-                </>
-              )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main content */}
+        <div className="lg:col-span-2">
+          <div
+            className="rounded-xl border p-6"
+            style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}
+          >
+            {step === 0 && (
+              <PlanSelection plans={plans} selectedPlan={selectedPlan} onSelect={setSelectedPlan} />
+            )}
+            {step === 1 && (
+              <BillingDetails billing={billing} onChange={setBilling} errors={errors} />
+            )}
+            {step === 2 && selectedPlan && (
+              <StripePaymentForm
+                plan={selectedPlan}
+                billing={billing}
+                onSuccess={handlePaymentSuccess}
+              />
+            )}
 
-              {/* Navigation */}
+            {/* Navigation (only for steps 0 and 1) */}
+            {step < 2 && (
               <div className="flex items-center justify-between mt-8 pt-4 border-t" style={{ borderColor: "var(--gf-border)" }}>
                 {step > 0 ? (
                   <button
@@ -789,65 +674,73 @@ export default function CheckoutPage() {
                 ) : (
                   <div />
                 )}
-
-                {step < 2 ? (
-                  <button
-                    onClick={handleNext}
-                    disabled={step === 0 && !selectedPlan}
-                    className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-40"
-                    style={{ backgroundColor: "var(--gf-accent)" }}
-                  >
-                    Continue<ChevronRight className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleSubmitPayment}
-                    disabled={processing}
-                    className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60"
-                    style={{ backgroundColor: "#22c55e" }}
-                  >
-                    {processing ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
-                    ) : (
-                      <><Lock className="h-4 w-4" />Pay ${selectedPlan?.price}.00</>
-                    )}
-                  </button>
-                )}
+                <button
+                  onClick={handleNext}
+                  disabled={step === 0 && !selectedPlan}
+                  className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-40"
+                  style={{ backgroundColor: "var(--gf-accent)" }}
+                >
+                  Continue<ChevronRight className="h-4 w-4" />
+                </button>
               </div>
-            </div>
+            )}
+
+            {/* Back button on payment step */}
+            {step === 2 && (
+              <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--gf-border)" }}>
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium border transition-colors hover:opacity-80"
+                  style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
+                >
+                  <ChevronLeft className="h-4 w-4" />Back to Billing
+                </button>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Sidebar */}
-          <div className="space-y-4">
-            <OrderSummary plan={selectedPlan} />
-            <div
-              className="rounded-xl border p-4"
-              style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Shield className="h-4 w-4" style={{ color: "#22c55e" }} />
-                <span className="text-xs font-bold" style={{ color: "var(--gf-text-primary)" }}>Secure Checkout</span>
-              </div>
-              <ul className="space-y-1.5">
-                {["256-bit SSL encryption", "PCI DSS compliant", "30-day money-back guarantee"].map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-xs" style={{ color: "var(--gf-text-muted)" }}>
-                    <Check className="h-3 w-3" style={{ color: "#22c55e" }} />{item}
-                  </li>
-                ))}
-              </ul>
+        {/* Sidebar */}
+        <div className="space-y-4">
+          <OrderSummary plan={selectedPlan} />
+          <div
+            className="rounded-xl border p-4"
+            style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-4 w-4" style={{ color: "#22c55e" }} />
+              <span className="text-xs font-bold" style={{ color: "var(--gf-text-primary)" }}>Secure Checkout</span>
             </div>
+            <ul className="space-y-1.5">
+              {["256-bit SSL encryption", "PCI DSS compliant", "30-day money-back guarantee"].map((item) => (
+                <li key={item} className="flex items-center gap-2 text-xs" style={{ color: "var(--gf-text-muted)" }}>
+                  <Check className="h-3 w-3" style={{ color: "#22c55e" }} />{item}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* 3D Secure Modal */}
-      {show3ds && pendingPaymentId && (
-        <ThreeDSecureModal
-          paymentId={pendingPaymentId}
-          onSuccess={handle3dsSuccess}
-          onCancel={() => { setShow3ds(false); setProcessing(false); }}
-        />
-      )}
+export default function CheckoutPage() {
+  if (!stripePromise) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--gf-bg-base)" }}>
+        <p className="text-sm" style={{ color: "var(--gf-text-secondary)" }}>
+          Stripe is not configured. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to .env
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: "var(--gf-bg-base)" }}>
+      <Elements stripe={stripePromise}>
+        <CheckoutFlow />
+      </Elements>
     </div>
   );
 }

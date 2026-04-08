@@ -1,49 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const gateways = [
-  {
-    id: "gw_stripe",
-    name: "Stripe",
-    provider: "stripe",
-    enabled: true,
-    mode: "live",
-    publicKey: "pk_live_••••••••••••4242",
-    secretKey: "sk_live_••••••••••••8888",
-    webhookSecret: "whsec_••••••••••••",
-    webhookUrl: "https://api.glimmora.io/hooks/stripe",
-    supportedMethods: ["card", "bank_transfer", "wallet"],
-    currencies: ["USD", "EUR", "GBP", "INR"],
-    createdAt: "2025-11-01",
-  },
-  {
-    id: "gw_razorpay",
-    name: "Razorpay",
-    provider: "razorpay",
-    enabled: false,
-    mode: "test",
-    publicKey: "rzp_test_••••••••••••",
-    secretKey: "••••••••••••••••",
-    webhookSecret: "••••••••••••••••",
-    webhookUrl: "https://api.glimmora.io/hooks/razorpay",
-    supportedMethods: ["card", "upi", "netbanking", "wallet"],
-    currencies: ["INR", "USD"],
-    createdAt: "2026-01-15",
-  },
-];
+// Gateway configuration — in production you'd store these in an encrypted DB table.
+// For now this returns the configured gateway info based on env vars.
 
-// GET /api/payment-gateways — list all gateways
+function getGateways() {
+  const hasStripe = !!process.env.STRIPE_SECRET_KEY;
+
+  return [
+    {
+      id: "gw_stripe",
+      name: "Stripe",
+      provider: "stripe",
+      enabled: hasStripe,
+      mode: process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_")
+        ? "live"
+        : "test",
+      publicKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        ? `${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.slice(0, 12)}••••`
+        : "Not configured",
+      secretKey: hasStripe ? "sk_••••••••••••" : "Not configured",
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET
+        ? "whsec_••••••••••••"
+        : "Not configured",
+      webhookUrl: "/api/webhooks/stripe",
+      supportedMethods: ["card", "bank_transfer", "wallet"],
+      currencies: ["USD", "EUR", "GBP", "INR"],
+    },
+    {
+      id: "gw_razorpay",
+      name: "Razorpay",
+      provider: "razorpay",
+      enabled: false,
+      mode: "test",
+      publicKey: "Not configured",
+      secretKey: "Not configured",
+      webhookSecret: "Not configured",
+      webhookUrl: "/api/webhooks/razorpay",
+      supportedMethods: ["card", "upi", "netbanking", "wallet"],
+      currencies: ["INR", "USD"],
+    },
+  ];
+}
+
+// GET /api/payment-gateways
 export async function GET() {
-  return NextResponse.json(gateways);
+  return NextResponse.json(getGateways());
 }
 
 // PUT /api/payment-gateways — update gateway configuration
+// In production this would update encrypted values in DB
 export async function PUT(req: NextRequest) {
   const body = await req.json();
-
-  const updated = {
+  return NextResponse.json({
     ...body,
     updatedAt: new Date().toISOString(),
-  };
-
-  return NextResponse.json(updated);
+    message:
+      "Gateway config received. In production, update your environment variables and redeploy.",
+  });
 }

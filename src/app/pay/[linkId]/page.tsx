@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { stripePromise } from "@/lib/stripe-client";
 import {
   Check,
   CreditCard,
@@ -24,23 +26,176 @@ interface PaymentLink {
   createdBy: string;
 }
 
-export default function PaymentLinkPage() {
-  const params = useParams();
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: "14px",
+      color: "#e2e8f0",
+      fontFamily: "ui-monospace, SFMono-Regular, monospace",
+      "::placeholder": { color: "#64748b" },
+    },
+    invalid: { color: "#ef4444" },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Payment Form (with Stripe Elements)
+// ---------------------------------------------------------------------------
+
+function PaymentForm({ link }: { link: PaymentLink }) {
   const router = useRouter();
+  const stripeHook = useStripe();
+  const elements = useElements();
+
+  const [email, setEmail] = useState("");
+  const [cardComplete, setCardComplete] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const fieldStyle = {
+    backgroundColor: "var(--gf-bg-base)",
+    borderColor: "var(--gf-border)",
+    color: "var(--gf-text-primary)",
+  };
+
+  const handlePay = useCallback(async () => {
+    if (!stripeHook || !elements) return;
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) return;
+
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setFormError("Please enter a valid email address.");
+      return;
+    }
+
+    setProcessing(true);
+    setFormError(null);
+
+    try {
+      // 1. Create PaymentIntent on server
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: link.planId,
+          planName: link.planName,
+          amount: link.amount,
+          currency: link.currency,
+          billing: { email, fullName: "" },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setFormError(data.error ?? "Failed to create payment.");
+        setProcessing(false);
+        return;
+      }
+
+      // 2. Confirm payment with Stripe.js (handles 3DS automatically)
+      const { error, paymentIntent } = await stripeHook.confirmCardPayment(
+        data.clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: { email },
+          },
+        },
+      );
+
+      if (error) {
+        setFormError(error.message ?? "Payment was declined.");
+        setProcessing(false);
+        return;
+      }
+
+      if (paymentIntent?.status === "succeeded") {
+        router.push(`/checkout/success?paymentId=${data.id}`);
+      } else {
+        setFormError("Payment could not be completed. Please try again.");
+        setProcessing(false);
+      }
+    } catch {
+      setFormError("An unexpected error occurred. Please try again.");
+      setProcessing(false);
+    }
+  }, [stripeHook, elements, email, link, router]);
+
+  return (
+    <div
+      className="rounded-xl border p-6"
+      style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}
+    >
+      <div className="flex items-center gap-2 mb-5">
+        <Lock className="h-4 w-4" style={{ color: "var(--gf-accent)" }} />
+        <span className="text-sm font-bold" style={{ color: "var(--gf-text-primary)" }}>
+          Secure Payment
+        </span>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Email *</label>
+          <input
+            type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
+            style={fieldStyle}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Card Details *</label>
+          <div
+            className="rounded-lg border px-3 py-3"
+            style={{ backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)" }}
+          >
+            <CardElement
+              options={CARD_ELEMENT_OPTIONS}
+              onChange={(e) => setCardComplete(e.complete)}
+            />
+          </div>
+        </div>
+
+        {formError && (
+          <p className="text-xs text-red-500">{formError}</p>
+        )}
+
+        <button
+          onClick={handlePay}
+          disabled={processing || !cardComplete || !stripeHook}
+          className="w-full flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60 mt-2"
+          style={{ backgroundColor: "#22c55e" }}
+        >
+          {processing ? (
+            <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
+          ) : (
+            <><CreditCard className="h-4 w-4" />Pay ${link.amount}.00</>
+          )}
+        </button>
+
+        <div className="flex items-center justify-center gap-2 mt-3">
+          <Shield className="h-3.5 w-3.5" style={{ color: "#22c55e" }} />
+          <span className="text-[11px]" style={{ color: "var(--gf-text-muted)" }}>
+            Secured by Stripe. 256-bit SSL encryption.
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Page
+// ---------------------------------------------------------------------------
+
+function PaymentLinkContent() {
+  const params = useParams();
   const linkId = params.linkId as string;
 
   const [link, setLink] = useState<PaymentLink | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Card form state
-  const [email, setEmail] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvc, setCvc] = useState("");
-  const [cardName, setCardName] = useState("");
-  const [processing, setProcessing] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetch(`/api/payment-links/${linkId}`)
@@ -51,59 +206,6 @@ export default function PaymentLinkPage() {
       .then((data) => { setLink(data); setLoading(false); })
       .catch(() => { setError("This payment link is invalid or has expired."); setLoading(false); });
   }, [linkId]);
-
-  const fieldStyle = {
-    backgroundColor: "var(--gf-bg-base)",
-    borderColor: "var(--gf-border)",
-    color: "var(--gf-text-primary)",
-  };
-
-  const formatCardNumber = (val: string) => {
-    const digits = val.replace(/\D/g, "").slice(0, 16);
-    return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
-  };
-
-  const formatExpiry = (val: string) => {
-    const digits = val.replace(/\D/g, "").slice(0, 4);
-    if (digits.length > 2) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return digits;
-  };
-
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Valid email required";
-    if (cardNumber.replace(/\s/g, "").length < 13) e.cardNumber = "Invalid card number";
-    if (!cardName.trim()) e.cardName = "Required";
-    if (!/^\d{2}\/\d{2}$/.test(expiry)) e.expiry = "Invalid";
-    if (cvc.length < 3) e.cvc = "Invalid";
-    setFormErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handlePay = async () => {
-    if (!validate() || !link) return;
-    setProcessing(true);
-
-    try {
-      const res = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId: link.planId,
-          planName: link.planName,
-          amount: link.amount,
-          currency: link.currency,
-          billing: { fullName: cardName, email },
-          paymentMethod: "card",
-        }),
-      });
-      const payment = await res.json();
-      router.push(`/checkout/success?paymentId=${payment.id}`);
-    } catch {
-      setProcessing(false);
-      setFormErrors({ submit: "Payment failed. Please try again." });
-    }
-  };
 
   if (loading) {
     return (
@@ -168,104 +270,19 @@ export default function PaymentLinkPage() {
           </div>
 
           {/* Payment Form */}
-          <div
-            className="rounded-xl border p-6"
-            style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}
-          >
-            <div className="flex items-center gap-2 mb-5">
-              <Lock className="h-4 w-4" style={{ color: "var(--gf-accent)" }} />
-              <span className="text-sm font-bold" style={{ color: "var(--gf-text-primary)" }}>
-                Secure Payment
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Email *</label>
-                <input
-                  type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                  style={fieldStyle}
-                />
-                {formErrors.email && <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Card Number *</label>
-                <input
-                  type="text" value={cardNumber}
-                  onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                  placeholder="4242 4242 4242 4242" maxLength={19}
-                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40 font-mono"
-                  style={fieldStyle}
-                />
-                {formErrors.cardNumber && <p className="text-xs text-red-500 mt-1">{formErrors.cardNumber}</p>}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Cardholder Name *</label>
-                <input
-                  type="text" value={cardName} onChange={(e) => setCardName(e.target.value)}
-                  placeholder="John Doe"
-                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40"
-                  style={fieldStyle}
-                />
-                {formErrors.cardName && <p className="text-xs text-red-500 mt-1">{formErrors.cardName}</p>}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Expiry *</label>
-                  <input
-                    type="text" value={expiry}
-                    onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                    placeholder="MM/YY" maxLength={5}
-                    className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40 font-mono"
-                    style={fieldStyle}
-                  />
-                  {formErrors.expiry && <p className="text-xs text-red-500 mt-1">{formErrors.expiry}</p>}
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>CVC *</label>
-                  <input
-                    type="text" value={cvc}
-                    onChange={(e) => setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    placeholder="123" maxLength={4}
-                    className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40 font-mono"
-                    style={fieldStyle}
-                  />
-                  {formErrors.cvc && <p className="text-xs text-red-500 mt-1">{formErrors.cvc}</p>}
-                </div>
-              </div>
-
-              {formErrors.submit && (
-                <p className="text-xs text-red-500 mt-1">{formErrors.submit}</p>
-              )}
-
-              <button
-                onClick={handlePay}
-                disabled={processing}
-                className="w-full flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60 mt-2"
-                style={{ backgroundColor: "#22c55e" }}
-              >
-                {processing ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
-                ) : (
-                  <><CreditCard className="h-4 w-4" />Pay ${link.amount}.00</>
-                )}
-              </button>
-
-              <div className="flex items-center justify-center gap-2 mt-3">
-                <Shield className="h-3.5 w-3.5" style={{ color: "#22c55e" }} />
-                <span className="text-[11px]" style={{ color: "var(--gf-text-muted)" }}>
-                  Secured by Stripe. 256-bit SSL encryption.
-                </span>
-              </div>
-            </div>
-          </div>
+          <PaymentForm link={link} />
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentLinkPage() {
+  if (!stripePromise) return null;
+
+  return (
+    <Elements stripe={stripePromise}>
+      <PaymentLinkContent />
+    </Elements>
   );
 }

@@ -47,3 +47,28 @@ export type ApiToken = Prisma.ApiTokenModel
  * 
  */
 export type SsoConfig = Prisma.SsoConfigModel
+/**
+ * Model Subscription
+ * 
+ */
+export type Subscription = Prisma.SubscriptionModel
+/**
+ * Model Payment
+ * 
+ */
+export type Payment = Prisma.PaymentModel
+/**
+ * Model StoredPaymentMethod
+ * 
+ */
+export type StoredPaymentMethod = Prisma.StoredPaymentMethodModel
+/**
+ * Model Refund
+ * 
+ */
+export type Refund = Prisma.RefundModel
+/**
+ * Model Invoice
+ * 
+ */
+export type Invoice = Prisma.InvoiceModel

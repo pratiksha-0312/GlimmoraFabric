@@ -16,8 +16,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Auto-generate user code: USR-0001, USR-0002, etc.
+    const count = await prisma.platformUser.count();
+    const userCode = `USR-${String(count + 1).padStart(4, "0")}`;
+
     const user = await prisma.platformUser.create({
       data: {
+        code: userCode,
         name: body.name,
         email: body.email ?? "",
         password: body.password ?? "",

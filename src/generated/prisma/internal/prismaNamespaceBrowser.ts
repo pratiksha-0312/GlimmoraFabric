@@ -56,7 +56,12 @@ export const ModelName = {
   Role: 'Role',
   Session: 'Session',
   ApiToken: 'ApiToken',
-  SsoConfig: 'SsoConfig'
+  SsoConfig: 'SsoConfig',
+  Subscription: 'Subscription',
+  Payment: 'Payment',
+  StoredPaymentMethod: 'StoredPaymentMethod',
+  Refund: 'Refund',
+  Invoice: 'Invoice'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -98,6 +103,7 @@ export type TenantScalarFieldEnum = (typeof TenantScalarFieldEnum)[keyof typeof 
 
 export const PlatformUserScalarFieldEnum = {
   id: 'id',
+  code: 'code',
   name: 'name',
   email: 'email',
   password: 'password',
@@ -177,6 +183,81 @@ export const SsoConfigScalarFieldEnum = {
 } as const
 
 export type SsoConfigScalarFieldEnum = (typeof SsoConfigScalarFieldEnum)[keyof typeof SsoConfigScalarFieldEnum]
+
+
+export const SubscriptionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  plan: 'plan',
+  status: 'status',
+  stripeSubId: 'stripeSubId',
+  stripeCustId: 'stripeCustId',
+  currentPeriodEnd: 'currentPeriodEnd',
+  cancelledAt: 'cancelledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SubscriptionScalarFieldEnum = (typeof SubscriptionScalarFieldEnum)[keyof typeof SubscriptionScalarFieldEnum]
+
+
+export const PaymentScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  subscriptionId: 'subscriptionId',
+  stripePaymentId: 'stripePaymentId',
+  amount: 'amount',
+  currency: 'currency',
+  status: 'status',
+  receiptUrl: 'receiptUrl',
+  createdAt: 'createdAt'
+} as const
+
+export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
+
+
+export const StoredPaymentMethodScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  stripeMethodId: 'stripeMethodId',
+  brand: 'brand',
+  last4: 'last4',
+  expMonth: 'expMonth',
+  expYear: 'expYear',
+  isDefault: 'isDefault',
+  createdAt: 'createdAt'
+} as const
+
+export type StoredPaymentMethodScalarFieldEnum = (typeof StoredPaymentMethodScalarFieldEnum)[keyof typeof StoredPaymentMethodScalarFieldEnum]
+
+
+export const RefundScalarFieldEnum = {
+  id: 'id',
+  paymentId: 'paymentId',
+  stripeRefundId: 'stripeRefundId',
+  amount: 'amount',
+  currency: 'currency',
+  reason: 'reason',
+  status: 'status',
+  processedAt: 'processedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type RefundScalarFieldEnum = (typeof RefundScalarFieldEnum)[keyof typeof RefundScalarFieldEnum]
+
+
+export const InvoiceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  stripeInvoiceId: 'stripeInvoiceId',
+  amount: 'amount',
+  currency: 'currency',
+  status: 'status',
+  pdfUrl: 'pdfUrl',
+  createdAt: 'createdAt'
+} as const
+
+export type InvoiceScalarFieldEnum = (typeof InvoiceScalarFieldEnum)[keyof typeof InvoiceScalarFieldEnum]
 
 
 export const SortOrder = {

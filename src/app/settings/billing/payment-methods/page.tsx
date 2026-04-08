@@ -1,69 +1,110 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, CreditCard, Plus, Trash2, X, CheckCircle2, AlertTriangle, Star,
+  ArrowLeft, CreditCard, Plus, Trash2, X, AlertTriangle, Star, Loader2, Lock,
 } from "lucide-react";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { stripePromise } from "@/lib/stripe-client";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import type { UserRole } from "@/lib/roles";
 
 // ---------------------------------------------------------------------------
-// Mock Data
+// Types
 // ---------------------------------------------------------------------------
 
-interface PaymentMethod {
+interface PaymentMethodItem {
   id: string;
-  type: "visa" | "mastercard" | "amex";
+  brand: string;
   last4: string;
-  expiry: string;
+  expMonth: number;
+  expYear: number;
   isDefault: boolean;
-  holder: string;
+  createdAt: string;
 }
-
-const INITIAL_METHODS: PaymentMethod[] = [
-  { id: "pm1", type: "visa", last4: "4242", expiry: "12/27", isDefault: true, holder: "Pratiksha Yadav" },
-  { id: "pm2", type: "mastercard", last4: "8888", expiry: "06/26", isDefault: false, holder: "Pratiksha Yadav" },
-];
 
 const CARD_BRANDS: Record<string, { label: string; color: string }> = {
   visa: { label: "Visa", color: "#1a1f71" },
   mastercard: { label: "Mastercard", color: "#eb001b" },
   amex: { label: "Amex", color: "#006fcf" },
+  discover: { label: "Discover", color: "#ff6000" },
+  unknown: { label: "Card", color: "#6b7280" },
 };
 
 // ---------------------------------------------------------------------------
-// Add Card Modal
+// Stripe Card Element Options
 // ---------------------------------------------------------------------------
 
-function AddCardModal({ onSave, onClose }: { onSave: (m: PaymentMethod) => void; onClose: () => void }) {
-  const [holder, setHolder] = useState("");
-  const [number, setNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvc, setCvc] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: "14px",
+      color: "#e2e8f0",
+      fontFamily: "ui-monospace, SFMono-Regular, monospace",
+      "::placeholder": { color: "#64748b" },
+    },
+    invalid: { color: "#ef4444" },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Add Card Modal (uses Stripe Elements)
+// ---------------------------------------------------------------------------
+
+function AddCardModalInner({ onSave, onClose }: { onSave: () => void; onClose: () => void }) {
+  const stripeHook = useStripe();
+  const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [cardComplete, setCardComplete] = useState(false);
 
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!holder.trim()) e.holder = "Required";
-    if (number.replace(/\s/g, "").length < 16) e.number = "Enter 16 digits";
-    if (!/^\d{2}\/\d{2}$/.test(expiry)) e.expiry = "MM/YY format";
-    if (cvc.length < 3) e.cvc = "3-4 digits";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSubmit = async (ev: React.FormEvent) => {
+  const handleSubmit = useCallback(async (ev: React.FormEvent) => {
     ev.preventDefault();
-    if (!validate()) return;
-    setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    const last4 = number.replace(/\s/g, "").slice(-4);
-    onSave({ id: `pm${Date.now()}`, type: "visa", last4, expiry, isDefault: false, holder });
-  };
+    if (!stripeHook || !elements) return;
 
-  const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" };
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      // Create a payment method via Stripe.js (card data never hits our server)
+      const { error: stripeError, paymentMethod } = await stripeHook.createPaymentMethod({
+        type: "card",
+        card: cardElement,
+      });
+
+      if (stripeError) {
+        setError(stripeError.message ?? "Failed to add card");
+        setSubmitting(false);
+        return;
+      }
+
+      // Send the Stripe payment method ID to our backend to attach to customer
+      const res = await fetch("/api/payment-methods", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentMethodId: paymentMethod.id,
+          customerId: "cus_placeholder", // In production, get from user session
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "Failed to save payment method");
+        setSubmitting(false);
+        return;
+      }
+
+      onSave();
+    } catch {
+      setError("An unexpected error occurred");
+      setSubmitting(false);
+    }
+  }, [stripeHook, elements, onSave]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
@@ -76,35 +117,29 @@ function AddCardModal({ onSave, onClose }: { onSave: (m: PaymentMethod) => void;
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Cardholder Name *</label>
-            <input value={holder} onChange={(e) => setHolder(e.target.value)} placeholder="Name on card"
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none" style={fieldStyle} />
-            {errors.holder && <p className="text-xs text-red-500 mt-1">{errors.holder}</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Card Number *</label>
-            <input value={number} onChange={(e) => setNumber(e.target.value.replace(/[^\d\s]/g, "").slice(0, 19))} placeholder="1234 5678 9012 3456"
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none font-mono" style={fieldStyle} />
-            {errors.number && <p className="text-xs text-red-500 mt-1">{errors.number}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Expiry *</label>
-              <input value={expiry} onChange={(e) => setExpiry(e.target.value.slice(0, 5))} placeholder="MM/YY"
-                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none" style={fieldStyle} />
-              {errors.expiry && <p className="text-xs text-red-500 mt-1">{errors.expiry}</p>}
+            <div className="flex items-center gap-2 mb-3">
+              <Lock className="h-4 w-4" style={{ color: "var(--gf-accent)" }} />
+              <span className="text-xs font-medium" style={{ color: "var(--gf-text-muted)" }}>
+                Secured by Stripe — card details never touch our servers
+              </span>
             </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>CVC *</label>
-              <input value={cvc} onChange={(e) => setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="123"
-                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none" style={fieldStyle} />
-              {errors.cvc && <p className="text-xs text-red-500 mt-1">{errors.cvc}</p>}
+            <div
+              className="rounded-lg border px-3 py-3"
+              style={{ backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)" }}
+            >
+              <CardElement
+                options={CARD_ELEMENT_OPTIONS}
+                onChange={(e) => setCardComplete(e.complete)}
+              />
             </div>
           </div>
+          {error && <p className="text-xs text-red-500">{error}</p>}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium border" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>Cancel</button>
-            <button type="submit" disabled={submitting} className="rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:opacity-50" style={{ backgroundColor: "var(--gf-accent)" }}>
-              {submitting ? "Adding..." : "Add Card"}
+            <button type="submit" disabled={submitting || !cardComplete || !stripeHook}
+              className="rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              style={{ backgroundColor: "var(--gf-accent)" }}>
+              {submitting ? <><Loader2 className="h-4 w-4 animate-spin inline mr-1" />Adding...</> : "Add Card"}
             </button>
           </div>
         </form>
@@ -113,35 +148,70 @@ function AddCardModal({ onSave, onClose }: { onSave: (m: PaymentMethod) => void;
   );
 }
 
+function AddCardModal({ onSave, onClose }: { onSave: () => void; onClose: () => void }) {
+  return (
+    <Elements stripe={stripePromise}>
+      <AddCardModalInner onSave={onSave} onClose={onClose} />
+    </Elements>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
 
-export default function PaymentMethodsPage() {
+function PaymentMethodsContent() {
   const router = useRouter();
-  const [methods, setMethods] = useState(INITIAL_METHODS);
+  const [methods, setMethods] = useState<PaymentMethodItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<PaymentMethod | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PaymentMethodItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const handleAdd = (m: PaymentMethod) => {
-    setMethods((prev) => [...prev, m]);
+  const fetchMethods = useCallback(async () => {
+    try {
+      const res = await fetch("/api/payment-methods?tenantId=current");
+      const data = await res.json();
+      setMethods(Array.isArray(data) ? data : []);
+    } catch {
+      setMethods([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchMethods(); }, [fetchMethods]);
+
+  const handleAddSuccess = () => {
     setShowAdd(false);
+    fetchMethods();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    setMethods((prev) => prev.filter((m) => m.id !== deleteTarget.id));
+    setDeleting(true);
+    try {
+      const idParam = deleteTarget.id.startsWith("pm_") ? deleteTarget.id : deleteTarget.id;
+      await fetch(`/api/payment-methods?id=${idParam}`, { method: "DELETE" });
+      setMethods((prev) => prev.filter((m) => m.id !== deleteTarget.id));
+    } catch {
+      // silently fail
+    }
     setDeleteTarget(null);
-  };
-
-  const handleSetDefault = (id: string) => {
-    setMethods((prev) => prev.map((m) => ({ ...m, isDefault: m.id === id })));
+    setDeleting(false);
   };
 
   const cardStyle = { borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--gf-accent)" }} />
+      </div>
+    );
+  }
+
   return (
-    <AuthGuard allowedRoles={["billing_admin", "tenant_admin"] as UserRole[]}>
     <div className="space-y-6 max-w-3xl">
       <button onClick={() => router.push("/settings/billing")}
         className="flex items-center gap-2 text-sm font-medium hover:opacity-70"
@@ -164,7 +234,7 @@ export default function PaymentMethodsPage() {
       {/* Cards List */}
       <div className="space-y-3">
         {methods.map((m) => {
-          const brand = CARD_BRANDS[m.type];
+          const brand = CARD_BRANDS[m.brand] ?? CARD_BRANDS.unknown;
           return (
             <div key={m.id} className="flex items-center justify-between rounded-xl border p-5" style={cardStyle}>
               <div className="flex items-center gap-4">
@@ -180,17 +250,10 @@ export default function PaymentMethodsPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--gf-text-muted)" }}>{m.holder} — Expires {m.expiry}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--gf-text-muted)" }}>Expires {m.expMonth}/{m.expYear}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {!m.isDefault && (
-                  <button onClick={() => handleSetDefault(m.id)}
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium border hover:opacity-80"
-                    style={{ borderColor: "var(--gf-border)", color: "var(--gf-accent)" }}>
-                    Set Default
-                  </button>
-                )}
                 <button onClick={() => setDeleteTarget(m)}
                   className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/10">
                   <Trash2 className="h-4 w-4" />
@@ -208,7 +271,7 @@ export default function PaymentMethodsPage() {
       </div>
 
       {/* Add Modal */}
-      {showAdd && <AddCardModal onSave={handleAdd} onClose={() => setShowAdd(false)} />}
+      {showAdd && <AddCardModal onSave={handleAddSuccess} onClose={() => setShowAdd(false)} />}
 
       {/* Delete Modal */}
       {deleteTarget && (
@@ -221,16 +284,26 @@ export default function PaymentMethodsPage() {
               <h2 className="text-lg font-bold" style={{ color: "var(--gf-text-primary)" }}>Remove Card</h2>
             </div>
             <p className="text-sm mb-6" style={{ color: "var(--gf-text-secondary)" }}>
-              Remove {CARD_BRANDS[deleteTarget.type].label} ending in <strong>{deleteTarget.last4}</strong>?
+              Remove {(CARD_BRANDS[deleteTarget.brand] ?? CARD_BRANDS.unknown).label} ending in <strong>{deleteTarget.last4}</strong>?
             </p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setDeleteTarget(null)} className="rounded-lg px-4 py-2 text-sm font-medium border" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}>Cancel</button>
-              <button onClick={handleDelete} className="rounded-lg px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700">Remove</button>
+              <button onClick={handleDelete} disabled={deleting}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50">
+                {deleting ? "Removing..." : "Remove"}
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+export default function PaymentMethodsPage() {
+  return (
+    <AuthGuard allowedRoles={["billing_admin", "tenant_admin"] as UserRole[]}>
+      <PaymentMethodsContent />
     </AuthGuard>
   );
 }

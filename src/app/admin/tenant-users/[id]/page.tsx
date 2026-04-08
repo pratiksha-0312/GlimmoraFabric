@@ -8,8 +8,10 @@ import { AuthGuard } from "@/components/auth/auth-guard";
 
 interface PlatformUser {
   id: string;
+  code: string;
   name: string;
   email: string;
+  password: string;
   role: UserRole;
   status: "Active" | "Inactive" | "Invited";
   mfa: boolean;
@@ -119,7 +121,7 @@ export default function TenantUserDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>User Code</label>
-                <input type="text" value={user.id} readOnly className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed" style={fieldStyle} />
+                <input type="text" value={user.code || user.id} readOnly className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed" style={fieldStyle} />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>User Type</label>
@@ -146,6 +148,15 @@ export default function TenantUserDetailPage() {
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Role</label>
                 <input type="text" value={ROLE_LABELS[user.role] ?? user.role} readOnly className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed" style={fieldStyle} />
+              </div>
+            </div>
+
+            {/* Password */}
+            <h3 className="text-xs font-semibold uppercase tracking-wide pt-2" style={{ color: "var(--gf-text-muted)" }}>Password</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Password</label>
+                <input type="password" value={user.password || "••••••••"} readOnly className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed" style={fieldStyle} />
               </div>
             </div>
 

@@ -8,8 +8,10 @@ import { AuthGuard } from "@/components/auth/auth-guard";
 
 interface PlatformUser {
   id: string;
+  code: string;
   name: string;
   email: string;
+  password: string;
   role: UserRole;
   status: "Active" | "Inactive" | "Invited";
   mfa: boolean;
@@ -50,6 +52,8 @@ export default function SuperAdminUserEditPage() {
   const [timezone, setTimezone] = useState("Asia/Kolkata");
   const [blocked, setBlocked] = useState(false);
   const [active, setActive] = useState(true);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -98,6 +102,7 @@ export default function SuperAdminUserEditPage() {
     if (!name.trim()) e.name = "Full name is required";
     if (!email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Invalid email address";
+    if (password && password !== confirmPassword) e.confirmPassword = "Passwords do not match";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -106,10 +111,12 @@ export default function SuperAdminUserEditPage() {
     ev.preventDefault();
     if (!validate()) return;
     setSaving(true);
+    const payload: Record<string, unknown> = { name, email, role, status, mfa, tenant: user?.tenant };
+    if (password.trim()) payload.password = password;
     await fetch(`/api/users/${userId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, role, status, mfa, tenant: user?.tenant }),
+      body: JSON.stringify(payload),
     });
     setSaving(false);
     router.push("/admin/users");
@@ -159,7 +166,7 @@ export default function SuperAdminUserEditPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>User Code</label>
-                <input type="text" value={user.id} readOnly className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed" style={fieldStyle} />
+                <input type="text" value={user.code || user.id} readOnly className="w-full rounded-lg border px-3 py-2 text-sm outline-none opacity-70 cursor-not-allowed" style={fieldStyle} />
                 <p className="mt-1 text-[11px]" style={{ color: "var(--gf-text-muted)" }}>System-generated</p>
               </div>
               <div>
@@ -227,6 +234,23 @@ export default function SuperAdminUserEditPage() {
                   className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle}>
                   {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
+              </div>
+            </div>
+
+            {/* Password */}
+            <h3 className="text-xs font-semibold uppercase tracking-wide pt-2" style={{ color: "var(--gf-text-muted)" }}>Change Password</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>New Password</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank to keep current"
+                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
+                {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Confirm Password</label>
+                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password"
+                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
+                {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
               </div>
             </div>
 

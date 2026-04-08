@@ -31,6 +31,7 @@ model Tenant {
 
 model PlatformUser {
   id         String   @id @default(cuid())
+  code       String   @default("")
   name       String
   email      String
   password   String   @default("")
@@ -112,4 +113,84 @@ model SsoConfig {
 
   @@unique([provider, tenantId])
   @@map("sso_configs")
+}
+
+// ---------------------------------------------------------------------------
+// Payment models
+// ---------------------------------------------------------------------------
+
+model Subscription {
+  id               String    @id @default(cuid())
+  tenantId         String
+  plan             String    // Starter, Pro, Enterprise
+  status           String    @default("active") // active, cancelled, past_due, trialing
+  stripeSubId      String?   @unique
+  stripeCustId     String?
+  currentPeriodEnd DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  payments Payment[]
+
+  @@map("subscriptions")
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  tenantId        String
+  subscriptionId  String?
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  stripePaymentId String?  @unique
+  amount          Int      // in cents (e.g. 2900 = $29.00)
+  currency        String   @default("usd")
+  status          String   // succeeded, failed, pending, refunded
+  receiptUrl      String?
+  createdAt       DateTime @default(now())
+
+  refunds Refund[]
+
+  @@map("payments")
+}
+
+model StoredPaymentMethod {
+  id             String   @id @default(cuid())
+  tenantId       String
+  stripeMethodId String   @unique
+  brand          String
+  last4          String
+  expMonth       Int
+  expYear        Int
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@map("payment_methods")
+}
+
+model Refund {
+  id             String    @id @default(cuid())
+  paymentId      String
+  payment        Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  stripeRefundId String?   @unique
+  amount         Int
+  currency       String    @default("usd")
+  reason         String    @default("")
+  status         String    @default("pending") // pending, completed, rejected
+  processedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@map("refunds")
+}
+
+model Invoice {
+  id              String   @id @default(cuid())
+  tenantId        String
+  stripeInvoiceId String?  @unique
+  amount          Int
+  currency        String   @default("usd")
+  status          String   // paid, open, void
+  pdfUrl          String?
+  createdAt       DateTime @default(now())
+
+  @@map("invoices")
 }

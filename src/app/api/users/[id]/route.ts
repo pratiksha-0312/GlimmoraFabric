@@ -13,7 +13,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
-  const user = await prisma.platformUser.update({ where: { id }, data: body });
+
+  // Build update data — only include password if provided and non-empty
+  const updateData: Record<string, unknown> = { ...body };
+  if (!body.password || body.password.trim() === "") {
+    delete updateData.password;
+  }
+
+  const user = await prisma.platformUser.update({ where: { id }, data: updateData });
   return NextResponse.json(user);
 }
 

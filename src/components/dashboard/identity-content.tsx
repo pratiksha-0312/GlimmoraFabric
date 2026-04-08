@@ -38,8 +38,10 @@ import { useAuth } from "@/context/auth-context";
 
 export interface PlatformUser {
   id: string;
+  code?: string;
   name: string;
   email: string;
+  password?: string;
   role: UserRole;
   status: "Active" | "Inactive" | "Invited";
   mfa: boolean;
@@ -206,7 +208,7 @@ function UserFormModal({
 }) {
   const isEdit = !!user;
   const defaultUserType = user ? (INTERNAL_SYSTEM_ROLES.includes(user.role) ? "internal" : "end-user") : "end-user";
-  const [userCode] = useState(() => isEdit ? user!.id : `USR-${String(userCount + 1).padStart(4, "0")}`);
+  const [userCode] = useState(() => isEdit ? (user!.code || user!.id) : `USR-${String(userCount + 1).padStart(4, "0")}`);
   const [userType, setUserType] = useState<"end-user" | "internal">(defaultUserType);
   const [name, setName] = useState(user?.name ?? "");
   const [username, setUsername] = useState("");
