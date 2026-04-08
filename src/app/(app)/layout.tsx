@@ -68,7 +68,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Tenant Management", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "platform_engineering_lead", "product_lead", "cto"] },
   { label: "Plan Management", href: "/dashboard/plans", icon: Layers, visibleTo: ["super_admin"] },
   { label: "User Management", href: "/admin/users", icon: Users, visibleTo: ["super_admin"] },

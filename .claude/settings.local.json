@@ -99,7 +99,15 @@
       "Bash(PGPASSWORD=9091 psql -U postgres -h localhost -p 5432 -d glimmora -c \"SELECT id, name, username, email, password FROM tenants WHERE name ILIKE 'wm' OR username ILIKE 'wm' OR email ILIKE 'wm';\")",
       "Bash(PGPASSWORD=9091 psql -U postgres -h localhost -p 5432 -d glimmora -c \"SELECT id, name, email, role, password, status FROM platform_users WHERE name ILIKE 'wm' OR email ILIKE 'wm';\")",
       "Bash(PGPASSWORD=9091 psql -U postgres -h localhost -p 5432 -d glimmora -c \"SELECT id, name, email, role, password, status FROM platform_users;\")",
-      "Bash(PGPASSWORD=9091 psql -U postgres -h localhost -p 5432 -d glimmora -c \"UPDATE platform_users SET email = 'wm@gm.com' WHERE role = 'workflow_manager';\")"
+      "Bash(PGPASSWORD=9091 psql -U postgres -h localhost -p 5432 -d glimmora -c \"UPDATE platform_users SET email = 'wm@gm.com' WHERE role = 'workflow_manager';\")",
+      "Bash(PGPASSWORD=9091 psql:*)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"yes\" npx prisma:*)",
+      "Bash(mv admin:*)",
+      "Bash(cp -r admin \"\\(app\\)/admin\")",
+      "Bash(cp -r checkout \"\\(app\\)/checkout\")",
+      "Bash(cp -r dashboard \"\\(app\\)/dashboard\")",
+      "Bash(cp -r notifications \"\\(app\\)/notifications\")",
+      "Bash(cp -r pricing \"\\(app\\)/pricing\")"
     ]
   }
 }
