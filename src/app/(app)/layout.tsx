@@ -114,7 +114,7 @@ const navItems: NavItem[] = [
     { label: "Data Export", href: "/admin/compliance/data-export", icon: FileDown, visibleTo: ["super_admin", "auditor"] },
   ]},
   { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
-  { label: "Settings", href: "/settings", icon: Settings, section: "System", visibleTo: ["super_admin", "tenant_admin", "platform_engineering_lead"] },
+  { label: "Settings", href: "/settings", icon: Settings, section: "System", visibleTo: ["super_admin", "tenant_admin", "billing_admin", "platform_engineering_lead"] },
 ];
 
 const SIDEBAR_EXPANDED = 256;

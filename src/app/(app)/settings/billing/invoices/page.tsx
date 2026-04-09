@@ -1,36 +1,27 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, FileText, Download, Eye, Search, ChevronLeft, ChevronRight,
+  ArrowLeft, FileText, Download, Eye, Search, ChevronLeft, ChevronRight, Loader2,
 } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import type { UserRole } from "@/lib/roles";
 
 // ---------------------------------------------------------------------------
-// Mock Data
+// Types
 // ---------------------------------------------------------------------------
 
 interface Invoice {
   id: string;
   number: string;
   date: string;
-  amount: string;
+  dueDate: string;
+  amount: number;
+  currency: string;
   status: "Paid" | "Pending" | "Failed";
   plan: string;
 }
-
-const INVOICES: Invoice[] = [
-  { id: "inv1", number: "INV-2026-0012", date: "2026-04-01", amount: "$49.00", status: "Paid", plan: "Pro" },
-  { id: "inv2", number: "INV-2026-0011", date: "2026-03-01", amount: "$49.00", status: "Paid", plan: "Pro" },
-  { id: "inv3", number: "INV-2026-0010", date: "2026-02-01", amount: "$49.00", status: "Paid", plan: "Pro" },
-  { id: "inv4", number: "INV-2026-0009", date: "2026-01-01", amount: "$49.00", status: "Paid", plan: "Pro" },
-  { id: "inv5", number: "INV-2025-0008", date: "2025-12-01", amount: "$19.00", status: "Paid", plan: "Starter" },
-  { id: "inv6", number: "INV-2025-0007", date: "2025-11-01", amount: "$19.00", status: "Paid", plan: "Starter" },
-  { id: "inv7", number: "INV-2025-0006", date: "2025-10-01", amount: "$19.00", status: "Failed", plan: "Starter" },
-  { id: "inv8", number: "INV-2025-0005", date: "2025-09-01", amount: "$19.00", status: "Paid", plan: "Starter" },
-];
 
 const STATUS_COLORS: Record<string, string> = { Paid: "#22c55e", Pending: "#f59e0b", Failed: "#ef4444" };
 const PAGE_SIZE = 5;
@@ -41,14 +32,24 @@ const PAGE_SIZE = 5;
 
 export default function InvoicesPage() {
   const router = useRouter();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
+  useEffect(() => {
+    fetch("/api/invoices")
+      .then((r) => r.json())
+      .then((data) => { setInvoices(Array.isArray(data) ? data : []); })
+      .catch(() => setInvoices([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   const filtered = useMemo(() => {
-    if (!search) return INVOICES;
+    if (!search) return invoices;
     const q = search.toLowerCase();
-    return INVOICES.filter((inv) => inv.number.toLowerCase().includes(q) || inv.date.includes(q) || inv.plan.toLowerCase().includes(q));
-  }, [search]);
+    return invoices.filter((inv) => inv.number.toLowerCase().includes(q) || inv.date.includes(q) || inv.plan.toLowerCase().includes(q));
+  }, [search, invoices]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -87,14 +88,19 @@ export default function InvoicesPage() {
             </tr>
           </thead>
           <tbody>
-            {paged.map((inv) => {
+            {loading ? (
+              <tr><td colSpan={6} className="px-4 py-12 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" style={{ color: "var(--gf-accent)" }} /></td></tr>
+            ) : paged.length === 0 ? (
+              <tr><td colSpan={6} className="px-4 py-12 text-center text-sm" style={{ color: "var(--gf-text-muted)" }}>No invoices found</td></tr>
+            ) : (
+            paged.map((inv) => {
               const sc = STATUS_COLORS[inv.status];
               return (
                 <tr key={inv.id} className="border-t hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: "var(--gf-border)" }}>
                   <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>{inv.number}</td>
                   <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>{inv.date}</td>
                   <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>{inv.plan}</td>
-                  <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>{inv.amount}</td>
+                  <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>${inv.amount}</td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: sc }}>
                       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: sc }} />{inv.status}
@@ -105,16 +111,14 @@ export default function InvoicesPage() {
                       <button onClick={() => router.push(`/settings/billing/invoices/${inv.id}`)} title="View"
                         className="rounded-lg p-1.5 hover:bg-black/10 dark:hover:bg-white/10"
                         style={{ color: "var(--gf-text-secondary)" }}><Eye className="h-4 w-4" /></button>
-                      <button title="Download PDF"
+                      <a href={`/api/invoices/${inv.id}/pdf`} download title="Download PDF"
                         className="rounded-lg p-1.5 hover:bg-black/10 dark:hover:bg-white/10"
-                        style={{ color: "var(--gf-text-secondary)" }}><Download className="h-4 w-4" /></button>
+                        style={{ color: "var(--gf-text-secondary)" }}><Download className="h-4 w-4" /></a>
                     </div>
                   </td>
                 </tr>
               );
-            })}
-            {paged.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-sm" style={{ color: "var(--gf-text-muted)" }}>No invoices found</td></tr>
+            })
             )}
           </tbody>
         </table>

@@ -46,13 +46,36 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { paymentMethodId, customerId, tenantId } = body;
+    const { paymentMethodId, tenantId, email, fullName } = body;
+    let { customerId } = body;
 
-    if (!paymentMethodId || !customerId) {
+    if (!paymentMethodId) {
       return NextResponse.json(
-        { error: "paymentMethodId and customerId are required" },
+        { error: "paymentMethodId is required" },
         { status: 400 },
       );
+    }
+
+    // Find or create a Stripe customer if no valid customerId provided
+    if (!customerId || customerId === "cus_placeholder") {
+      if (!email) {
+        return NextResponse.json(
+          { error: "email is required to create a customer" },
+          { status: 400 },
+        );
+      }
+
+      // Check if customer already exists by email
+      const existing = await stripe.customers.list({ email, limit: 1 });
+      if (existing.data.length > 0) {
+        customerId = existing.data[0].id;
+      } else {
+        const customer = await stripe.customers.create({
+          email,
+          name: fullName ?? email,
+        });
+        customerId = customer.id;
+      }
     }
 
     // Attach the payment method to the customer in Stripe

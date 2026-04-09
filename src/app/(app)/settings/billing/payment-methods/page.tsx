@@ -8,6 +8,7 @@ import {
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { stripePromise } from "@/lib/stripe-client";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { useAuth } from "@/context/auth-context";
 import type { UserRole } from "@/lib/roles";
 
 // ---------------------------------------------------------------------------
@@ -52,7 +53,7 @@ const CARD_ELEMENT_OPTIONS = {
 // Add Card Modal (uses Stripe Elements)
 // ---------------------------------------------------------------------------
 
-function AddCardModalInner({ onSave, onClose }: { onSave: () => void; onClose: () => void }) {
+function AddCardModalInner({ onSave, onClose, userEmail, userFullName }: { onSave: () => void; onClose: () => void; userEmail: string; userFullName: string }) {
   const stripeHook = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -88,7 +89,8 @@ function AddCardModalInner({ onSave, onClose }: { onSave: () => void; onClose: (
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           paymentMethodId: paymentMethod.id,
-          customerId: "cus_placeholder", // In production, get from user session
+          email: userEmail,
+          fullName: userFullName,
         }),
       });
 
@@ -148,10 +150,10 @@ function AddCardModalInner({ onSave, onClose }: { onSave: () => void; onClose: (
   );
 }
 
-function AddCardModal({ onSave, onClose }: { onSave: () => void; onClose: () => void }) {
+function AddCardModal({ onSave, onClose, userEmail, userFullName }: { onSave: () => void; onClose: () => void; userEmail: string; userFullName: string }) {
   return (
     <Elements stripe={stripePromise}>
-      <AddCardModalInner onSave={onSave} onClose={onClose} />
+      <AddCardModalInner onSave={onSave} onClose={onClose} userEmail={userEmail} userFullName={userFullName} />
     </Elements>
   );
 }
@@ -162,6 +164,7 @@ function AddCardModal({ onSave, onClose }: { onSave: () => void; onClose: () => 
 
 function PaymentMethodsContent() {
   const router = useRouter();
+  const { user } = useAuth();
   const [methods, setMethods] = useState<PaymentMethodItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -271,7 +274,7 @@ function PaymentMethodsContent() {
       </div>
 
       {/* Add Modal */}
-      {showAdd && <AddCardModal onSave={handleAddSuccess} onClose={() => setShowAdd(false)} />}
+      {showAdd && <AddCardModal onSave={handleAddSuccess} onClose={() => setShowAdd(false)} userEmail={user?.email ?? ""} userFullName={user?.fullName ?? ""} />}
 
       {/* Delete Modal */}
       {deleteTarget && (

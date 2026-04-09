@@ -1,43 +1,31 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Download, FileText, Building2, Calendar, CreditCard } from "lucide-react";
+import { ArrowLeft, Download, FileText, Building2, Calendar, CreditCard, Loader2 } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import type { UserRole } from "@/lib/roles";
 
 // ---------------------------------------------------------------------------
-// Mock Data
+// Types
 // ---------------------------------------------------------------------------
 
-const INVOICES: Record<string, {
-  number: string; date: string; dueDate: string; amount: string; status: string;
-  plan: string; period: string; tenant: string; paymentMethod: string;
-  items: { desc: string; qty: number; price: string }[];
-}> = {
-  inv1: {
-    number: "INV-2026-0012", date: "2026-04-01", dueDate: "2026-04-15", amount: "$49.00",
-    status: "Paid", plan: "Pro", period: "Apr 1 – Apr 30, 2026", tenant: "Glimmora HQ",
-    paymentMethod: "Visa ending in 4242",
-    items: [
-      { desc: "Pro Plan — Monthly subscription", qty: 1, price: "$49.00" },
-    ],
-  },
-  inv2: {
-    number: "INV-2026-0011", date: "2026-03-01", dueDate: "2026-03-15", amount: "$49.00",
-    status: "Paid", plan: "Pro", period: "Mar 1 – Mar 31, 2026", tenant: "Glimmora HQ",
-    paymentMethod: "Visa ending in 4242",
-    items: [
-      { desc: "Pro Plan — Monthly subscription", qty: 1, price: "$49.00" },
-    ],
-  },
-};
-
-// Fallback for unknown IDs
-const FALLBACK = {
-  number: "INV-0000-0000", date: "—", dueDate: "—", amount: "$0.00",
-  status: "Unknown", plan: "—", period: "—", tenant: "—", paymentMethod: "—",
-  items: [],
-};
+interface InvoiceDetail {
+  id: string;
+  number: string;
+  date: string;
+  dueDate: string;
+  status: string;
+  tenant: string;
+  paymentMethod: string;
+  billingPeriod: string;
+  lineItems: { description: string; qty: number; amount: number }[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  currency: string;
+  paidAt: string;
+}
 
 // ---------------------------------------------------------------------------
 // Page
@@ -47,19 +35,19 @@ export default function InvoiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const inv = INVOICES[id] ?? FALLBACK;
+  const [inv, setInv] = useState<InvoiceDetail | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleDownload = () => {
-    const text = `INVOICE: ${inv.number}\nDate: ${inv.date}\nAmount: ${inv.amount}\nStatus: ${inv.status}\nPlan: ${inv.plan}\nPeriod: ${inv.period}\nTenant: ${inv.tenant}\nPayment: ${inv.paymentMethod}\n\nItems:\n${inv.items.map((i) => `  ${i.desc} x${i.qty} — ${i.price}`).join("\n")}`;
-    const blob = new Blob([text], { type: "text/plain" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${inv.number}.txt`;
-    a.click();
-  };
+  useEffect(() => {
+    fetch(`/api/invoices/${id}`)
+      .then((r) => r.json())
+      .then((data) => setInv(data))
+      .catch(() => setInv(null))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const cardStyle = { borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" };
-  const statusColor = inv.status === "Paid" ? "#22c55e" : inv.status === "Failed" ? "#ef4444" : "#f59e0b";
+  const statusColor = inv?.status === "Paid" ? "#22c55e" : inv?.status === "Failed" ? "#ef4444" : "#f59e0b";
 
   return (
     <AuthGuard allowedRoles={["billing_admin", "tenant_admin"] as UserRole[]}>
@@ -70,6 +58,16 @@ export default function InvoiceDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Back to Invoices
       </button>
 
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--gf-accent)" }} />
+        </div>
+      ) : !inv ? (
+        <div className="rounded-xl border p-12 text-center" style={cardStyle}>
+          <p className="text-sm" style={{ color: "var(--gf-text-muted)" }}>Invoice not found.</p>
+        </div>
+      ) : (
+      <>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -82,11 +80,11 @@ export default function InvoiceDetailPage() {
             <span className="text-xs" style={{ color: "var(--gf-text-muted)" }}>{inv.date}</span>
           </div>
         </div>
-        <button onClick={handleDownload}
+        <a href={`/api/invoices/${id}/pdf`} download
           className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white"
           style={{ backgroundColor: "var(--gf-accent)" }}>
           <Download className="h-4 w-4" /> Download PDF
-        </button>
+        </a>
       </div>
 
       {/* Info Grid */}
@@ -108,7 +106,7 @@ export default function InvoiceDetailPage() {
       {/* Billing Period */}
       <div className="rounded-xl border p-5" style={cardStyle}>
         <p className="text-xs font-medium mb-1" style={{ color: "var(--gf-text-muted)" }}>Billing Period</p>
-        <p className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>{inv.period}</p>
+        <p className="text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>{inv.billingPeriod}</p>
       </div>
 
       {/* Line Items */}
@@ -122,22 +120,24 @@ export default function InvoiceDetailPage() {
             </tr>
           </thead>
           <tbody>
-            {inv.items.map((item, i) => (
+            {inv.lineItems.map((item, i) => (
               <tr key={i} className="border-t" style={{ borderColor: "var(--gf-border)" }}>
-                <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>{item.desc}</td>
+                <td className="px-4 py-3" style={{ color: "var(--gf-text-primary)" }}>{item.description}</td>
                 <td className="px-4 py-3" style={{ color: "var(--gf-text-secondary)" }}>{item.qty}</td>
-                <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>{item.price}</td>
+                <td className="px-4 py-3 font-medium" style={{ color: "var(--gf-text-primary)" }}>${item.amount}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className="border-t" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-elevated)" }}>
               <td colSpan={2} className="px-4 py-3 text-right text-sm font-semibold" style={{ color: "var(--gf-text-primary)" }}>Total</td>
-              <td className="px-4 py-3 text-sm font-bold" style={{ color: "var(--gf-accent)" }}>{inv.amount}</td>
+              <td className="px-4 py-3 text-sm font-bold" style={{ color: "var(--gf-accent)" }}>${inv.total}</td>
             </tr>
           </tfoot>
         </table>
       </div>
+      </>
+      )}
     </div>
     </AuthGuard>
   );
