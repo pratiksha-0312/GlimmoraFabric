@@ -96,7 +96,14 @@ const navItems: NavItem[] = [
     { label: "Payment Gateways", href: "/admin/payment-gateways", icon: Shield, visibleTo: ["super_admin"] },
     { label: "Pricing", href: "/pricing", icon: Layers, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"] },
   ]},
-  { label: "Document Management", href: "/dashboard/documents", icon: File },
+  { label: "Document Templates", href: "#doc-templates", icon: FileText, section: "Operations", visibleTo: ["super_admin", "tenant_admin"], children: [
+    { label: "All Templates", href: "/admin/doc-templates", icon: FileText, visibleTo: ["super_admin", "tenant_admin"] },
+    { label: "Create Template", href: "/admin/doc-templates/new", icon: File, visibleTo: ["super_admin"] },
+  ]},
+  { label: "Document Library", href: "#documents", icon: File, visibleTo: ["tenant_member"], children: [
+    { label: "All Documents", href: "/documents", icon: File, visibleTo: ["tenant_member"] },
+  ]},
+  { label: "File Management", href: "/files", icon: File, visibleTo: ["super_admin", "tenant_admin", "auditor", "tenant_member", "billing_admin", "workflow_manager", "developer"] },
   { label: "AI Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
   { label: "AI Config & Analytics", href: "/dashboard/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
   { label: "Compliance", href: "#compliance", icon: ShieldCheck, section: "Compliance", visibleTo: ["super_admin", "auditor"], children: [

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export interface FileRecord {
   id: string;
@@ -30,4 +30,17 @@ const files: FileRecord[] = [
 // GET /api/files — list all files
 export async function GET() {
   return NextResponse.json(files);
+}
+
+// DELETE /api/files?id=file_001 — delete a file
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing file id" }, { status: 400 });
+
+  const idx = files.findIndex((f) => f.id === id);
+  if (idx === -1) return NextResponse.json({ error: "File not found" }, { status: 404 });
+
+  files.splice(idx, 1);
+  return NextResponse.json({ success: true });
 }
