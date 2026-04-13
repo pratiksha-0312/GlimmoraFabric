@@ -17,6 +17,8 @@ import {
   Loader2,
   X,
 } from "lucide-react";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import { useAuth } from "@/context/auth-context";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,6 +33,7 @@ interface TaskDetail {
   priority: string;
   status: string;
   assignee: string;
+  approver?: string;
   requester: string;
   description: string;
   dueDate: string;
@@ -47,7 +50,7 @@ interface Comment {
 }
 
 // ---------------------------------------------------------------------------
-// Approve / Reject Buttons (Component)
+// Approve / Reject Buttons (Component) — Approver only
 // ---------------------------------------------------------------------------
 
 function ActionButtons({
@@ -158,7 +161,8 @@ function CommentsSection({ taskId }: { taskId: string }) {
   useEffect(() => {
     fetch(`/api/tasks/${taskId}/comments`)
       .then((r) => r.json())
-      .then(setComments);
+      .then(setComments)
+      .catch(() => {});
   }, [taskId]);
 
   const handlePost = async () => {
@@ -232,6 +236,7 @@ function CommentsSection({ taskId }: { taskId: string }) {
 export default function TaskDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const taskId = params.id as string;
 
   const [task, setTask] = useState<TaskDetail | null>(null);
@@ -277,6 +282,14 @@ export default function TaskDetailPage() {
 
   const isPending = task.status === "Pending";
 
+  // Approver check: user is the assigned approver (assignee) or has an approver role
+  const currentUserName = user?.fullName ?? "";
+  const isApprover =
+    task.assignee === "Current User" ||
+    task.assignee === currentUserName ||
+    task.approver === currentUserName ||
+    task.approver === "Current User";
+
   const PRIORITY_STYLES: Record<string, { bg: string; text: string }> = {
     Urgent: { bg: "bg-red-500/15", text: "text-red-500" },
     High: { bg: "bg-orange-500/15", text: "text-orange-500" },
@@ -295,104 +308,107 @@ export default function TaskDetailPage() {
   const ss = STATUS_STYLES[task.status] ?? STATUS_STYLES.Pending;
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <button onClick={() => router.push("/tasks")} className="flex items-center gap-2 text-sm font-medium hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
-        <ArrowLeft className="h-4 w-4" />Back to Task Inbox
-      </button>
+    <AuthGuard>
+      <div className="space-y-6 max-w-4xl">
+        <button onClick={() => router.push("/tasks")} className="flex items-center gap-2 text-sm font-medium hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
+          <ArrowLeft className="h-4 w-4" />Back to Task Inbox
+        </button>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>{task.title}</h1>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ss.bg} ${ss.text}`}>{task.status}</span>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ps.bg} ${ps.text}`}>{task.priority}</span>
-            <span className="text-xs px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--gf-bg-elevated)", color: "var(--gf-text-muted)" }}>{task.type}</span>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>{task.title}</h1>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ss.bg} ${ss.text}`}>{task.status}</span>
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ps.bg} ${ps.text}`}>{task.priority}</span>
+              <span className="text-xs px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--gf-bg-elevated)", color: "var(--gf-text-muted)" }}>{task.type}</span>
+            </div>
           </div>
+          {/* Approve/Reject only visible to assigned approver when task is pending */}
+          {isPending && isApprover && (
+            <ActionButtons onApprove={handleApprove} onReject={() => setShowRejectModal(true)} processing={processing} />
+          )}
         </div>
-        {isPending && (
-          <ActionButtons onApprove={handleApprove} onReject={() => setShowRejectModal(true)} processing={processing} />
-        )}
-      </div>
 
-      {/* Detail Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
-          <div className="rounded-xl border p-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
-            <h2 className="text-sm font-bold mb-3" style={{ color: "var(--gf-text-primary)" }}>Description</h2>
-            <p className="text-sm leading-relaxed" style={{ color: "var(--gf-text-secondary)" }}>{task.description}</p>
+        {/* Detail Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Description */}
+            <div className="rounded-xl border p-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
+              <h2 className="text-sm font-bold mb-3" style={{ color: "var(--gf-text-primary)" }}>Description</h2>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--gf-text-secondary)" }}>{task.description}</p>
+            </div>
+
+            {/* Metadata */}
+            {Object.keys(task.metadata).length > 0 && (
+              <div className="rounded-xl border p-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
+                <h2 className="text-sm font-bold mb-3" style={{ color: "var(--gf-text-primary)" }}>Details</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(task.metadata).map(([key, value]) => (
+                    <div key={key} className="rounded-lg border p-3" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-base)" }}>
+                      <p className="text-[11px] font-medium" style={{ color: "var(--gf-text-muted)" }}>{key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}</p>
+                      <p className="text-sm font-medium mt-0.5" style={{ color: "var(--gf-text-primary)" }}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Comments */}
+            <CommentsSection taskId={taskId} />
           </div>
 
-          {/* Metadata */}
-          {Object.keys(task.metadata).length > 0 && (
+          {/* Sidebar */}
+          <div className="space-y-4">
+            {/* Info */}
             <div className="rounded-xl border p-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
-              <h2 className="text-sm font-bold mb-3" style={{ color: "var(--gf-text-primary)" }}>Details</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(task.metadata).map(([key, value]) => (
-                  <div key={key} className="rounded-lg border p-3" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-base)" }}>
-                    <p className="text-[11px] font-medium" style={{ color: "var(--gf-text-muted)" }}>{key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}</p>
-                    <p className="text-sm font-medium mt-0.5" style={{ color: "var(--gf-text-primary)" }}>{value}</p>
+              <h2 className="text-sm font-bold mb-3" style={{ color: "var(--gf-text-primary)" }}>Information</h2>
+              <div className="space-y-3">
+                {[
+                  { icon: <User className="h-4 w-4" />, label: "Assignee", value: task.assignee },
+                  { icon: <User className="h-4 w-4" />, label: "Requester", value: task.requester },
+                  { icon: <GitBranch className="h-4 w-4" />, label: "Workflow", value: task.workflow },
+                  { icon: <Tag className="h-4 w-4" />, label: "Type", value: task.type },
+                  { icon: <Calendar className="h-4 w-4" />, label: "Due Date", value: task.dueDate },
+                  { icon: <Clock className="h-4 w-4" />, label: "Created", value: new Date(task.createdAt).toLocaleDateString() },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-3">
+                    <span style={{ color: "var(--gf-text-muted)" }}>{item.icon}</span>
+                    <div>
+                      <p className="text-[10px] font-medium" style={{ color: "var(--gf-text-muted)" }}>{item.label}</p>
+                      <p className="text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>{item.value}</p>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* Comments */}
-          <CommentsSection taskId={taskId} />
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Info */}
-          <div className="rounded-xl border p-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
-            <h2 className="text-sm font-bold mb-3" style={{ color: "var(--gf-text-primary)" }}>Information</h2>
-            <div className="space-y-3">
-              {[
-                { icon: <User className="h-4 w-4" />, label: "Assignee", value: task.assignee },
-                { icon: <User className="h-4 w-4" />, label: "Requester", value: task.requester },
-                { icon: <GitBranch className="h-4 w-4" />, label: "Workflow", value: task.workflow },
-                { icon: <Tag className="h-4 w-4" />, label: "Type", value: task.type },
-                { icon: <Calendar className="h-4 w-4" />, label: "Due Date", value: task.dueDate },
-                { icon: <Clock className="h-4 w-4" />, label: "Created", value: new Date(task.createdAt).toLocaleDateString() },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-3">
-                  <span style={{ color: "var(--gf-text-muted)" }}>{item.icon}</span>
-                  <div>
-                    <p className="text-[10px] font-medium" style={{ color: "var(--gf-text-muted)" }}>{item.label}</p>
-                    <p className="text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>{item.value}</p>
+            {/* Activity History */}
+            <div className="rounded-xl border p-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
+              <h2 className="text-sm font-bold mb-3" style={{ color: "var(--gf-text-primary)" }}>Activity</h2>
+              <div className="space-y-3">
+                {task.history.map((h, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: "var(--gf-bg-elevated)" }}>
+                      <FileText className="h-3 w-3" style={{ color: "var(--gf-text-muted)" }} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>{h.action}</p>
+                      <p className="text-[10px]" style={{ color: "var(--gf-text-muted)" }}>{h.by} · {new Date(h.at).toLocaleString()}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Activity History */}
-          <div className="rounded-xl border p-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
-            <h2 className="text-sm font-bold mb-3" style={{ color: "var(--gf-text-primary)" }}>Activity</h2>
-            <div className="space-y-3">
-              {task.history.map((h, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: "var(--gf-bg-elevated)" }}>
-                    <FileText className="h-3 w-3" style={{ color: "var(--gf-text-muted)" }} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium" style={{ color: "var(--gf-text-primary)" }}>{h.action}</p>
-                    <p className="text-[10px]" style={{ color: "var(--gf-text-muted)" }}>{h.by} · {new Date(h.at).toLocaleString()}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Reject Modal */}
+        {showRejectModal && (
+          <RejectReasonModal onConfirm={handleReject} onCancel={() => setShowRejectModal(false)} processing={processing} />
+        )}
       </div>
-
-      {/* Reject Modal */}
-      {showRejectModal && (
-        <RejectReasonModal onConfirm={handleReject} onCancel={() => setShowRejectModal(false)} processing={processing} />
-      )}
-    </div>
+    </AuthGuard>
   );
 }

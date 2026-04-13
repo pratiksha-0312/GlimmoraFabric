@@ -34,7 +34,7 @@ export default function WorkflowVersionHistoryPage() {
   };
 
   return (
-    <AuthGuard allowedRoles={["workflow_manager"] as UserRole[]}>
+    <AuthGuard allowedRoles={["workflow_manager", "super_admin"] as UserRole[]}>
       <div className="space-y-6 max-w-3xl">
         <button onClick={() => router.push("/admin/workflows")} className="flex items-center gap-2 text-sm font-medium hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }}>
           <ArrowLeft className="h-4 w-4" />Back to Workflows

@@ -2,6 +2,17 @@
 
 import { useState, useEffect } from "react";
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  Legend,
+} from "recharts";
+import {
   Check,
   AlertTriangle,
   XCircle,
@@ -31,6 +42,12 @@ interface SlaData {
     slaTarget: string;
   }[];
   trend: { month: string; compliance: number }[];
+}
+
+function getBarColor(compliance: number) {
+  if (compliance >= 85) return "#22c55e";
+  if (compliance >= 75) return "#f59e0b";
+  return "#ef4444";
 }
 
 export default function SlaStatusDashboard() {
@@ -90,25 +107,26 @@ export default function SlaStatusDashboard() {
               ))}
             </div>
 
-            {/* Compliance Trend Chart */}
+            {/* Compliance Trend Chart (Recharts) */}
             <div className="rounded-xl border p-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
               <h2 className="text-sm font-bold mb-4" style={{ color: "var(--gf-text-primary)" }}>SLA Compliance Trend</h2>
-              <div className="flex items-end gap-4 h-36">
-                {data.trend.map((t) => (
-                  <div key={t.month} className="flex-1 flex flex-col items-center gap-1">
-                    <span className="text-[10px] font-bold" style={{ color: t.compliance >= 85 ? "#22c55e" : t.compliance >= 75 ? "#f59e0b" : "#ef4444" }}>
-                      {t.compliance}%
-                    </span>
-                    <div className="w-full rounded-t-md" style={{
-                      height: `${(t.compliance / 100) * 100}%`,
-                      minHeight: 8,
-                      backgroundColor: t.compliance >= 85 ? "#22c55e" : t.compliance >= 75 ? "#f59e0b" : "#ef4444",
-                      opacity: 0.7,
-                    }} />
-                    <span className="text-[10px] font-medium" style={{ color: "var(--gf-text-muted)" }}>{t.month}</span>
-                  </div>
-                ))}
-              </div>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={data.trend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--gf-border)" />
+                  <XAxis dataKey="month" tick={{ fill: "var(--gf-text-muted)", fontSize: 12 }} axisLine={{ stroke: "var(--gf-border)" }} />
+                  <YAxis domain={[0, 100]} tick={{ fill: "var(--gf-text-muted)", fontSize: 12 }} axisLine={{ stroke: "var(--gf-border)" }} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)", borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: "var(--gf-text-primary)", fontWeight: 600 }}
+                    formatter={(value) => [`${value}%`, "Compliance"]}
+                  />
+                  <Bar dataKey="compliance" radius={[4, 4, 0, 0]} maxBarSize={48}>
+                    {data.trend.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={getBarColor(entry.compliance)} fillOpacity={0.8} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
 
             {/* SLA by Workflow Table */}

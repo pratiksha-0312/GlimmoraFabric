@@ -1,7 +1,24 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import ReactFlow, {
+  Background,
+  Controls,
+  MiniMap,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  type Node,
+  type Edge,
+  type Connection,
+  type NodeTypes,
+  type OnConnect,
+  Handle,
+  Position,
+  MarkerType,
+} from "reactflow";
+import "reactflow/dist/style.css";
 import {
   ArrowLeft,
   Save,
@@ -25,22 +42,12 @@ import type { UserRole } from "@/lib/roles";
 // Types
 // ---------------------------------------------------------------------------
 
-type NodeType = "start" | "task" | "decision" | "end";
+type WfNodeType = "start" | "task" | "decision" | "end";
 
-interface WfNode {
-  id: string;
-  type: NodeType;
+interface NodeData {
   label: string;
-  x: number;
-  y: number;
+  nodeType: WfNodeType;
   config: Record<string, string>;
-}
-
-interface WfEdge {
-  id: string;
-  from: string;
-  to: string;
-  label?: string;
 }
 
 interface ValidationError {
@@ -52,23 +59,27 @@ interface ValidationError {
 // Node Palette (Component)
 // ---------------------------------------------------------------------------
 
-const NODE_TYPES: { type: NodeType; label: string; icon: React.ReactNode; color: string }[] = [
+const NODE_DEFS: { type: WfNodeType; label: string; icon: React.ReactNode; color: string }[] = [
   { type: "start", label: "Start", icon: <Play className="h-4 w-4" />, color: "#22c55e" },
   { type: "task", label: "Task", icon: <Square className="h-4 w-4" />, color: "#3b82f6" },
   { type: "decision", label: "Decision", icon: <Diamond className="h-4 w-4" />, color: "#f59e0b" },
   { type: "end", label: "End", icon: <StopCircle className="h-4 w-4" />, color: "#ef4444" },
 ];
 
-function NodePalette({ onAdd }: { onAdd: (type: NodeType) => void }) {
+function NodePalette() {
+  const onDragStart = (event: React.DragEvent, nodeType: WfNodeType) => {
+    event.dataTransfer.setData("application/reactflow", nodeType);
+    event.dataTransfer.effectAllowed = "move";
+  };
+
   return (
     <div className="space-y-2">
       <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--gf-text-muted)" }}>Node Palette</p>
-      {NODE_TYPES.map((nt) => (
-        <button
+      {NODE_DEFS.map((nt) => (
+        <div
           key={nt.type}
-          onClick={() => onAdd(nt.type)}
           draggable
-          onDragStart={(e) => e.dataTransfer.setData("nodeType", nt.type)}
+          onDragStart={(e) => onDragStart(e, nt.type)}
           className="flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:opacity-80 cursor-grab active:cursor-grabbing"
           style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
         >
@@ -77,8 +88,67 @@ function NodePalette({ onAdd }: { onAdd: (type: NodeType) => void }) {
             {nt.icon}
           </div>
           {nt.label}
-        </button>
+        </div>
       ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Custom React Flow Nodes
+// ---------------------------------------------------------------------------
+
+function StartNode({ data, selected }: { data: NodeData; selected: boolean }) {
+  return (
+    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium ${selected ? "ring-2 ring-[var(--gf-accent)]" : ""}`}
+      style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: selected ? "var(--gf-accent)" : "var(--gf-border)", color: "var(--gf-text-primary)" }}>
+      <div className="flex h-6 w-6 items-center justify-center rounded" style={{ backgroundColor: "#22c55e20", color: "#22c55e" }}>
+        <Play className="h-4 w-4" />
+      </div>
+      <span className="whitespace-nowrap">{data.label}</span>
+      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-green-500" />
+    </div>
+  );
+}
+
+function TaskNode({ data, selected }: { data: NodeData; selected: boolean }) {
+  return (
+    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium ${selected ? "ring-2 ring-[var(--gf-accent)]" : ""}`}
+      style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: selected ? "var(--gf-accent)" : "var(--gf-border)", color: "var(--gf-text-primary)" }}>
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-blue-500" />
+      <div className="flex h-6 w-6 items-center justify-center rounded" style={{ backgroundColor: "#3b82f620", color: "#3b82f6" }}>
+        <Square className="h-4 w-4" />
+      </div>
+      <span className="whitespace-nowrap">{data.label}</span>
+      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-blue-500" />
+    </div>
+  );
+}
+
+function DecisionNode({ data, selected }: { data: NodeData; selected: boolean }) {
+  return (
+    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium ${selected ? "ring-2 ring-[var(--gf-accent)]" : ""}`}
+      style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: selected ? "var(--gf-accent)" : "var(--gf-border)", color: "var(--gf-text-primary)" }}>
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-amber-500" />
+      <div className="flex h-6 w-6 items-center justify-center rounded" style={{ backgroundColor: "#f59e0b20", color: "#f59e0b" }}>
+        <Diamond className="h-4 w-4" />
+      </div>
+      <span className="whitespace-nowrap">{data.label}</span>
+      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-amber-500" />
+      <Handle type="source" position={Position.Bottom} id="no" className="!w-2 !h-2 !bg-red-500" />
+    </div>
+  );
+}
+
+function EndNode({ data, selected }: { data: NodeData; selected: boolean }) {
+  return (
+    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium ${selected ? "ring-2 ring-[var(--gf-accent)]" : ""}`}
+      style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: selected ? "var(--gf-accent)" : "var(--gf-border)", color: "var(--gf-text-primary)" }}>
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-red-500" />
+      <div className="flex h-6 w-6 items-center justify-center rounded" style={{ backgroundColor: "#ef444420", color: "#ef4444" }}>
+        <StopCircle className="h-4 w-4" />
+      </div>
+      <span className="whitespace-nowrap">{data.label}</span>
     </div>
   );
 }
@@ -93,12 +163,12 @@ function NodePropertyEditor({
   onDelete,
   onClose,
 }: {
-  node: WfNode;
-  onUpdate: (node: WfNode) => void;
+  node: Node<NodeData>;
+  onUpdate: (id: string, data: Partial<NodeData>) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
 }) {
-  const nt = NODE_TYPES.find((n) => n.type === node.type);
+  const nt = NODE_DEFS.find((n) => n.type === node.data.nodeType);
   const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" };
 
   return (
@@ -117,34 +187,34 @@ function NodePropertyEditor({
 
       <div>
         <label className="block text-xs font-medium mb-1" style={{ color: "var(--gf-text-secondary)" }}>Label *</label>
-        <input type="text" value={node.label} onChange={(e) => onUpdate({ ...node, label: e.target.value })}
+        <input type="text" value={node.data.label} onChange={(e) => onUpdate(node.id, { label: e.target.value })}
           className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
       </div>
 
-      {node.type === "task" && (
+      {node.data.nodeType === "task" && (
         <>
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: "var(--gf-text-secondary)" }}>Assignee</label>
-            <input type="text" value={node.config.assignee ?? ""} onChange={(e) => onUpdate({ ...node, config: { ...node.config, assignee: e.target.value } })}
+            <input type="text" value={node.data.config.assignee ?? ""} onChange={(e) => onUpdate(node.id, { config: { ...node.data.config, assignee: e.target.value } })}
               placeholder="e.g. IT Team" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
           </div>
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: "var(--gf-text-secondary)" }}>Timeout (hours)</label>
-            <input type="text" value={node.config.timeout ?? ""} onChange={(e) => onUpdate({ ...node, config: { ...node.config, timeout: e.target.value } })}
+            <input type="text" value={node.data.config.timeout ?? ""} onChange={(e) => onUpdate(node.id, { config: { ...node.data.config, timeout: e.target.value } })}
               placeholder="e.g. 24" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
           </div>
         </>
       )}
 
-      {node.type === "decision" && (
+      {node.data.nodeType === "decision" && (
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: "var(--gf-text-secondary)" }}>Condition</label>
-          <input type="text" value={node.config.condition ?? ""} onChange={(e) => onUpdate({ ...node, config: { ...node.config, condition: e.target.value } })}
+          <input type="text" value={node.data.config.condition ?? ""} onChange={(e) => onUpdate(node.id, { config: { ...node.data.config, condition: e.target.value } })}
             placeholder="e.g. amount > 1000" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
         </div>
       )}
 
-      {node.type !== "start" && (
+      {node.data.nodeType !== "start" && (
         <button onClick={() => onDelete(node.id)} className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors">
           <Trash2 className="h-3.5 w-3.5" />Remove Node
         </button>
@@ -178,170 +248,126 @@ function ValidationFeedback({ errors }: { errors: ValidationError[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Canvas (Visual Builder)
-// ---------------------------------------------------------------------------
-
-function Canvas({
-  nodes,
-  edges,
-  selectedId,
-  onSelect,
-  onDrop,
-  onMove,
-}: {
-  nodes: WfNode[];
-  edges: WfEdge[];
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
-  onDrop: (type: NodeType, x: number, y: number) => void;
-  onMove: (id: string, x: number, y: number) => void;
-}) {
-  const [dragging, setDragging] = useState<string | null>(null);
-
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const type = e.dataTransfer.getData("nodeType") as NodeType;
-    if (type) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      onDrop(type, e.clientX - rect.left - 60, e.clientY - rect.top - 20);
-    }
-  };
-
-  const nt = (type: NodeType) => NODE_TYPES.find((n) => n.type === type)!;
-
-  return (
-    <div
-      className="relative w-full h-full min-h-[500px] rounded-xl border overflow-hidden"
-      style={{ backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", backgroundImage: "radial-gradient(circle, var(--gf-border) 1px, transparent 1px)", backgroundSize: "20px 20px" }}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      onClick={() => onSelect(null)}
-    >
-      {/* Edges (SVG lines) */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none">
-        {edges.map((edge) => {
-          const fromNode = nodes.find((n) => n.id === edge.from);
-          const toNode = nodes.find((n) => n.id === edge.to);
-          if (!fromNode || !toNode) return null;
-          return (
-            <line key={edge.id} x1={fromNode.x + 60} y1={fromNode.y + 20} x2={toNode.x + 60} y2={toNode.y + 20}
-              stroke="var(--gf-accent)" strokeWidth="2" strokeDasharray="6 3" opacity="0.5" />
-          );
-        })}
-      </svg>
-
-      {/* Nodes */}
-      {nodes.map((node) => {
-        const nodeType = nt(node.type);
-        const isSelected = selectedId === node.id;
-        return (
-          <div
-            key={node.id}
-            className={`absolute flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium cursor-move select-none transition-shadow ${isSelected ? "ring-2 ring-[var(--gf-accent)]" : ""}`}
-            style={{
-              left: node.x,
-              top: node.y,
-              backgroundColor: "var(--gf-bg-surface)",
-              borderColor: isSelected ? "var(--gf-accent)" : "var(--gf-border)",
-              color: "var(--gf-text-primary)",
-              zIndex: isSelected ? 10 : 1,
-            }}
-            onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              setDragging(node.id);
-              const startX = e.clientX - node.x;
-              const startY = e.clientY - node.y;
-              const onMouseMove = (ev: MouseEvent) => { onMove(node.id, ev.clientX - startX, ev.clientY - startY); };
-              const onMouseUp = () => { setDragging(null); document.removeEventListener("mousemove", onMouseMove); document.removeEventListener("mouseup", onMouseUp); };
-              document.addEventListener("mousemove", onMouseMove);
-              document.addEventListener("mouseup", onMouseUp);
-            }}
-          >
-            <div className="flex h-6 w-6 items-center justify-center rounded" style={{ backgroundColor: `${nodeType.color}20`, color: nodeType.color }}>
-              {nodeType.icon}
-            </div>
-            <span className="whitespace-nowrap">{node.label}</span>
-          </div>
-        );
-      })}
-
-      {nodes.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <Diamond className="h-10 w-10 mx-auto mb-3 opacity-20" style={{ color: "var(--gf-text-muted)" }} />
-            <p className="text-sm font-medium" style={{ color: "var(--gf-text-muted)" }}>Drag nodes from the palette to build your workflow</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Main Builder Page
 // ---------------------------------------------------------------------------
 
+const initialNodes: Node<NodeData>[] = [
+  {
+    id: "n1",
+    type: "startNode",
+    position: { x: 50, y: 200 },
+    data: { label: "Start", nodeType: "start", config: {} },
+  },
+];
+
+const initialEdges: Edge[] = [];
+
 export default function WorkflowBuilderPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("id");
+
   const [name, setName] = useState("Untitled Workflow");
-  const [nodes, setNodes] = useState<WfNode[]>([
-    { id: "n1", type: "start", label: "Start", x: 50, y: 200, config: {} },
-  ]);
-  const [edges, setEdges] = useState<WfEdge[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [showValidation, setShowValidation] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const selectedNode = nodes.find((n) => n.id === selectedId) ?? null;
+  const nodeTypes: NodeTypes = useMemo(
+    () => ({
+      startNode: StartNode,
+      taskNode: TaskNode,
+      decisionNode: DecisionNode,
+      endNode: EndNode,
+    }),
+    []
+  );
 
-  let nextId = nodes.length + 1;
-  const addNode = useCallback((type: NodeType, x?: number, y?: number) => {
-    const id = `n${Date.now()}`;
-    const defaultLabels: Record<NodeType, string> = { start: "Start", task: "New Task", decision: "Decision", end: "End" };
-    const newNode: WfNode = {
-      id, type, label: defaultLabels[type],
-      x: x ?? 200 + Math.random() * 200,
-      y: y ?? 100 + Math.random() * 200,
-      config: {},
-    };
-    setNodes((prev) => {
-      const updated = [...prev, newNode];
-      // Auto-connect to last node
-      if (prev.length > 0) {
-        const lastNode = prev[prev.length - 1];
-        setEdges((e) => [...e, { id: `e${Date.now()}`, from: lastNode.id, to: id }]);
-      }
-      return updated;
-    });
-  }, []);
-
-  const moveNode = (id: string, x: number, y: number) => {
-    setNodes((prev) => prev.map((n) => n.id === id ? { ...n, x: Math.max(0, x), y: Math.max(0, y) } : n));
+  const typeToNodeType: Record<WfNodeType, string> = {
+    start: "startNode",
+    task: "taskNode",
+    decision: "decisionNode",
+    end: "endNode",
   };
 
-  const updateNode = (updated: WfNode) => {
-    setNodes((prev) => prev.map((n) => n.id === updated.id ? updated : n));
+  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+
+  const onConnect: OnConnect = useCallback(
+    (connection: Connection) => {
+      setEdges((eds) =>
+        addEdge(
+          { ...connection, markerEnd: { type: MarkerType.ArrowClosed }, animated: true, style: { stroke: "var(--gf-accent)" } },
+          eds
+        )
+      );
+    },
+    [setEdges]
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const type = event.dataTransfer.getData("application/reactflow") as WfNodeType;
+      if (!type) return;
+
+      const reactFlowBounds = event.currentTarget.getBoundingClientRect();
+      const position = {
+        x: event.clientX - reactFlowBounds.left,
+        y: event.clientY - reactFlowBounds.top,
+      };
+
+      const defaultLabels: Record<WfNodeType, string> = { start: "Start", task: "New Task", decision: "Decision", end: "End" };
+      const newNode: Node<NodeData> = {
+        id: `n${Date.now()}`,
+        type: typeToNodeType[type],
+        position,
+        data: { label: defaultLabels[type], nodeType: type, config: {} },
+      };
+
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [setNodes]
+  );
+
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+  }, []);
+
+  const updateNodeData = (id: string, dataUpdate: Partial<NodeData>) => {
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === id ? { ...n, data: { ...n.data, ...dataUpdate } } : n
+      )
+    );
   };
 
   const deleteNode = (id: string) => {
-    setNodes((prev) => prev.filter((n) => n.id !== id));
-    setEdges((prev) => prev.filter((e) => e.from !== id && e.to !== id));
-    setSelectedId(null);
+    setNodes((nds) => nds.filter((n) => n.id !== id));
+    setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
+    setSelectedNodeId(null);
   };
 
   const validate = (): ValidationError[] => {
     const errs: ValidationError[] = [];
-    const starts = nodes.filter((n) => n.type === "start");
-    const ends = nodes.filter((n) => n.type === "end");
+    const starts = nodes.filter((n) => n.data.nodeType === "start");
+    const ends = nodes.filter((n) => n.data.nodeType === "end");
     if (starts.length === 0) errs.push({ message: "Workflow must have a Start node" });
     if (starts.length > 1) errs.push({ message: "Workflow can only have one Start node" });
     if (ends.length === 0) errs.push({ message: "Workflow must have an End node" });
     nodes.forEach((n) => {
-      if (!n.label.trim()) errs.push({ nodeId: n.id, message: `Node "${n.type}" is missing a label` });
+      if (!n.data.label.trim()) errs.push({ nodeId: n.id, message: `Node "${n.data.nodeType}" is missing a label` });
     });
     if (nodes.length < 3) errs.push({ message: "Workflow needs at least Start, one Task, and End" });
     return errs;
@@ -360,11 +386,27 @@ export default function WorkflowBuilderPage() {
     if (errs.length > 0) return;
 
     setSaving(true);
-    await fetch("/api/workflows", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, nodes, edges, status: publish ? "Published" : "Draft" }),
-    });
+    const payload = {
+      name,
+      nodes: nodes.map((n) => ({ id: n.id, type: n.data.nodeType, label: n.data.label, x: n.position.x, y: n.position.y, config: n.data.config })),
+      edges: edges.map((e) => ({ id: e.id, from: e.source, to: e.target })),
+      status: publish ? "Published" : "Draft",
+    };
+
+    if (editId) {
+      await fetch("/api/workflows", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editId, ...payload }),
+      });
+    } else {
+      await fetch("/api/workflows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    }
+
     setSaving(false);
     setSaved(true);
     setTimeout(() => { setSaved(false); if (publish) router.push("/admin/workflows"); }, 1500);
@@ -409,7 +451,7 @@ export default function WorkflowBuilderPage() {
         <div className="grid grid-cols-[220px_1fr_260px] gap-4" style={{ height: "calc(100vh - 200px)" }}>
           {/* Left: Node Palette */}
           <div className="rounded-xl border p-4 space-y-4 overflow-y-auto" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
-            <NodePalette onAdd={(type) => addNode(type)} />
+            <NodePalette />
 
             {showValidation && (
               <div className="pt-4 border-t" style={{ borderColor: "var(--gf-border)" }}>
@@ -419,13 +461,36 @@ export default function WorkflowBuilderPage() {
             )}
           </div>
 
-          {/* Center: Canvas */}
-          <Canvas nodes={nodes} edges={edges} selectedId={selectedId} onSelect={setSelectedId} onDrop={(type, x, y) => addNode(type, x, y)} onMove={moveNode} />
+          {/* Center: React Flow Canvas */}
+          <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--gf-border)" }}>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onNodeClick={onNodeClick}
+              onPaneClick={onPaneClick}
+              nodeTypes={nodeTypes}
+              fitView
+              deleteKeyCode="Delete"
+              style={{ backgroundColor: "var(--gf-bg-base)" }}
+            >
+              <Background gap={20} size={1} color="var(--gf-border)" />
+              <Controls />
+              <MiniMap
+                nodeStrokeWidth={3}
+                style={{ backgroundColor: "var(--gf-bg-surface)" }}
+              />
+            </ReactFlow>
+          </div>
 
           {/* Right: Property Editor */}
           <div className="rounded-xl border p-4 overflow-y-auto" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
             {selectedNode ? (
-              <NodePropertyEditor node={selectedNode} onUpdate={updateNode} onDelete={deleteNode} onClose={() => setSelectedId(null)} />
+              <NodePropertyEditor node={selectedNode} onUpdate={updateNodeData} onDelete={deleteNode} onClose={() => setSelectedNodeId(null)} />
             ) : (
               <div className="flex flex-col items-center justify-center h-full opacity-50">
                 <Circle className="h-8 w-8 mb-3" style={{ color: "var(--gf-text-muted)" }} />

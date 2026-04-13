@@ -1,7 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import ReactFlow, {
+  Background,
+  Controls,
+  type Node,
+  type Edge,
+  type NodeTypes,
+  Handle,
+  Position,
+  MarkerType,
+} from "reactflow";
+import "reactflow/dist/style.css";
 import {
   ArrowLeft,
   Play,
@@ -13,7 +24,6 @@ import {
   Loader2,
   XCircle,
   AlertTriangle,
-  X,
 } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import type { UserRole } from "@/lib/roles";
@@ -40,7 +50,7 @@ interface InstanceDetail {
   steps: Step[];
 }
 
-const TYPE_ICONS: Record<string, { icon: React.ReactNode; color: string }> = {
+const TYPE_META: Record<string, { icon: React.ReactNode; color: string }> = {
   start: { icon: <Play className="h-3.5 w-3.5" />, color: "#22c55e" },
   task: { icon: <Square className="h-3.5 w-3.5" />, color: "#3b82f6" },
   decision: { icon: <Diamond className="h-3.5 w-3.5" />, color: "#f59e0b" },
@@ -54,6 +64,41 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   failed: <XCircle className="h-4 w-4 text-red-500" />,
 };
 
+// ---------------------------------------------------------------------------
+// React Flow Custom Nodes (Readonly)
+// ---------------------------------------------------------------------------
+
+function ReadonlyStepNode({ data }: { data: { label: string; stepType: string; status: string; assignee?: string } }) {
+  const t = TYPE_META[data.stepType];
+  const borderColor =
+    data.status === "completed" ? "#22c55e40" :
+    data.status === "running" ? "#3b82f640" :
+    data.status === "failed" ? "#ef444440" :
+    "var(--gf-border)";
+
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium ${data.status === "running" ? "ring-2 ring-blue-500/40" : ""}`}
+      style={{ borderColor, backgroundColor: data.status === "completed" ? "#22c55e08" : "var(--gf-bg-surface)", color: "var(--gf-text-primary)" }}
+    >
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !opacity-0" />
+      <div className="flex h-6 w-6 items-center justify-center rounded" style={{ backgroundColor: `${t.color}20`, color: t.color }}>
+        {t.icon}
+      </div>
+      <div>
+        <p className="font-medium">{data.label}</p>
+        {data.assignee && <p className="text-[10px] mt-0.5" style={{ color: "var(--gf-text-muted)" }}>{data.assignee}</p>}
+      </div>
+      <div className="ml-2">{STATUS_ICONS[data.status]}</div>
+      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !opacity-0" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Page
+// ---------------------------------------------------------------------------
+
 export default function InstanceDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -62,6 +107,8 @@ export default function InstanceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showCancel, setShowCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+
+  const nodeTypes: NodeTypes = useMemo(() => ({ readonlyStep: ReadonlyStepNode }), []);
 
   useEffect(() => {
     fetch(`/api/workflow-instances/${instanceId}`)
@@ -77,6 +124,32 @@ export default function InstanceDetailPage() {
     setShowCancel(false);
     setInstance((prev) => prev ? { ...prev, status: "Cancelled" } : null);
   };
+
+  // Build React Flow nodes/edges from steps
+  const { flowNodes, flowEdges } = useMemo(() => {
+    if (!instance) return { flowNodes: [] as Node[], flowEdges: [] as Edge[] };
+
+    const fNodes: Node[] = instance.steps.map((step, i) => ({
+      id: step.id,
+      type: "readonlyStep",
+      position: { x: i * 220, y: 50 },
+      data: { label: step.name, stepType: step.type, status: step.status, assignee: step.assignee },
+      draggable: false,
+      connectable: false,
+      selectable: false,
+    }));
+
+    const fEdges: Edge[] = instance.steps.slice(0, -1).map((step, i) => ({
+      id: `e-${step.id}`,
+      source: step.id,
+      target: instance.steps[i + 1].id,
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { stroke: step.status === "completed" ? "#22c55e" : "var(--gf-border)", strokeWidth: 2 },
+      animated: step.status === "running",
+    }));
+
+    return { flowNodes: fNodes, flowEdges: fEdges };
+  }, [instance]);
 
   if (loading) {
     return (
@@ -128,36 +201,29 @@ export default function InstanceDetailPage() {
           <p className="text-xs mt-2" style={{ color: "var(--gf-text-muted)" }}>{completedSteps} of {instance.steps.length} steps completed</p>
         </div>
 
-        {/* Visual Status (Canvas - readonly) */}
-        <div className="rounded-xl border p-5" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
-          <h2 className="text-sm font-bold mb-4" style={{ color: "var(--gf-text-primary)" }}>Workflow Progress</h2>
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            {instance.steps.map((step, i) => {
-              const t = TYPE_ICONS[step.type];
-              const isLast = i === instance.steps.length - 1;
-              return (
-                <div key={step.id} className="flex items-center gap-2 shrink-0">
-                  <div
-                    className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium ${step.status === "running" ? "ring-2 ring-blue-500/40" : ""}`}
-                    style={{
-                      borderColor: step.status === "completed" ? "#22c55e40" : step.status === "running" ? "#3b82f640" : "var(--gf-border)",
-                      backgroundColor: step.status === "completed" ? "#22c55e08" : "var(--gf-bg-base)",
-                      color: "var(--gf-text-primary)",
-                    }}
-                  >
-                    <div className="flex h-6 w-6 items-center justify-center rounded" style={{ backgroundColor: `${t.color}20`, color: t.color }}>
-                      {t.icon}
-                    </div>
-                    <div>
-                      <p className="font-medium">{step.name}</p>
-                      {step.assignee && <p className="text-[10px] mt-0.5" style={{ color: "var(--gf-text-muted)" }}>{step.assignee}</p>}
-                    </div>
-                    <div className="ml-2">{STATUS_ICONS[step.status]}</div>
-                  </div>
-                  {!isLast && <div className="w-6 h-0.5 rounded-full shrink-0" style={{ backgroundColor: step.status === "completed" ? "#22c55e" : "var(--gf-border)" }} />}
-                </div>
-              );
-            })}
+        {/* Visual Status (React Flow Canvas - readonly) */}
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" }}>
+          <div className="px-5 pt-4">
+            <h2 className="text-sm font-bold" style={{ color: "var(--gf-text-primary)" }}>Workflow Progress</h2>
+          </div>
+          <div style={{ height: 180 }}>
+            <ReactFlow
+              nodes={flowNodes}
+              edges={flowEdges}
+              nodeTypes={nodeTypes}
+              fitView
+              panOnDrag={false}
+              zoomOnScroll={false}
+              zoomOnPinch={false}
+              zoomOnDoubleClick={false}
+              nodesDraggable={false}
+              nodesConnectable={false}
+              elementsSelectable={false}
+              proOptions={{ hideAttribution: true }}
+              style={{ backgroundColor: "var(--gf-bg-base)" }}
+            >
+              <Background gap={20} size={1} color="var(--gf-border)" />
+            </ReactFlow>
           </div>
         </div>
 
@@ -166,7 +232,7 @@ export default function InstanceDetailPage() {
           <h2 className="text-sm font-bold mb-4" style={{ color: "var(--gf-text-primary)" }}>Step Details</h2>
           <div className="space-y-3">
             {instance.steps.map((step) => {
-              const t = TYPE_ICONS[step.type];
+              const t = TYPE_META[step.type];
               return (
                 <div key={step.id} className="flex items-center gap-4 rounded-lg border px-4 py-3" style={{ borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-base)" }}>
                   <div>{STATUS_ICONS[step.status]}</div>

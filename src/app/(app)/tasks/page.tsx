@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 interface Task {
   id: string;
@@ -76,6 +77,7 @@ export default function TaskInboxPage() {
   const urgentCount = tasks.filter((t) => t.priority === "Urgent" && t.status === "Pending").length;
 
   return (
+    <AuthGuard>
     <div className="space-y-6">
       {/* Header */}
       <div>
@@ -195,5 +197,6 @@ export default function TaskInboxPage() {
         )}
       </div>
     </div>
+    </AuthGuard>
   );
 }
