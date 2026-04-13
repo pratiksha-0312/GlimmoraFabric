@@ -72,3 +72,88 @@ export type Refund = Prisma.RefundModel
  * 
  */
 export type Invoice = Prisma.InvoiceModel
+/**
+ * Model Workflow
+ * 
+ */
+export type Workflow = Prisma.WorkflowModel
+/**
+ * Model WorkflowVersion
+ * 
+ */
+export type WorkflowVersion = Prisma.WorkflowVersionModel
+/**
+ * Model WorkflowInstance
+ * 
+ */
+export type WorkflowInstance = Prisma.WorkflowInstanceModel
+/**
+ * Model WorkflowStep
+ * 
+ */
+export type WorkflowStep = Prisma.WorkflowStepModel
+/**
+ * Model Task
+ * 
+ */
+export type Task = Prisma.TaskModel
+/**
+ * Model TaskComment
+ * 
+ */
+export type TaskComment = Prisma.TaskCommentModel
+/**
+ * Model TaskHistory
+ * 
+ */
+export type TaskHistory = Prisma.TaskHistoryModel
+/**
+ * Model Document
+ * 
+ */
+export type Document = Prisma.DocumentModel
+/**
+ * Model DocumentTemplate
+ * 
+ */
+export type DocumentTemplate = Prisma.DocumentTemplateModel
+/**
+ * Model DocumentTemplateVersion
+ * 
+ */
+export type DocumentTemplateVersion = Prisma.DocumentTemplateVersionModel
+/**
+ * Model NotificationTemplate
+ * 
+ */
+export type NotificationTemplate = Prisma.NotificationTemplateModel
+/**
+ * Model NotificationDeliveryLog
+ * 
+ */
+export type NotificationDeliveryLog = Prisma.NotificationDeliveryLogModel
+/**
+ * Model File
+ * 
+ */
+export type File = Prisma.FileModel
+/**
+ * Model Plan
+ * 
+ */
+export type Plan = Prisma.PlanModel
+/**
+ * Model PaymentLink
+ * 
+ */
+export type PaymentLink = Prisma.PaymentLinkModel
+/**
+ * Model PaymentGateway
+ * 
+ */
+export type PaymentGateway = Prisma.PaymentGatewayModel
+/**
+ * Model Webhook
+ * 
+ */
+export type Webhook = Prisma.WebhookModel

@@ -61,7 +61,24 @@ export const ModelName = {
   Payment: 'Payment',
   StoredPaymentMethod: 'StoredPaymentMethod',
   Refund: 'Refund',
-  Invoice: 'Invoice'
+  Invoice: 'Invoice',
+  Workflow: 'Workflow',
+  WorkflowVersion: 'WorkflowVersion',
+  WorkflowInstance: 'WorkflowInstance',
+  WorkflowStep: 'WorkflowStep',
+  Task: 'Task',
+  TaskComment: 'TaskComment',
+  TaskHistory: 'TaskHistory',
+  Document: 'Document',
+  DocumentTemplate: 'DocumentTemplate',
+  DocumentTemplateVersion: 'DocumentTemplateVersion',
+  NotificationTemplate: 'NotificationTemplate',
+  NotificationDeliveryLog: 'NotificationDeliveryLog',
+  File: 'File',
+  Plan: 'Plan',
+  PaymentLink: 'PaymentLink',
+  PaymentGateway: 'PaymentGateway',
+  Webhook: 'Webhook'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -258,6 +275,276 @@ export const InvoiceScalarFieldEnum = {
 } as const
 
 export type InvoiceScalarFieldEnum = (typeof InvoiceScalarFieldEnum)[keyof typeof InvoiceScalarFieldEnum]
+
+
+export const WorkflowScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  status: 'status',
+  version: 'version',
+  trigger: 'trigger',
+  nodes: 'nodes',
+  edges: 'edges',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkflowScalarFieldEnum = (typeof WorkflowScalarFieldEnum)[keyof typeof WorkflowScalarFieldEnum]
+
+
+export const WorkflowVersionScalarFieldEnum = {
+  id: 'id',
+  workflowId: 'workflowId',
+  version: 'version',
+  status: 'status',
+  changedBy: 'changedBy',
+  summary: 'summary',
+  nodes: 'nodes',
+  edges: 'edges',
+  createdAt: 'createdAt'
+} as const
+
+export type WorkflowVersionScalarFieldEnum = (typeof WorkflowVersionScalarFieldEnum)[keyof typeof WorkflowVersionScalarFieldEnum]
+
+
+export const WorkflowInstanceScalarFieldEnum = {
+  id: 'id',
+  workflowId: 'workflowId',
+  triggeredBy: 'triggeredBy',
+  status: 'status',
+  currentStep: 'currentStep',
+  progress: 'progress',
+  sla: 'sla',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  cancelledAt: 'cancelledAt',
+  cancelledBy: 'cancelledBy'
+} as const
+
+export type WorkflowInstanceScalarFieldEnum = (typeof WorkflowInstanceScalarFieldEnum)[keyof typeof WorkflowInstanceScalarFieldEnum]
+
+
+export const WorkflowStepScalarFieldEnum = {
+  id: 'id',
+  instanceId: 'instanceId',
+  name: 'name',
+  type: 'type',
+  status: 'status',
+  assignee: 'assignee',
+  result: 'result',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  sortOrder: 'sortOrder'
+} as const
+
+export type WorkflowStepScalarFieldEnum = (typeof WorkflowStepScalarFieldEnum)[keyof typeof WorkflowStepScalarFieldEnum]
+
+
+export const TaskScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  type: 'type',
+  workflow: 'workflow',
+  workflowInstanceId: 'workflowInstanceId',
+  priority: 'priority',
+  status: 'status',
+  assignee: 'assignee',
+  approver: 'approver',
+  requester: 'requester',
+  description: 'description',
+  metadata: 'metadata',
+  dueDate: 'dueDate',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
+
+
+export const TaskCommentScalarFieldEnum = {
+  id: 'id',
+  taskId: 'taskId',
+  author: 'author',
+  text: 'text',
+  createdAt: 'createdAt'
+} as const
+
+export type TaskCommentScalarFieldEnum = (typeof TaskCommentScalarFieldEnum)[keyof typeof TaskCommentScalarFieldEnum]
+
+
+export const TaskHistoryScalarFieldEnum = {
+  id: 'id',
+  taskId: 'taskId',
+  action: 'action',
+  by: 'by',
+  at: 'at'
+} as const
+
+export type TaskHistoryScalarFieldEnum = (typeof TaskHistoryScalarFieldEnum)[keyof typeof TaskHistoryScalarFieldEnum]
+
+
+export const DocumentScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  templateId: 'templateId',
+  tenantId: 'tenantId',
+  status: 'status',
+  format: 'format',
+  size: 'size',
+  createdBy: 'createdBy',
+  signedAt: 'signedAt',
+  signedBy: 'signedBy',
+  createdAt: 'createdAt'
+} as const
+
+export type DocumentScalarFieldEnum = (typeof DocumentScalarFieldEnum)[keyof typeof DocumentScalarFieldEnum]
+
+
+export const DocumentTemplateScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  type: 'type',
+  format: 'format',
+  status: 'status',
+  version: 'version',
+  content: 'content',
+  usageCount: 'usageCount',
+  createdBy: 'createdBy',
+  updatedBy: 'updatedBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentTemplateScalarFieldEnum = (typeof DocumentTemplateScalarFieldEnum)[keyof typeof DocumentTemplateScalarFieldEnum]
+
+
+export const DocumentTemplateVersionScalarFieldEnum = {
+  id: 'id',
+  templateId: 'templateId',
+  version: 'version',
+  status: 'status',
+  changedBy: 'changedBy',
+  changeDescription: 'changeDescription',
+  content: 'content',
+  createdAt: 'createdAt'
+} as const
+
+export type DocumentTemplateVersionScalarFieldEnum = (typeof DocumentTemplateVersionScalarFieldEnum)[keyof typeof DocumentTemplateVersionScalarFieldEnum]
+
+
+export const NotificationTemplateScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  subject: 'subject',
+  channel: 'channel',
+  category: 'category',
+  status: 'status',
+  version: 'version',
+  usageCount: 'usageCount',
+  editedBy: 'editedBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NotificationTemplateScalarFieldEnum = (typeof NotificationTemplateScalarFieldEnum)[keyof typeof NotificationTemplateScalarFieldEnum]
+
+
+export const NotificationDeliveryLogScalarFieldEnum = {
+  id: 'id',
+  templateId: 'templateId',
+  templateName: 'templateName',
+  channel: 'channel',
+  recipient: 'recipient',
+  status: 'status',
+  sentAt: 'sentAt',
+  deliveredAt: 'deliveredAt',
+  failedAt: 'failedAt',
+  failReason: 'failReason',
+  createdAt: 'createdAt'
+} as const
+
+export type NotificationDeliveryLogScalarFieldEnum = (typeof NotificationDeliveryLogScalarFieldEnum)[keyof typeof NotificationDeliveryLogScalarFieldEnum]
+
+
+export const FileScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  type: 'type',
+  size: 'size',
+  mimeType: 'mimeType',
+  storagePath: 'storagePath',
+  uploadedBy: 'uploadedBy',
+  thumbnailUrl: 'thumbnailUrl',
+  createdAt: 'createdAt'
+} as const
+
+export type FileScalarFieldEnum = (typeof FileScalarFieldEnum)[keyof typeof FileScalarFieldEnum]
+
+
+export const PlanScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  price: 'price',
+  billingCycle: 'billingCycle',
+  currency: 'currency',
+  features: 'features',
+  isActive: 'isActive',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlanScalarFieldEnum = (typeof PlanScalarFieldEnum)[keyof typeof PlanScalarFieldEnum]
+
+
+export const PaymentLinkScalarFieldEnum = {
+  id: 'id',
+  planId: 'planId',
+  description: 'description',
+  active: 'active',
+  expiresAt: 'expiresAt',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+} as const
+
+export type PaymentLinkScalarFieldEnum = (typeof PaymentLinkScalarFieldEnum)[keyof typeof PaymentLinkScalarFieldEnum]
+
+
+export const PaymentGatewayScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  provider: 'provider',
+  enabled: 'enabled',
+  mode: 'mode',
+  publicKey: 'publicKey',
+  secretKey: 'secretKey',
+  webhookSecret: 'webhookSecret',
+  webhookUrl: 'webhookUrl',
+  supportedMethods: 'supportedMethods',
+  currencies: 'currencies',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PaymentGatewayScalarFieldEnum = (typeof PaymentGatewayScalarFieldEnum)[keyof typeof PaymentGatewayScalarFieldEnum]
+
+
+export const WebhookScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  url: 'url',
+  events: 'events',
+  status: 'status',
+  secret: 'secret',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WebhookScalarFieldEnum = (typeof WebhookScalarFieldEnum)[keyof typeof WebhookScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -194,3 +194,314 @@ model Invoice {
 
   @@map("invoices")
 }
+
+// ---------------------------------------------------------------------------
+// Workflow models (P5-F01 Workflow Builder)
+// ---------------------------------------------------------------------------
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  status      String   @default("Draft") // Draft, Published, Archived
+  version     Int      @default(1)
+  trigger     String   @default("Manual") // Manual, Event, API, Schedule
+  nodes       String   @default("[]") // JSON array of workflow nodes
+  edges       String   @default("[]") // JSON array of workflow edges
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions  WorkflowVersion[]
+  instances WorkflowInstance[]
+
+  @@map("workflows")
+}
+
+model WorkflowVersion {
+  id          String   @id @default(cuid())
+  workflowId  String
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  version     Int
+  status      String   // Published, Draft
+  changedBy   String
+  summary     String   @default("")
+  nodes       String   @default("[]") // JSON snapshot of nodes at this version
+  edges       String   @default("[]") // JSON snapshot of edges at this version
+  createdAt   DateTime @default(now())
+
+  @@unique([workflowId, version])
+  @@map("workflow_versions")
+}
+
+// ---------------------------------------------------------------------------
+// Workflow Monitoring models (P5-F02)
+// ---------------------------------------------------------------------------
+
+model WorkflowInstance {
+  id           String   @id @default(cuid())
+  workflowId   String
+  workflow     Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  triggeredBy  String
+  status       String   @default("Running") // Running, Completed, Failed, Cancelled
+  currentStep  String   @default("")
+  progress     Int      @default(0) // 0-100
+  sla          String   @default("Within SLA") // Within SLA, At Risk, Breached
+  startedAt    DateTime @default(now())
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  cancelledBy  String?
+
+  steps WorkflowStep[]
+
+  @@map("workflow_instances")
+}
+
+model WorkflowStep {
+  id           String   @id @default(cuid())
+  instanceId   String
+  instance     WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  name         String
+  type         String   // start, task, decision, end
+  status       String   @default("pending") // pending, running, completed, failed
+  assignee     String?
+  result       String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  sortOrder    Int      @default(0)
+
+  @@map("workflow_steps")
+}
+
+// ---------------------------------------------------------------------------
+// Task models (P5-F03 Task Inbox)
+// ---------------------------------------------------------------------------
+
+model Task {
+  id                 String   @id @default(cuid())
+  title              String
+  type               String   @default("Approval") // Approval, Review, Escalation, Task
+  workflow           String   @default("")
+  workflowInstanceId String?
+  priority           String   @default("Medium") // Urgent, High, Medium, Low
+  status             String   @default("Pending") // Pending, Approved, Rejected, Completed
+  assignee           String
+  approver           String?
+  requester          String
+  description        String   @default("")
+  metadata           String   @default("{}") // JSON string of task-specific metadata
+  dueDate            DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  comments TaskComment[]
+  history  TaskHistory[]
+
+  @@map("tasks")
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@map("task_comments")
+}
+
+model TaskHistory {
+  id     String   @id @default(cuid())
+  taskId String
+  task   Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  action String
+  by     String
+  at     DateTime @default(now())
+
+  @@map("task_history")
+}
+
+// ---------------------------------------------------------------------------
+// Document models
+// ---------------------------------------------------------------------------
+
+model Document {
+  id           String    @id @default(cuid())
+  name         String
+  templateId   String?
+  template     DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  tenantId     String?
+  status       String    @default("generated") // generated, pending_sign, signed, expired
+  format       String    @default("pdf")
+  size         String    @default("")
+  createdBy    String
+  signedAt     DateTime?
+  signedBy     String?
+  createdAt    DateTime  @default(now())
+
+  @@map("documents")
+}
+
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  type        String   @default("invoice") // invoice, legal, certificate, contract, receipt, report
+  format      String   @default("html")
+  status      String   @default("draft") // draft, published, archived
+  version     Int      @default(1)
+  content     String   @default("") // HTML template content with variables
+  usageCount  Int      @default(0)
+  createdBy   String
+  updatedBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  documents Document[]
+  versions  DocumentTemplateVersion[]
+
+  @@map("document_templates")
+}
+
+model DocumentTemplateVersion {
+  id                String   @id @default(cuid())
+  templateId        String
+  template          DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  version           Int
+  status            String   @default("previous") // current, previous
+  changedBy         String
+  changeDescription String   @default("")
+  content           String   @default("") // HTML content snapshot
+  createdAt         DateTime @default(now())
+
+  @@unique([templateId, version])
+  @@map("document_template_versions")
+}
+
+// ---------------------------------------------------------------------------
+// Notification models
+// ---------------------------------------------------------------------------
+
+model NotificationTemplate {
+  id         String   @id @default(cuid())
+  name       String
+  subject    String   @default("")
+  channel    String   @default("email") // email, sms, push, in_app
+  category   String   @default("general") // onboarding, security, billing, general
+  status     String   @default("active") // active, draft, archived
+  version    Int      @default(1)
+  usageCount Int      @default(0)
+  editedBy   String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  deliveryLogs NotificationDeliveryLog[]
+
+  @@map("notification_templates")
+}
+
+model NotificationDeliveryLog {
+  id           String    @id @default(cuid())
+  templateId   String?
+  template     NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateName String    @default("")
+  channel      String    // email, sms, push, in_app
+  recipient    String
+  status       String    @default("pending") // pending, sent, delivered, failed, bounced
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  failedAt     DateTime?
+  failReason   String?
+  createdAt    DateTime  @default(now())
+
+  @@map("notification_delivery_logs")
+}
+
+// ---------------------------------------------------------------------------
+// File management
+// ---------------------------------------------------------------------------
+
+model File {
+  id           String   @id @default(cuid())
+  name         String
+  type         String   @default("document") // document, image
+  size         Int      @default(0) // in bytes
+  mimeType     String   @default("")
+  storagePath  String   @default("") // path in storage bucket
+  uploadedBy   String
+  thumbnailUrl String?
+  createdAt    DateTime @default(now())
+
+  @@map("files")
+}
+
+// ---------------------------------------------------------------------------
+// Plan & payment configuration models
+// ---------------------------------------------------------------------------
+
+model Plan {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  price        Int      @default(0) // in whole units (e.g. 29 = $29)
+  billingCycle String   @default("Monthly") // Monthly, Yearly
+  currency     String   @default("USD")
+  features     String   @default("[]") // JSON array of feature strings
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  paymentLinks PaymentLink[]
+
+  @@map("plans")
+}
+
+model PaymentLink {
+  id           String    @id @default(cuid())
+  planId       String
+  plan         Plan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  description  String    @default("")
+  active       Boolean   @default(true)
+  expiresAt    DateTime?
+  createdBy    String    @default("")
+  createdAt    DateTime  @default(now())
+
+  @@map("payment_links")
+}
+
+model PaymentGateway {
+  id               String   @id @default(cuid())
+  name             String
+  provider         String   @unique // stripe, razorpay, etc.
+  enabled          Boolean  @default(false)
+  mode             String   @default("test") // test, live
+  publicKey        String   @default("")
+  secretKey        String   @default("") // encrypted in production
+  webhookSecret    String   @default("")
+  webhookUrl       String   @default("")
+  supportedMethods String   @default("[]") // JSON array
+  currencies       String   @default("[]") // JSON array
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("payment_gateways")
+}
+
+// ---------------------------------------------------------------------------
+// Webhook registrations
+// ---------------------------------------------------------------------------
+
+model Webhook {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  events    String   @default("[]") // JSON array of event names
+  status    String   @default("active") // active, inactive
+  secret    String?  // signing secret
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("webhooks")
+}
