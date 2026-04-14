@@ -68,15 +68,16 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Tenant Management", href: "/tenants", icon: Building2, visibleTo: ["super_admin", "platform_engineering_lead", "product_lead", "cto"] },
-  { label: "Plan Management", href: "/plans", icon: Layers, visibleTo: ["super_admin"] },
+  { label: "Tenant Management", href: "#tenant-management", icon: Building2, visibleTo: ["super_admin", "platform_engineering_lead", "product_lead", "cto"], children: [
+    { label: "Account Overview", href: "/tenants", icon: Building2, visibleTo: ["super_admin", "platform_engineering_lead", "product_lead", "cto"] },
+    { label: "Plan Management", href: "/plans", icon: Layers, visibleTo: ["super_admin"] },
+    { label: "Feature Flags", href: "/feature-flags", icon: Flag, visibleTo: ["super_admin"] },
+  ]},
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "User Management", href: "/user", icon: Users, visibleTo: ["super_admin"] },
   { label: "User Management", href: "/tenant-user", icon: Users, visibleTo: ["tenant_admin"] },
   { label: "Onboarding Wizard", href: "/onboarding", icon: Wrench, visibleTo: ["tenant_admin"] },
-  { label: "Feature Flags", href: "/feature-flags", icon: Flag, visibleTo: ["super_admin"] },
   { label: "Role & Permission Management", href: "/roles", icon: Shield, visibleTo: ["super_admin", "tenant_admin"] },
-  { label: "Service Management", href: "/services", icon: Activity, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
   { label: "API & Developer Tools", href: "/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
   { label: "Workflow", href: "#workflow", icon: GitBranch, visibleTo: ["super_admin", "workflow_manager", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"], children: [
     { label: "Overview", href: "/workflow", icon: GitBranch, visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
@@ -98,24 +99,21 @@ const navItems: NavItem[] = [
     { label: "Payment Gateways", href: "/payment-gateways", icon: Shield, visibleTo: ["super_admin"] },
     { label: "Pricing", href: "/pricing", icon: Layers, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"] },
   ]},
-  { label: "Document Templates", href: "#doc-templates", icon: FileText, visibleTo: ["super_admin", "tenant_admin"], children: [
+  { label: "Document Templates", href: "#doc-templates", icon: FileText, visibleTo: ["super_admin", "tenant_admin", "auditor", "tenant_member", "billing_admin", "workflow_manager", "developer"], children: [
     { label: "All Templates", href: "/doc-templates", icon: FileText, visibleTo: ["super_admin", "tenant_admin"] },
     { label: "Create Template", href: "/doc-templates/new", icon: File, visibleTo: ["super_admin"] },
+    { label: "File Management", href: "/files", icon: File, visibleTo: ["super_admin", "tenant_admin", "auditor", "tenant_member", "billing_admin", "workflow_manager", "developer"] },
   ]},
   { label: "Document Library", href: "#documents", icon: File, visibleTo: ["tenant_member"], children: [
     { label: "All Documents", href: "/documents", icon: File, visibleTo: ["tenant_member"] },
   ]},
-  { label: "File Management", href: "/files", icon: File, visibleTo: ["super_admin", "tenant_admin", "auditor", "tenant_member", "billing_admin", "workflow_manager", "developer"] },
-  { label: "AI Platform", href: "/ai-platform", icon: Brain, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
   { label: "AI Config & Analytics", href: "/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
   { label: "Compliance", href: "#compliance", icon: ShieldCheck, visibleTo: ["super_admin", "auditor"], children: [
-    { label: "Audit & Logs", href: "/audit", icon: FileText, visibleTo: ["super_admin", "auditor"] },
     { label: "Audit Log Viewer", href: "/audit-logs", icon: ClipboardList, visibleTo: ["super_admin", "auditor"] },
     { label: "Compliance Reports", href: "/compliance/reports", icon: Shield, visibleTo: ["super_admin", "auditor"] },
     { label: "Retention Policy", href: "/compliance/retention", icon: Database, visibleTo: ["super_admin"] },
     { label: "Data Export", href: "/compliance/data-export", icon: FileDown, visibleTo: ["super_admin", "auditor"] },
   ]},
-  { label: "Monitoring & Logs", href: "/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
   { label: "Settings", href: "/settings", icon: Settings, visibleTo: ["super_admin", "tenant_admin", "billing_admin", "platform_engineering_lead"] },
 ];
 
