@@ -107,7 +107,8 @@
       "Bash(cp -r checkout \"\\(app\\)/checkout\")",
       "Bash(cp -r dashboard \"\\(app\\)/dashboard\")",
       "Bash(cp -r notifications \"\\(app\\)/notifications\")",
-      "Bash(cp -r pricing \"\\(app\\)/pricing\")"
+      "Bash(cp -r pricing \"\\(app\\)/pricing\")",
+      "Bash(npm uninstall:*)"
     ]
   }
 }
