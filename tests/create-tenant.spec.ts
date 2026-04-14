@@ -22,7 +22,7 @@ test("Create New Tenant – full form test", async ({ page }) => {
 
   // ── NAVIGATE TO CREATE TENANT PAGE ──────────────────────────────
   console.log("➕ Opening Create New Tenant page...");
-  await page.goto("/dashboard/tenants/create");
+  await page.goto("/tenants/create");
   await page.waitForTimeout(1500);
   await expect(page).toHaveURL(/\/dashboard\/tenants\/create/);
   console.log("✅ Create Tenant page loaded\n");

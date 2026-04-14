@@ -31,15 +31,15 @@ test("Super Admin – Full dashboard navigation & header test", async ({ page })
   // ── 2. NAVIGATE TO EACH PAGE ────────────────────────────────────
   const pages = [
     { label: "Overview", url: "/dashboard", heading: "Welcome" },
-    { label: "Identity & Access", url: "/admin/users", heading: "Identity" },
-    { label: "Services", url: "/dashboard/services", heading: "Service Health" },
-    { label: "Notifications", url: "/dashboard/notifications", heading: "Notification" },
-    { label: "Payments", url: "/dashboard/payments", heading: "Payment" },
-    { label: "Workflows", url: "/dashboard/workflows", heading: "Workflow" },
-    { label: "Audit Logs", url: "/dashboard/audit", heading: "Audit" },
-    { label: "Team", url: "/dashboard/team", heading: "Team" },
-    { label: "Tenants", url: "/dashboard/tenants", heading: "Tenant" },
-    { label: "Settings", url: "/dashboard/settings", heading: "Settings" },
+    { label: "Identity & Access", url: "/user", heading: "Identity" },
+    { label: "Services", url: "/services", heading: "Service Health" },
+    { label: "Notifications", url: "/notifications/manage", heading: "Notification" },
+    { label: "Payments", url: "/payments", heading: "Payment" },
+    { label: "Workflows", url: "/workflow", heading: "Workflow" },
+    { label: "Audit Logs", url: "/audit", heading: "Audit" },
+    { label: "Team", url: "/team", heading: "Team" },
+    { label: "Tenants", url: "/tenants", heading: "Tenant" },
+    { label: "Settings", url: "/settings", heading: "Settings" },
   ];
 
   for (const pg of pages) {
@@ -113,12 +113,12 @@ test("Super Admin – Full dashboard navigation & header test", async ({ page })
   await page.waitForTimeout(1000);
 
   // Click Identity & Access card
-  const identityCard = page.locator('a[href="/admin/users"]').first();
+  const identityCard = page.locator('a[href="/user"]').first();
   if (await identityCard.isVisible()) {
     await identityCard.click();
     await page.waitForTimeout(1000);
     await expect(page).toHaveURL(/\/dashboard\/identity/);
-    console.log("  ✅ Identity card links to /admin/users");
+    console.log("  ✅ Identity card links to /users");
   }
 
   // Go back to Services
@@ -126,7 +126,7 @@ test("Super Admin – Full dashboard navigation & header test", async ({ page })
   await page.waitForTimeout(1000);
 
   // Click Payments card
-  const paymentsCard = page.locator('a[href="/dashboard/payments"]').first();
+  const paymentsCard = page.locator('a[href="/payments"]').first();
   if (await paymentsCard.isVisible()) {
     await paymentsCard.click();
     await page.waitForTimeout(1000);

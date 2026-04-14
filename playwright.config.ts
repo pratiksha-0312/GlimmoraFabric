@@ -9,7 +9,7 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3000",
     headless: false,
-    launchOptions: { slowMo: 800 },
+    launchOptions: { slowMo: 2000 },
     screenshot: "only-on-failure",
     trace: "on-first-retry",
   },

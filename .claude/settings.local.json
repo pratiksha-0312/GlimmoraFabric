@@ -108,7 +108,19 @@
       "Bash(cp -r dashboard \"\\(app\\)/dashboard\")",
       "Bash(cp -r notifications \"\\(app\\)/notifications\")",
       "Bash(cp -r pricing \"\\(app\\)/pricing\")",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(mv \"src/app/\\(app\\)/admin/users\"/* \"src/app/\\(app\\)/users/\")",
+      "Bash(mv \"src/app/\\(app\\)/admin/tenant-users\"/* \"src/app/\\(app\\)/tenant-users/\")",
+      "Bash([ -e \"src/app/\\(app\\)/$d\" ])",
+      "Bash(mkdir -p workflow/tasks)",
+      "Bash(mv dashboard/workflows/page.tsx workflow/page.tsx)",
+      "Bash(rmdir dashboard/workflows)",
+      "Bash(mv workflows/builder workflow/builder)",
+      "Bash(mv workflows/instances workflow/instances)",
+      "Bash(mv \"src/app/\\(app\\)/users\"/* \"src/app/\\(app\\)/user/\")",
+      "Bash(mv \"src/app/\\(app\\)/tenant-users\"/* \"src/app/\\(app\\)/tenant-user/\")",
+      "Bash(bash scripts/rewrite-dashboard.sh)",
+      "Bash(bash scripts/rewrite-admin.sh)"
     ]
   }
 }

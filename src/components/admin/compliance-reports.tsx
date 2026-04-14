@@ -366,7 +366,7 @@ export function ComplianceReportsPage() {
                       <div className="flex items-center gap-1">
                         {report.status === "Generated" && (
                           <>
-                            <Link href={`/admin/compliance/reports/${report.id}`} className="rounded-lg p-1.5 hover:opacity-70" style={{ color: "var(--gf-accent)" }} title="View Report"><Eye className="h-4 w-4" /></Link>
+                            <Link href={`/compliance/reports/${report.id}`} className="rounded-lg p-1.5 hover:opacity-70" style={{ color: "var(--gf-accent)" }} title="View Report"><Eye className="h-4 w-4" /></Link>
                             <button onClick={() => handleDownload(report)} className="rounded-lg p-1.5 hover:opacity-70" style={{ color: "var(--gf-text-secondary)" }} title="Download"><Download className="h-4 w-4" /></button>
                           </>
                         )}

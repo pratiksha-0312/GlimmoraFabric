@@ -112,49 +112,49 @@ const INITIAL_SERVICES: Service[] = [
   {
     id: "s2", name: "Notification Hub", description: "Email, SMS, Push, In-app and webhook notifications",
     icon: "Bell", status: "Running", version: "1.7.0", endpoints: 12, uptime: "99.95%", latency: "120ms",
-    href: "/dashboard/notifications", category: "Core", lastDeployed: "2026-03-25 09:15",
+    href: "/notifications/manage", category: "Core", lastDeployed: "2026-03-25 09:15",
     healthCheckUrl: "https://notifications.glimmora.internal/health", healthCheckInterval: "30s", autoRestart: true,
     cpu: 22, memory: 38, dependencies: ["Kafka"],
   },
   {
     id: "s3", name: "Payment Service", description: "Multi-gateway payments via Stripe, Razorpay and Adyen",
     icon: "CreditCard", status: "Running", version: "3.1.2", endpoints: 14, uptime: "99.99%", latency: "230ms",
-    href: "/dashboard/payments", category: "Core", lastDeployed: "2026-03-30 11:00",
+    href: "/payments", category: "Core", lastDeployed: "2026-03-30 11:00",
     healthCheckUrl: "https://payments.glimmora.internal/health", healthCheckInterval: "15s", autoRestart: true,
     cpu: 41, memory: 60, dependencies: ["Database", "Audit Service"],
   },
   {
     id: "s4", name: "Audit Service", description: "Immutable audit trail, compliance reports and change tracking",
     icon: "FileText", status: "Running", version: "1.3.0", endpoints: 8, uptime: "100%", latency: "32ms",
-    href: "/dashboard/audit", category: "Platform", lastDeployed: "2026-03-20 16:45",
+    href: "/audit", category: "Platform", lastDeployed: "2026-03-20 16:45",
     healthCheckUrl: "https://audit.glimmora.internal/health", healthCheckInterval: "60s", autoRestart: false,
     cpu: 12, memory: 28, dependencies: ["Database", "Kafka"],
   },
   {
     id: "s5", name: "Workflow Engine", description: "Approvals, onboarding flows and SLA management",
     icon: "GitBranch", status: "Degraded", version: "2.0.4", endpoints: 11, uptime: "98.70%", latency: "310ms",
-    href: "/dashboard/workflows", category: "Platform", lastDeployed: "2026-03-22 08:30",
+    href: "/workflow", category: "Platform", lastDeployed: "2026-03-22 08:30",
     healthCheckUrl: "https://workflows.glimmora.internal/health", healthCheckInterval: "30s", autoRestart: true,
     cpu: 78, memory: 85, dependencies: ["Notification Hub", "Database"],
   },
   {
     id: "s6", name: "Document Service", description: "PDF generation, contract templates and e-signatures",
     icon: "File", status: "Running", version: "1.1.0", endpoints: 9, uptime: "99.90%", latency: "180ms",
-    href: "/dashboard/documents", category: "Integration", lastDeployed: "2026-03-18 13:20",
+    href: "/documents/manage", category: "Integration", lastDeployed: "2026-03-18 13:20",
     healthCheckUrl: "https://documents.glimmora.internal/health", healthCheckInterval: "30s", autoRestart: true,
     cpu: 28, memory: 45, dependencies: ["Storage"],
   },
   {
     id: "s7", name: "AI Platform", description: "Model hosting, prompt management and inference APIs",
     icon: "Cpu", status: "Running", version: "0.9.3", endpoints: 15, uptime: "99.85%", latency: "290ms",
-    href: "/dashboard/ai-platform", category: "Platform", lastDeployed: "2026-03-29 10:00",
+    href: "/ai-platform", category: "Platform", lastDeployed: "2026-03-29 10:00",
     healthCheckUrl: "https://ai.glimmora.internal/health", healthCheckInterval: "15s", autoRestart: true,
     cpu: 65, memory: 72, dependencies: ["GPU Cluster", "Redis Cache"],
   },
   {
     id: "s8", name: "API Gateway", description: "Rate limiting, request routing, auth proxy and analytics",
     icon: "Globe", status: "Down", version: "2.2.0", endpoints: 6, uptime: "95.40%", latency: "—",
-    href: "/dashboard/api-gateway", category: "Infrastructure", lastDeployed: "2026-03-27 17:00",
+    href: "/api-gateway", category: "Infrastructure", lastDeployed: "2026-03-27 17:00",
     healthCheckUrl: "https://gateway.glimmora.internal/health", healthCheckInterval: "10s", autoRestart: true,
     cpu: 0, memory: 0, dependencies: ["Redis Cache", "Load Balancer"],
   },
@@ -367,7 +367,7 @@ function ServiceFormModal({ service, onSave, onCancel }: {
   const [endpoints, setEndpoints] = useState(service?.endpoints ?? 0);
   const [category, setCategory] = useState<ServiceCategory>(service?.category ?? "Core");
   const [status, setStatus] = useState<ServiceStatus>(service?.status ?? "Running");
-  const [href, setHref] = useState(service?.href ?? "/dashboard/");
+  const [href, setHref] = useState(service?.href ?? "/");
   const [healthCheckUrl, setHealthCheckUrl] = useState(service?.healthCheckUrl ?? "https://");
   const [healthCheckInterval, setHealthCheckInterval] = useState(service?.healthCheckInterval ?? "30s");
   const [autoRestart, setAutoRestart] = useState(service?.autoRestart ?? true);
@@ -455,7 +455,7 @@ function ServiceFormModal({ service, onSave, onCancel }: {
             )}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--gf-text-secondary)" }}>Dashboard Route</label>
-              <input type="text" value={href} onChange={(e) => setHref(e.target.value)} placeholder="/dashboard/service-name" className="w-full rounded-lg border px-3 py-2 text-sm font-mono outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
+              <input type="text" value={href} onChange={(e) => setHref(e.target.value)} placeholder="/service-name" className="w-full rounded-lg border px-3 py-2 text-sm font-mono outline-none focus:ring-2 focus:ring-[var(--gf-accent)]/40" style={fieldStyle} />
             </div>
           </div>
 
@@ -782,7 +782,7 @@ export function ServicesContent() {
                                 <Pause className="h-4 w-4" />Maintenance Mode
                               </button>
                             )}
-                            <button onClick={() => { router.push("/dashboard/monitoring"); setOpenAction(null); }} className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}>
+                            <button onClick={() => { router.push("/monitoring"); setOpenAction(null); }} className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}>
                               <Activity className="h-4 w-4" style={{ color: "var(--gf-text-secondary)" }} />View Logs
                             </button>
                             <div className="my-1 border-t" style={{ borderColor: "var(--gf-border)" }} />
@@ -915,7 +915,7 @@ export function ServicesContent() {
                                     <Pause className="h-4 w-4" />Maintenance Mode
                                   </button>
                                 )}
-                                <button onClick={() => { router.push("/dashboard/monitoring"); setOpenAction(null); }} className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}>
+                                <button onClick={() => { router.push("/monitoring"); setOpenAction(null); }} className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}>
                                   <Activity className="h-4 w-4" style={{ color: "var(--gf-text-secondary)" }} />View Logs
                                 </button>
                                 <div className="my-1 border-t" style={{ borderColor: "var(--gf-border)" }} />

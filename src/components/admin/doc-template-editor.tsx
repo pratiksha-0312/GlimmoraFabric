@@ -89,7 +89,7 @@ export function DocTemplateEditor() {
         {/* Top bar */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push("/admin/doc-templates")} className="rounded-lg border p-2 transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ borderColor: "var(--gf-border)" }}>
+            <button onClick={() => router.push("/doc-templates")} className="rounded-lg border p-2 transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ borderColor: "var(--gf-border)" }}>
               <ArrowLeft className="w-4 h-4" style={{ color: "var(--gf-text-secondary)" }} />
             </button>
             <div>

@@ -68,54 +68,55 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Tenant Management", href: "/dashboard/tenants", icon: Building2, visibleTo: ["super_admin", "platform_engineering_lead", "product_lead", "cto"] },
-  { label: "Plan Management", href: "/dashboard/plans", icon: Layers, visibleTo: ["super_admin"] },
-  { label: "User Management", href: "/admin/users", icon: Users, visibleTo: ["super_admin"] },
-  { label: "User Management", href: "/admin/tenant-users", icon: Users, visibleTo: ["tenant_admin"] },
+  { label: "Tenant Management", href: "/tenants", icon: Building2, visibleTo: ["super_admin", "platform_engineering_lead", "product_lead", "cto"] },
+  { label: "Plan Management", href: "/plans", icon: Layers, visibleTo: ["super_admin"] },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "User Management", href: "/user", icon: Users, visibleTo: ["super_admin"] },
+  { label: "User Management", href: "/tenant-user", icon: Users, visibleTo: ["tenant_admin"] },
   { label: "Onboarding Wizard", href: "/onboarding", icon: Wrench, visibleTo: ["tenant_admin"] },
-  { label: "Feature Flags", href: "/dashboard/feature-flags", icon: Flag, visibleTo: ["super_admin"] },
-  { label: "Role & Permission Management", href: "/dashboard/roles", icon: Shield, visibleTo: ["super_admin", "tenant_admin"] },
-  { label: "Service Management", href: "/dashboard/services", icon: Activity, section: "Platform", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
-  { label: "API & Developer Tools", href: "/dashboard/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
-  { label: "Workflow", href: "#workflow", icon: GitBranch, section: "Operations", visibleTo: ["super_admin", "workflow_manager", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"], children: [
-    { label: "Overview", href: "/dashboard/workflows", icon: GitBranch, visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
-    { label: "Workflow Builder", href: "/admin/workflows", icon: Layers, visibleTo: ["workflow_manager", "super_admin"] },
-    { label: "Active Instances", href: "/admin/workflows/instances", icon: Activity, visibleTo: ["workflow_manager"] },
-    { label: "SLA Status", href: "/admin/workflows/sla", icon: Clock, visibleTo: ["workflow_manager", "super_admin"] },
-    { label: "Task Inbox", href: "/tasks", icon: ClipboardList },
+  { label: "Feature Flags", href: "/feature-flags", icon: Flag, visibleTo: ["super_admin"] },
+  { label: "Role & Permission Management", href: "/roles", icon: Shield, visibleTo: ["super_admin", "tenant_admin"] },
+  { label: "Service Management", href: "/services", icon: Activity, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead"] },
+  { label: "API & Developer Tools", href: "/api-gateway", icon: Key, visibleTo: ["super_admin", "developer", "platform_engineering_lead"] },
+  { label: "Workflow", href: "#workflow", icon: GitBranch, visibleTo: ["super_admin", "workflow_manager", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"], children: [
+    { label: "Overview", href: "/workflow", icon: GitBranch, visibleTo: ["super_admin", "tenant_admin", "developer", "platform_engineering_lead", "qa_engineer", "product_lead", "cto"] },
+    { label: "Workflow Builder", href: "/workflow/builder", icon: Layers, visibleTo: ["workflow_manager", "super_admin"] },
+    { label: "Active Instances", href: "/workflow/instances", icon: Activity, visibleTo: ["workflow_manager"] },
+    { label: "SLA Status", href: "/workflow/sla", icon: Clock, visibleTo: ["workflow_manager", "super_admin"] },
+    { label: "Task Inbox", href: "/workflow/tasks", icon: ClipboardList },
   ]},
   { label: "Notification Management", href: "#notifications", icon: Bell, visibleTo: ["super_admin", "auditor", "tenant_admin", "platform_engineering_lead"], children: [
-    { label: "All Notifications", href: "/dashboard/notifications", icon: Bell, visibleTo: ["super_admin", "auditor"] },
-    { label: "Templates", href: "/admin/notification-templates", icon: Mail, visibleTo: ["super_admin", "auditor"] },
-    { label: "Delivery Logs", href: "/admin/notifications/logs", icon: Send, visibleTo: ["super_admin", "auditor"] },
-    { label: "Webhooks", href: "/admin/webhooks", icon: Globe, visibleTo: ["super_admin", "auditor"] },
+    { label: "All Notifications", href: "/notifications/manage", icon: Bell, visibleTo: ["super_admin", "auditor"] },
+    { label: "Templates", href: "/notification-templates", icon: Mail, visibleTo: ["super_admin", "auditor"] },
+    { label: "Delivery Logs", href: "/notifications/logs", icon: Send, visibleTo: ["super_admin", "auditor"] },
+    { label: "Webhooks", href: "/webhooks", icon: Globe, visibleTo: ["super_admin", "auditor"] },
   ]},
   { label: "Payment", href: "#payment", icon: CreditCard, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"], children: [
     { label: "Checkout", href: "/checkout", icon: ShoppingCart, visibleTo: ["tenant_member"] },
-    { label: "Revenue Analytics", href: "/admin/billing/dashboard", icon: BarChart3, visibleTo: ["super_admin", "billing_admin"] },
-    { label: "Refund Management", href: "/admin/billing/refunds", icon: RefreshCw, visibleTo: ["super_admin", "billing_admin"] },
-    { label: "Payment Gateways", href: "/admin/payment-gateways", icon: Shield, visibleTo: ["super_admin"] },
+    { label: "Revenue Analytics", href: "/billing/dashboard", icon: BarChart3, visibleTo: ["super_admin", "billing_admin"] },
+    { label: "Refund Management", href: "/billing/refunds", icon: RefreshCw, visibleTo: ["super_admin", "billing_admin"] },
+    { label: "Payment Gateways", href: "/payment-gateways", icon: Shield, visibleTo: ["super_admin"] },
     { label: "Pricing", href: "/pricing", icon: Layers, visibleTo: ["super_admin", "billing_admin", "tenant_admin", "tenant_member"] },
   ]},
-  { label: "Document Templates", href: "#doc-templates", icon: FileText, section: "Operations", visibleTo: ["super_admin", "tenant_admin"], children: [
-    { label: "All Templates", href: "/admin/doc-templates", icon: FileText, visibleTo: ["super_admin", "tenant_admin"] },
-    { label: "Create Template", href: "/admin/doc-templates/new", icon: File, visibleTo: ["super_admin"] },
+  { label: "Document Templates", href: "#doc-templates", icon: FileText, visibleTo: ["super_admin", "tenant_admin"], children: [
+    { label: "All Templates", href: "/doc-templates", icon: FileText, visibleTo: ["super_admin", "tenant_admin"] },
+    { label: "Create Template", href: "/doc-templates/new", icon: File, visibleTo: ["super_admin"] },
   ]},
   { label: "Document Library", href: "#documents", icon: File, visibleTo: ["tenant_member"], children: [
     { label: "All Documents", href: "/documents", icon: File, visibleTo: ["tenant_member"] },
   ]},
   { label: "File Management", href: "/files", icon: File, visibleTo: ["super_admin", "tenant_admin", "auditor", "tenant_member", "billing_admin", "workflow_manager", "developer"] },
-  { label: "AI Platform", href: "/dashboard/ai-platform", icon: Brain, section: "Intelligence", visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
-  { label: "AI Config & Analytics", href: "/dashboard/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
-  { label: "Compliance", href: "#compliance", icon: ShieldCheck, section: "Compliance", visibleTo: ["super_admin", "auditor"], children: [
-    { label: "Audit & Logs", href: "/dashboard/audit", icon: FileText, visibleTo: ["super_admin", "auditor"] },
-    { label: "Audit Log Viewer", href: "/admin/audit-logs", icon: ClipboardList, visibleTo: ["super_admin", "auditor"] },
-    { label: "Compliance Reports", href: "/admin/compliance/reports", icon: Shield, visibleTo: ["super_admin", "auditor"] },
-    { label: "Retention Policy", href: "/admin/compliance/retention", icon: Database, visibleTo: ["super_admin"] },
-    { label: "Data Export", href: "/admin/compliance/data-export", icon: FileDown, visibleTo: ["super_admin", "auditor"] },
+  { label: "AI Platform", href: "/ai-platform", icon: Brain, visibleTo: ["super_admin", "developer", "platform_engineering_lead", "ai_prompt_owner"] },
+  { label: "AI Config & Analytics", href: "/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
+  { label: "Compliance", href: "#compliance", icon: ShieldCheck, visibleTo: ["super_admin", "auditor"], children: [
+    { label: "Audit & Logs", href: "/audit", icon: FileText, visibleTo: ["super_admin", "auditor"] },
+    { label: "Audit Log Viewer", href: "/audit-logs", icon: ClipboardList, visibleTo: ["super_admin", "auditor"] },
+    { label: "Compliance Reports", href: "/compliance/reports", icon: Shield, visibleTo: ["super_admin", "auditor"] },
+    { label: "Retention Policy", href: "/compliance/retention", icon: Database, visibleTo: ["super_admin"] },
+    { label: "Data Export", href: "/compliance/data-export", icon: FileDown, visibleTo: ["super_admin", "auditor"] },
   ]},
-  { label: "Monitoring & Logs", href: "/dashboard/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
-  { label: "Settings", href: "/settings", icon: Settings, section: "System", visibleTo: ["super_admin", "tenant_admin", "billing_admin", "platform_engineering_lead"] },
+  { label: "Monitoring & Logs", href: "/monitoring", icon: MonitorDot, visibleTo: ["super_admin", "platform_engineering_lead", "qa_engineer", "cto"] },
+  { label: "Settings", href: "/settings", icon: Settings, visibleTo: ["super_admin", "tenant_admin", "billing_admin", "platform_engineering_lead"] },
 ];
 
 const SIDEBAR_EXPANDED = 256;
@@ -187,7 +188,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Breadcrumb segments from pathname
   const breadcrumbs = useMemo(() => {
-    const segments = pathname.split("/").filter(Boolean);
+    const segments = pathname.split("/").filter(Boolean).filter((s) => s !== "admin" && s !== "dashboard");
     return segments.map((seg, i) => {
       const href = "/" + segments.slice(0, i + 1).join("/");
       const label = seg

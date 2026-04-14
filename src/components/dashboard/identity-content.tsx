@@ -778,7 +778,7 @@ export function IdentityContent({ mode }: { mode: "super_admin" | "tenant_admin"
           </button>
           {isSuperAdmin && (
             <button
-              onClick={() => router.push("/admin/users/import")}
+              onClick={() => router.push("/user/import")}
               className="flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors"
               style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
             >
@@ -994,7 +994,7 @@ export function IdentityContent({ mode }: { mode: "super_admin" | "tenant_admin"
                                   >
                                     <button
                                       onClick={() => {
-                                        router.push(isSuperAdmin ? `/admin/users/${u.id}` : `/admin/tenant-users/${u.id}`);
+                                        router.push(isSuperAdmin ? `/user/${u.id}` : `/tenant-user/${u.id}`);
                                         setOpenActionId(null);
                                       }}
                                       className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
@@ -1004,7 +1004,7 @@ export function IdentityContent({ mode }: { mode: "super_admin" | "tenant_admin"
                                     </button>
                                     <button
                                       onClick={() => {
-                                        router.push(isSuperAdmin ? `/admin/users/${u.id}/edit` : `/admin/tenant-users/${u.id}/edit`);
+                                        router.push(isSuperAdmin ? `/user/${u.id}/edit` : `/tenant-user/${u.id}/edit`);
                                         setOpenActionId(null);
                                       }}
                                       className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"

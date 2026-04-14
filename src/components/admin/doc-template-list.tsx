@@ -157,7 +157,7 @@ export function DocTemplateListPage() {
             <p className="text-sm mt-1" style={{ color: "var(--gf-text-muted)" }}>Manage and create document templates for your organization</p>
           </div>
           <button
-            onClick={() => router.push("/admin/doc-templates/new")}
+            onClick={() => router.push("/doc-templates/new")}
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors"
             style={{ backgroundColor: "var(--gf-accent)" }}
           >
@@ -276,9 +276,9 @@ export function DocTemplateListPage() {
                         </button>
                         {actionMenu === tpl.id && (
                           <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-lg border shadow-lg py-1" style={{ backgroundColor: "var(--gf-bg-elevated)", borderColor: "var(--gf-border)" }}>
-                            <button onClick={() => { router.push(`/admin/doc-templates/${tpl.id}/edit`); setActionMenu(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}><Pencil className="w-3.5 h-3.5" /> Edit Template</button>
+                            <button onClick={() => { router.push(`/doc-templates/${tpl.id}/edit`); setActionMenu(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}><Pencil className="w-3.5 h-3.5" /> Edit Template</button>
                             <button onClick={() => { setPreviewId(tpl.id); setActionMenu(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}><Eye className="w-3.5 h-3.5" /> Preview</button>
-                            <button onClick={() => { router.push(`/admin/doc-templates/${tpl.id}/versions`); setActionMenu(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}><History className="w-3.5 h-3.5" /> Version History</button>
+                            <button onClick={() => { router.push(`/doc-templates/${tpl.id}/versions`); setActionMenu(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}><History className="w-3.5 h-3.5" /> Version History</button>
                             <button onClick={() => handleDuplicate(tpl)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5" style={{ color: "var(--gf-text-primary)" }}><Copy className="w-3.5 h-3.5" /> Duplicate</button>
                             <div className="my-1 border-t" style={{ borderColor: "var(--gf-border)" }} />
                             <button onClick={() => handleDelete(tpl.id)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 className="w-3.5 h-3.5" /> Delete</button>

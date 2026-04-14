@@ -79,7 +79,7 @@ export function CreateTemplateWizard() {
   };
 
   const handleCreate = () => {
-    router.push("/admin/doc-templates");
+    router.push("/doc-templates");
   };
 
   return (
@@ -87,7 +87,7 @@ export function CreateTemplateWizard() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/admin/doc-templates")} className="rounded-lg border p-2 transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ borderColor: "var(--gf-border)" }}>
+          <button onClick={() => router.push("/doc-templates")} className="rounded-lg border p-2 transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ borderColor: "var(--gf-border)" }}>
             <ArrowLeft className="w-4 h-4" style={{ color: "var(--gf-text-secondary)" }} />
           </button>
           <div>
@@ -215,7 +215,7 @@ export function CreateTemplateWizard() {
         {/* Navigation */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => step > 0 ? setStep(s => s - 1) : router.push("/admin/doc-templates")}
+            onClick={() => step > 0 ? setStep(s => s - 1) : router.push("/doc-templates")}
             className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5"
             style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-secondary)" }}
           >
