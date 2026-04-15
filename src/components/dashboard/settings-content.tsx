@@ -23,7 +23,7 @@ const sections: SettingsSection[] = [
   { title: "Active Sessions", description: "View and manage your logged-in devices", icon: Monitor, href: "/settings/sessions" },
   { title: "API Tokens", description: "Generate and manage personal API tokens", icon: Key, href: "/settings/api-tokens", visibleTo: ["developer", "tenant_admin"] },
   { title: "SSO Configuration", description: "Configure Single Sign-On providers", icon: Lock, href: "/settings/sso", visibleTo: ["tenant_admin", "super_admin"] },
-  { title: "Notifications", description: "Manage notification preferences", icon: Bell, href: "/notifications/manage" },
+  { title: "Notifications", description: "Manage notification preferences", icon: Bell, href: "/settings/notifications" },
 ];
 
 export function SettingsContent() {

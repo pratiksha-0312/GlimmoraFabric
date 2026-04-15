@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Bell,
   Mail,
@@ -76,6 +76,34 @@ export function NotificationPreferences() {
   const [channels, setChannels] = useState(INITIAL_CHANNELS);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/notifications/preferences");
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          channels: { id: string; enabled: boolean }[];
+          categories: { id: string; channels: CategoryPreference["channels"] }[];
+        };
+        setChannels((prev) =>
+          prev.map((c) => {
+            const server = data.channels.find((x) => x.id === c.id);
+            return server ? { ...c, enabled: server.enabled } : c;
+          })
+        );
+        setCategories((prev) =>
+          prev.map((c) => {
+            const server = data.categories.find((x) => x.id === c.id);
+            return server ? { ...c, channels: server.channels } : c;
+          })
+        );
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
 
   const toggleChannel = (id: string) => {
     setChannels((prev) => prev.map((c) => c.id === id ? { ...c, enabled: !c.enabled } : c));
@@ -87,9 +115,22 @@ export function NotificationPreferences() {
     setSaved(false);
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await fetch("/api/notifications/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channels: channels.map((c) => ({ id: c.id, enabled: c.enabled })),
+          categories: categories.map((c) => ({ id: c.id, channels: c.channels })),
+        }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const channelMap = { email: "Email", sms: "SMS", push: "Push", inApp: "In-App" } as const;
@@ -102,9 +143,9 @@ export function NotificationPreferences() {
           <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Notification Preferences</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--gf-text-secondary)" }}>Control how and when you receive notifications</p>
         </div>
-        <button onClick={handleSave} className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white" style={{ backgroundColor: saved ? "#22c55e" : "var(--gf-accent)" }}>
+        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60" style={{ backgroundColor: saved ? "#22c55e" : "var(--gf-accent)" }}>
           {saved ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-          {saved ? "Saved!" : "Save Preferences"}
+          {saving ? "Saving..." : saved ? "Saved!" : "Save Preferences"}
         </button>
       </div>
 

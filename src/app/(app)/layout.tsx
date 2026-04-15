@@ -87,7 +87,7 @@ const navItems: NavItem[] = [
     { label: "Task Inbox", href: "/workflow/tasks", icon: ClipboardList },
   ]},
   { label: "Notification Management", href: "#notifications", icon: Bell, visibleTo: ["super_admin", "auditor", "tenant_admin", "platform_engineering_lead"], children: [
-    { label: "All Notifications", href: "/notifications/manage", icon: Bell, visibleTo: ["super_admin", "auditor"] },
+    { label: "All Notifications", href: "/notifications", icon: Bell, visibleTo: ["super_admin", "auditor"] },
     { label: "Templates", href: "/notification-templates", icon: Mail, visibleTo: ["super_admin", "auditor"] },
     { label: "Delivery Logs", href: "/notifications/logs", icon: Send, visibleTo: ["super_admin", "auditor"] },
     { label: "Webhooks", href: "/webhooks", icon: Globe, visibleTo: ["super_admin", "auditor"] },

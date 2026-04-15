@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Search,
   Plus,
@@ -63,7 +63,7 @@ const AVAILABLE_EVENTS = [
 // SAMPLE DATA
 // ============================================================================
 
-const SAMPLE_WEBHOOKS: Webhook[] = [
+const _UNUSED_WEBHOOKS: Webhook[] = [
   { id: "wh-001", name: "Slack Notifications", url: "https://hooks.slack.com/services/T0123/B4567/abc123xyz", events: ["user.created", "payment.completed", "payment.failed"], status: "active", secret: "whsec_sk_live_abc123def456", createdAt: "2026-03-15", lastTriggered: "2026-04-07 14:30", successRate: 99.2, totalDeliveries: 1245, failedDeliveries: 10, retryPolicy: "exponential", timeout: 30, headers: { "X-Custom-Source": "glimmora" } },
   { id: "wh-002", name: "CRM Sync", url: "https://api.salesforce.com/webhooks/glimmora", events: ["user.created", "user.updated", "tenant.created"], status: "active", secret: "whsec_crm_9876xyz", createdAt: "2026-03-20", lastTriggered: "2026-04-07 13:15", successRate: 97.5, totalDeliveries: 890, failedDeliveries: 22, retryPolicy: "linear", timeout: 15, headers: {} },
   { id: "wh-003", name: "Analytics Pipeline", url: "https://analytics.internal.glimmora.com/ingest", events: ["payment.completed", "invoice.generated", "invoice.paid", "subscription.created", "subscription.cancelled"], status: "active", secret: "whsec_analytics_qwe789", createdAt: "2026-02-28", lastTriggered: "2026-04-07 12:00", successRate: 100, totalDeliveries: 3420, failedDeliveries: 0, retryPolicy: "exponential", timeout: 60, headers: { "Authorization": "Bearer analytics_token_xxx" } },
@@ -86,7 +86,20 @@ const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle2; color: string; 
 export function WebhookManagementPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [webhooks, setWebhooks] = useState(SAMPLE_WEBHOOKS);
+  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/webhooks");
+        if (!res.ok) return;
+        const data = (await res.json()) as Webhook[];
+        setWebhooks(data);
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
   const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
@@ -115,28 +128,56 @@ export function WebhookManagementPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newName || !newUrl || newEvents.length === 0) return;
-    const wh: Webhook = {
-      id: `wh-new-${Date.now()}`, name: newName, url: newUrl, events: newEvents,
-      status: "active", secret: `whsec_${Math.random().toString(36).slice(2, 14)}`,
-      createdAt: new Date().toISOString().slice(0, 10), lastTriggered: null,
-      successRate: 100, totalDeliveries: 0, failedDeliveries: 0,
-      retryPolicy: newRetry, timeout: newTimeout, headers: {},
-    };
-    setWebhooks(prev => [wh, ...prev]);
+    try {
+      const res = await fetch("/api/webhooks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          url: newUrl,
+          events: newEvents,
+          retryPolicy: newRetry,
+          timeout: newTimeout,
+        }),
+      });
+      if (res.ok) {
+        const created = (await res.json()) as Webhook;
+        setWebhooks(prev => [created, ...prev]);
+      }
+    } catch {
+      // ignore
+    }
     setShowCreate(false);
     setNewName(""); setNewUrl(""); setNewEvents([]); setNewRetry("exponential"); setNewTimeout(30);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     setWebhooks(prev => prev.filter(w => w.id !== id));
     setActionMenu(null);
+    try {
+      await fetch(`/api/webhooks?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    } catch {
+      // ignore
+    }
   };
 
-  const toggleStatus = (id: string) => {
-    setWebhooks(prev => prev.map(w => w.id === id ? { ...w, status: w.status === "active" ? "inactive" : "active" } : w));
+  const toggleStatus = async (id: string) => {
+    const target = webhooks.find(w => w.id === id);
+    if (!target) return;
+    const nextStatus: Webhook["status"] = target.status === "active" ? "inactive" : "active";
+    setWebhooks(prev => prev.map(w => w.id === id ? { ...w, status: nextStatus } : w));
     setActionMenu(null);
+    try {
+      await fetch("/api/webhooks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: nextStatus }),
+      });
+    } catch {
+      // ignore
+    }
   };
 
   const toggleEventSelection = (event: string) => {

@@ -21,14 +21,12 @@ interface NotificationsDropdownProps {
 
 // Static seed notifications (shown immediately)
 const SEED: AppNotification[] = [
-  { id: 1, icon: Shield, title: "Security Alert", description: "New login detected from unknown device", timeAgo: "2 min ago", unread: true, timestamp: Date.now() - 120_000 },
-  { id: 2, icon: Users, title: "Team Update", description: "A new user accepted the invitation", timeAgo: "15 min ago", unread: true, timestamp: Date.now() - 900_000 },
-  { id: 3, icon: Activity, title: "Service Deployed", description: "auth-service v2.4.1 deployed successfully", timeAgo: "1 hour ago", unread: true, timestamp: Date.now() - 3_600_000 },
-  { id: 4, icon: FileText, title: "Report Ready", description: "Monthly compliance report is ready", timeAgo: "3 hours ago", unread: false, timestamp: Date.now() - 10_800_000 },
-  { id: 5, icon: Bell, title: "System Update", description: "Platform maintenance scheduled for Sunday", timeAgo: "1 day ago", unread: false, timestamp: Date.now() - 86_400_000 },
+  { id: "seed-1", icon: Shield, title: "Security Alert", description: "New login detected from unknown device", timeAgo: "2 min ago", unread: true, timestamp: Date.now() - 120_000 },
+  { id: "seed-2", icon: Users, title: "Team Update", description: "A new user accepted the invitation", timeAgo: "15 min ago", unread: true, timestamp: Date.now() - 900_000 },
+  { id: "seed-3", icon: Activity, title: "Service Deployed", description: "auth-service v2.4.1 deployed successfully", timeAgo: "1 hour ago", unread: true, timestamp: Date.now() - 3_600_000 },
+  { id: "seed-4", icon: FileText, title: "Report Ready", description: "Monthly compliance report is ready", timeAgo: "3 hours ago", unread: false, timestamp: Date.now() - 10_800_000 },
+  { id: "seed-5", icon: Bell, title: "System Update", description: "Platform maintenance scheduled for Sunday", timeAgo: "1 day ago", unread: false, timestamp: Date.now() - 86_400_000 },
 ];
-
-let seeded = false;
 
 export function NotificationsDropdown({
   open,
@@ -74,7 +72,7 @@ export function NotificationsDropdown({
     SEED.forEach((s) => (s.unread = false));
   }, []);
 
-  const markOneRead = useCallback((id: number) => {
+  const markOneRead = useCallback((id: string) => {
     notificationStore.markRead(id);
     const s = SEED.find((n) => n.id === id);
     if (s) s.unread = false;
@@ -151,7 +149,7 @@ function NotificationItem({
   onRead,
 }: {
   notification: AppNotification;
-  onRead: (id: number) => void;
+  onRead: (id: string) => void;
 }) {
   const Icon = notification.icon;
 

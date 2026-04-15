@@ -13,13 +13,17 @@ export function UnsubscribePage({ token }: { token: string }) {
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
   const [loading, setLoading] = useState(false);
 
-  const handleUnsubscribe = () => {
+  const handleUnsubscribe = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/notifications/unsubscribe/${encodeURIComponent(token)}`);
+      const data = await res.json();
+      setStatus(res.ok && data.valid ? "success" : "error");
+    } catch {
+      setStatus("error");
+    } finally {
       setLoading(false);
-      setStatus("success");
-    }, 1500);
+    }
   };
 
   if (status === "success") {

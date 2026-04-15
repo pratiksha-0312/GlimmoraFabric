@@ -112,7 +112,7 @@ const INITIAL_SERVICES: Service[] = [
   {
     id: "s2", name: "Notification Hub", description: "Email, SMS, Push, In-app and webhook notifications",
     icon: "Bell", status: "Running", version: "1.7.0", endpoints: 12, uptime: "99.95%", latency: "120ms",
-    href: "/notifications/manage", category: "Core", lastDeployed: "2026-03-25 09:15",
+    href: "/notifications", category: "Core", lastDeployed: "2026-03-25 09:15",
     healthCheckUrl: "https://notifications.glimmora.internal/health", healthCheckInterval: "30s", autoRestart: true,
     cpu: 22, memory: 38, dependencies: ["Kafka"],
   },

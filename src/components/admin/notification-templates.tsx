@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -51,7 +51,7 @@ type SortDir = "asc" | "desc";
 // SAMPLE DATA
 // ============================================================================
 
-const SAMPLE_TEMPLATES: NotificationTemplate[] = [
+const _UNUSED: NotificationTemplate[] = [
   { id: "tpl-001", name: "Welcome Email", subject: "Welcome to {{tenant_name}}!", channel: "email", category: "onboarding", status: "active", lastEdited: "2026-04-07 14:30", editedBy: "Vanshika Keswani", version: 3, usageCount: 1245 },
   { id: "tpl-002", name: "Password Reset", subject: "Reset your password", channel: "email", category: "security", status: "active", lastEdited: "2026-04-06 10:15", editedBy: "Vanshika Keswani", version: 5, usageCount: 890 },
   { id: "tpl-003", name: "Invoice Generated", subject: "Your invoice #{{invoice_id}} is ready", channel: "email", category: "billing", status: "active", lastEdited: "2026-04-05 16:45", editedBy: "Pratiksha M.", version: 2, usageCount: 3420 },
@@ -99,7 +99,20 @@ export function NotificationTemplatesPage() {
   const [sortField, setSortField] = useState<SortField>("lastEdited");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [actionMenu, setActionMenu] = useState<string | null>(null);
-  const [templates, setTemplates] = useState(SAMPLE_TEMPLATES);
+  const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/notification-templates");
+        if (!res.ok) return;
+        const data = (await res.json()) as NotificationTemplate[];
+        setTemplates(data);
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
 
   const filtered = useMemo(() => {
     let data = [...templates];

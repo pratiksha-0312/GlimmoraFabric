@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -55,7 +55,7 @@ type SortDir = "asc" | "desc";
 // SAMPLE DATA
 // ============================================================================
 
-const SAMPLE_LOGS: DeliveryLog[] = [
+const _UNUSED_SAMPLE_LOGS: DeliveryLog[] = [
   { id: "dl-001", templateName: "Welcome Email", templateId: "tpl-001", channel: "email", recipient: "rahul.sharma@acme.com", subject: "Welcome to Acme Corp!", status: "delivered", sentAt: "2026-04-07 14:32:10", deliveredAt: "2026-04-07 14:32:12", openedAt: "2026-04-07 14:45:22", errorMessage: null, attempts: 1, tenant: "Acme Corp", triggeredBy: "System" },
   { id: "dl-002", templateName: "Password Reset", templateId: "tpl-002", channel: "email", recipient: "priya@diamondcorp.com", subject: "Reset your password", status: "delivered", sentAt: "2026-04-07 14:28:05", deliveredAt: "2026-04-07 14:28:08", openedAt: "2026-04-07 14:30:11", errorMessage: null, attempts: 1, tenant: "Diamond Corp", triggeredBy: "User Request" },
   { id: "dl-003", templateName: "Two-Factor Code", templateId: "tpl-004", channel: "sms", recipient: "+91 98765 43210", subject: "OTP: 483920", status: "delivered", sentAt: "2026-04-07 14:15:00", deliveredAt: "2026-04-07 14:15:03", openedAt: null, errorMessage: null, attempts: 1, tenant: "Acme Corp", triggeredBy: "Auth System" },
@@ -100,9 +100,25 @@ export function DeliveryLogsPage() {
   const [sortField, setSortField] = useState<SortField>("sentAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedLog, setSelectedLog] = useState<DeliveryLog | null>(null);
+  const [logs, setLogs] = useState<DeliveryLog[]>([]);
+
+  const loadLogs = async () => {
+    try {
+      const res = await fetch("/api/notifications/delivery-logs");
+      if (!res.ok) return;
+      const data = (await res.json()) as DeliveryLog[];
+      setLogs(data);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    loadLogs();
+  }, []);
 
   const filtered = useMemo(() => {
-    let data = [...SAMPLE_LOGS];
+    let data = [...logs];
     if (search) {
       const q = search.toLowerCase();
       data = data.filter(l => l.templateName.toLowerCase().includes(q) || l.recipient.toLowerCase().includes(q) || l.subject.toLowerCase().includes(q));
@@ -114,7 +130,7 @@ export function DeliveryLogsPage() {
       return mul * String(a[sortField]).localeCompare(String(b[sortField]));
     });
     return data;
-  }, [search, channelFilter, statusFilter, sortField, sortDir]);
+  }, [logs, search, channelFilter, statusFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -130,12 +146,12 @@ export function DeliveryLogsPage() {
   };
 
   const stats = useMemo(() => ({
-    total: SAMPLE_LOGS.length,
-    delivered: SAMPLE_LOGS.filter(l => l.status === "delivered" || l.status === "opened").length,
-    failed: SAMPLE_LOGS.filter(l => l.status === "failed" || l.status === "bounced").length,
-    pending: SAMPLE_LOGS.filter(l => l.status === "pending").length,
-    openRate: Math.round((SAMPLE_LOGS.filter(l => l.status === "opened").length / Math.max(1, SAMPLE_LOGS.filter(l => l.status === "delivered" || l.status === "opened").length)) * 100),
-  }), []);
+    total: logs.length,
+    delivered: logs.filter(l => l.status === "delivered" || l.status === "opened").length,
+    failed: logs.filter(l => l.status === "failed" || l.status === "bounced").length,
+    pending: logs.filter(l => l.status === "pending").length,
+    openRate: Math.round((logs.filter(l => l.status === "opened").length / Math.max(1, logs.filter(l => l.status === "delivered" || l.status === "opened").length)) * 100),
+  }), [logs]);
 
   const activeFilters = [channelFilter !== "all", statusFilter !== "all"].filter(Boolean).length;
 
@@ -148,7 +164,7 @@ export function DeliveryLogsPage() {
           <p className="text-sm mt-1" style={{ color: "var(--gf-text-muted)" }}>Track notification delivery status across all channels</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-secondary)" }}>
+          <button onClick={loadLogs} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-secondary)" }}>
             <RefreshCw className="w-4 h-4" /> Refresh
           </button>
           <button className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors" style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-secondary)" }}>

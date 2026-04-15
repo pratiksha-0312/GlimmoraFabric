@@ -47,24 +47,6 @@ const CATEGORY_META: Record<string, { label: string; color: string; icon: Lucide
   deployment: { label: "Deployment", color: "#06b6d4", icon: Activity },
 };
 
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  { id: "n-001", icon: Shield, category: "security", title: "New login detected", description: "Login from Chrome on Windows 11 — IP: 192.168.1.10", timestamp: "2026-04-07 09:42", read: false },
-  { id: "n-002", icon: Users, category: "team", title: "User accepted invitation", description: "dev@glimmora.com joined as Developer in GlimmoraCorp", timestamp: "2026-04-07 09:38", read: false },
-  { id: "n-003", icon: Activity, category: "deployment", title: "Service deployed", description: "auth-service v2.4.1 deployed to production successfully", timestamp: "2026-04-07 09:15", read: false },
-  { id: "n-004", icon: FileText, category: "compliance", title: "Report ready", description: "SOC2 Type II Q1 2026 compliance report generated", timestamp: "2026-04-07 08:30", read: false },
-  { id: "n-005", icon: Bell, category: "system", title: "Maintenance scheduled", description: "Platform maintenance window: Sunday 02:00–04:00 UTC", timestamp: "2026-04-07 08:00", read: true },
-  { id: "n-006", icon: CreditCard, category: "billing", title: "Payment received", description: "Diamond Corp — $4,200 payment processed for Pro plan", timestamp: "2026-04-06 22:15", read: true },
-  { id: "n-007", icon: Shield, category: "security", title: "Failed login attempts", description: "5 failed login attempts from IP 45.33.12.89 — IP blocked", timestamp: "2026-04-06 18:30", read: true },
-  { id: "n-008", icon: AlertTriangle, category: "security", title: "API rate limit exceeded", description: "Token tk_29x hit 890 req/min — rate limiting applied", timestamp: "2026-04-06 16:00", read: true },
-  { id: "n-009", icon: Users, category: "team", title: "Role updated", description: "Rahul Sharma promoted from Member to Admin", timestamp: "2026-04-06 14:00", read: true },
-  { id: "n-010", icon: Activity, category: "deployment", title: "Build completed", description: "Frontend build #1284 completed in 2m 14s — no errors", timestamp: "2026-04-06 11:30", read: true },
-  { id: "n-011", icon: FileText, category: "compliance", title: "Retention policy executed", description: "Purged 3,280 expired session records (90-day policy)", timestamp: "2026-04-06 02:00", read: true },
-  { id: "n-012", icon: CreditCard, category: "billing", title: "Invoice generated", description: "Acme Corp — INV-2026-0901 generated for $2,100", timestamp: "2026-04-05 17:00", read: true },
-  { id: "n-013", icon: Shield, category: "security", title: "SSL certificate renewed", description: "api.glimmora.com certificate auto-renewed, expires 2027-04-04", timestamp: "2026-04-05 10:00", read: true },
-  { id: "n-014", icon: Settings, category: "system", title: "Feature flag updated", description: "dark_mode_v2 enabled for 50% of users in production", timestamp: "2026-04-05 09:00", read: true },
-  { id: "n-015", icon: Users, category: "team", title: "User removed", description: "Amit Patel removed from tenant GlimmoraCorp", timestamp: "2026-04-04 16:30", read: true },
-];
-
 const PAGE_SIZE = 8;
 
 // ============================================================================
@@ -98,40 +80,95 @@ function CustomSelect({ value, onChange, options }: { value: string; onChange: (
 // MAIN
 // ============================================================================
 
+const TYPE_TO_CATEGORY: Record<string, Notification["category"]> = {
+  task_approved: "team",
+  task_escalated: "security",
+  new_assignment: "team",
+  workflow_completed: "deployment",
+  comment_added: "team",
+  task_due_soon: "system",
+  approval_required: "security",
+};
+
+interface ServerItem {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  unread: boolean;
+  createdAt: string;
+}
+
+function mapServerItem(s: ServerItem): Notification {
+  const category = TYPE_TO_CATEGORY[s.type] ?? "system";
+  return {
+    id: s.id,
+    icon: CATEGORY_META[category].icon,
+    category,
+    title: s.title,
+    description: s.description,
+    timestamp: s.createdAt.replace("T", " ").slice(0, 16),
+    read: !s.unread,
+  };
+}
+
 export function AllNotificationsPage() {
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [readFilter, setReadFilter] = useState("All");
   const [page, setPage] = useState(1);
   const [wsConnected, setWsConnected] = useState(false);
 
-  // Simulate WebSocket connection
   useEffect(() => {
-    const timer = setTimeout(() => setWsConnected(true), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    let ws: WebSocket | null = null;
 
-  // Simulate real-time notification arriving
-  useEffect(() => {
-    if (!wsConnected) return;
-    const interval = setInterval(() => {
-      const cats = Object.keys(CATEGORY_META);
-      const cat = cats[Math.floor(Math.random() * cats.length)] as Notification["category"];
-      const meta = CATEGORY_META[cat];
-      const nn: Notification = {
-        id: `n-rt-${Date.now()}`,
-        icon: meta.icon,
-        category: cat,
-        title: `Real-time: ${meta.label} update`,
-        description: `Live notification received via WebSocket at ${new Date().toLocaleTimeString()}`,
-        timestamp: new Date().toLocaleString("sv-SE").slice(0, 16),
-        read: false,
-      };
-      setNotifications((prev) => [nn, ...prev]);
-    }, 30000); // every 30s
-    return () => clearInterval(interval);
-  }, [wsConnected]);
+    const load = async () => {
+      try {
+        const res = await fetch("/api/notifications?pageSize=100");
+        if (!res.ok) return;
+        const data = (await res.json()) as { items: ServerItem[] };
+        setNotifications(data.items.map(mapServerItem));
+      } catch {
+        // ignore
+      }
+    };
+
+    const connect = () => {
+      try {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        ws = new WebSocket(`${protocol}//${window.location.host}/ws/notifications`);
+        ws.onopen = () => setWsConnected(true);
+        ws.onclose = () => setWsConnected(false);
+        ws.onerror = () => setWsConnected(false);
+        ws.onmessage = (ev) => {
+          try {
+            const msg = JSON.parse(ev.data);
+            if (msg.type === "read") {
+              setNotifications((prev) =>
+                prev.map((n) => (n.id === msg.id ? { ...n, read: true } : n))
+              );
+            } else if (msg.type === "read_all") {
+              setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+            } else if (msg.type === "created" && msg.notification) {
+              setNotifications((prev) => [mapServerItem(msg.notification), ...prev]);
+            }
+          } catch {
+            // ignore
+          }
+        };
+      } catch {
+        // ignore
+      }
+    };
+
+    load();
+    connect();
+
+    return () => {
+      ws?.close();
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     let list = notifications;
@@ -148,8 +185,14 @@ export function AllNotificationsPage() {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const markAsRead = (id: string) => setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
-  const markAllRead = () => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markAsRead = async (id: string) => {
+    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+    await fetch(`/api/notifications/${id}/read`, { method: "PUT" });
+  };
+  const markAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    await fetch(`/api/notifications/all/read`, { method: "PUT" });
+  };
 
   return (
     <div className="space-y-6">

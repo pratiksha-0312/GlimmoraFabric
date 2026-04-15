@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -172,18 +172,76 @@ export function TemplateEditorPage({ templateId }: { templateId: string }) {
   const [viewMode, setViewMode] = useState<"visual" | "html">("visual");
   const [showVariables, setShowVariables] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [showTest, setShowTest] = useState(false);
+
+  useEffect(() => {
+    if (templateId === "new") return;
+    (async () => {
+      try {
+        const res = await fetch("/api/notification-templates");
+        if (!res.ok) return;
+        const list = (await res.json()) as TemplateData[];
+        const found = list.find((t) => t.id === templateId);
+        if (found) setTemplate({ ...template, ...found });
+      } catch {
+        // ignore
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateId]);
 
   const update = useCallback((patch: Partial<TemplateData>) => {
     setTemplate(prev => ({ ...prev, ...patch }));
     setSaved(false);
   }, []);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/notification-templates/${templateId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: template.name,
+          subject: template.subject,
+          channel: template.channel,
+          category: template.category,
+          status: template.status,
+          bodyHtml: template.bodyHtml,
+          bodyText: template.bodyText,
+          variables: template.variables,
+        }),
+      });
+      if (res.ok) {
+        const updated = (await res.json()) as TemplateData;
+        setTemplate((prev) => ({ ...prev, ...updated }));
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } finally {
+      setSaving(false);
+    }
   };
+
+  useEffect(() => {
+    if (!showPreview || templateId === "new") return;
+    const t = setTimeout(() => {
+      fetch(`/api/notification-templates/${templateId}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: template.subject,
+          body: template.channel === "email" ? template.bodyHtml : template.bodyText,
+          channel: template.channel,
+        }),
+      }).catch(() => {
+        // ignore — local preview still renders
+      });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [showPreview, templateId, template.subject, template.bodyHtml, template.bodyText, template.channel]);
 
   const insertVariable = (varName: string) => {
     const tag = `{{${varName}}}`;
@@ -220,8 +278,8 @@ export function TemplateEditorPage({ templateId }: { templateId: string }) {
               <TestTube className="w-3.5 h-3.5" /> Test Send
             </button>
           )}
-          <button onClick={handleSave} className="inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium text-white transition-colors" style={{ backgroundColor: saved ? "#059669" : "var(--gf-accent)" }}>
-            {saved ? <><CheckCircle2 className="w-3.5 h-3.5" /> Saved</> : <><Save className="w-3.5 h-3.5" /> Save</>}
+          <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium text-white transition-colors disabled:opacity-60" style={{ backgroundColor: saved ? "#059669" : "var(--gf-accent)" }}>
+            {saving ? "Saving..." : saved ? <><CheckCircle2 className="w-3.5 h-3.5" /> Saved</> : <><Save className="w-3.5 h-3.5" /> Save</>}
           </button>
         </div>
       </div>

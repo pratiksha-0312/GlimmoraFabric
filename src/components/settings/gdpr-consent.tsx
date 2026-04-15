@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Shield,
   Save,
@@ -56,15 +56,46 @@ function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (
 export function GdprConsentPage() {
   const [consents, setConsents] = useState(INITIAL_CONSENTS);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/consent");
+        if (!res.ok) return;
+        const data = (await res.json()) as { items: { id: string; enabled: boolean; lastUpdated: string }[] };
+        setConsents((prev) =>
+          prev.map((c) => {
+            const s = data.items.find((x) => x.id === c.id);
+            return s ? { ...c, enabled: s.enabled, lastUpdated: s.lastUpdated } : c;
+          })
+        );
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
 
   const toggleConsent = (id: string) => {
     setConsents((prev) => prev.map((c) => c.id === id && !c.required ? { ...c, enabled: !c.enabled, lastUpdated: new Date().toISOString().slice(0, 10) } : c));
     setSaved(false);
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await fetch("/api/consent", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: consents.map((c) => ({ id: c.id, enabled: c.enabled, lastUpdated: c.lastUpdated })),
+        }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -75,9 +106,9 @@ export function GdprConsentPage() {
           <h1 className="text-2xl font-bold" style={{ color: "var(--gf-text-primary)" }}>Privacy & Consent</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--gf-text-secondary)" }}>Manage your GDPR consent preferences and data privacy settings</p>
         </div>
-        <button onClick={handleSave} className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white" style={{ backgroundColor: saved ? "#22c55e" : "var(--gf-accent)" }}>
+        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60" style={{ backgroundColor: saved ? "#22c55e" : "var(--gf-accent)" }}>
           {saved ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-          {saved ? "Saved!" : "Save Preferences"}
+          {saving ? "Saving..." : saved ? "Saved!" : "Save Preferences"}
         </button>
       </div>
 
