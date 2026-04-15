@@ -77,8 +77,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setAccentColorState(color);
   }, []);
 
-  if (!mounted) return null;
-
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, accentColor, setAccentColor }}>
       {children}

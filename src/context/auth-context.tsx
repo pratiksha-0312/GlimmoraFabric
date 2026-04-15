@@ -85,10 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Avoid rendering children until we have checked localStorage so the UI
-  // does not flash between unauthenticated and authenticated states.
-  if (!isReady) return null;
-
   return (
     <AuthContext.Provider
       value={{
