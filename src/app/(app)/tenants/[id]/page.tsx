@@ -181,7 +181,7 @@ export default function TenantDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => router.push(`/tenants/${tenantId}/edit`)}
+              onClick={() => router.push(`/tenants/${tenantId}/settings`)}
               className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:opacity-80"
               style={{ borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" }}
             >

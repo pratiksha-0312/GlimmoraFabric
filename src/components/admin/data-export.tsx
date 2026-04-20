@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FileDown,
   Plus,
@@ -184,9 +184,20 @@ function Pagination({ current, total, onChange }: { current: number; total: numb
 // ============================================================================
 
 export function DataExportPage() {
-  const [exports, setExports] = useState(INITIAL_EXPORTS);
+  const [exports, setExports] = useState<ExportRequest[]>(INITIAL_EXPORTS);
   const [showModal, setShowModal] = useState(false);
   const [page, setPage] = useState(1);
+
+  const refresh = () => {
+    fetch("/api/compliance/data-export")
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data: ExportRequest[]) => setExports(data))
+      .catch(() => { /* ignore */ });
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const PAGE_SIZE = 5;
   const totalPages = Math.max(1, Math.ceil(exports.length / PAGE_SIZE));
@@ -200,34 +211,21 @@ export function DataExportPage() {
     totalSize: exports.filter((e) => e.fileSize).reduce((a, e) => a + parseFloat(e.fileSize!), 0).toFixed(1),
   };
 
-  const handleNewExport = (data: { name: string; dataScope: string; format: ExportRequest["format"]; reason: string }) => {
-    const nr: ExportRequest = {
-      id: `exp-${Date.now()}`,
-      name: data.name,
-      dataScope: data.dataScope,
-      format: data.format,
-      status: "Queued",
-      requestedBy: "Current User",
-      requestedAt: new Date().toLocaleString("sv-SE", { hour12: false }).replace("T", " ").slice(0, 16),
-      completedAt: null,
-      fileSize: null,
-      progress: 0,
-      reason: data.reason,
-    };
-    setExports((prev) => [nr, ...prev]);
+  const handleNewExport = async (data: { name: string; dataScope: string; format: ExportRequest["format"]; reason: string }) => {
     setShowModal(false);
-
-    // Simulate progress
-    const interval = setInterval(() => {
-      setExports((prev) => prev.map((e) => {
-        if (e.id !== nr.id) return e;
-        if (e.progress >= 100) { clearInterval(interval); return { ...e, status: "Completed" as const, progress: 100, completedAt: new Date().toLocaleString("sv-SE", { hour12: false }).slice(0, 16), fileSize: `${(1 + Math.random() * 20).toFixed(1)} MB` }; }
-        return { ...e, status: "Processing" as const, progress: Math.min(100, e.progress + 15 + Math.floor(Math.random() * 10)) };
-      }));
-    }, 800);
+    const res = await fetch("/api/compliance/data-export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return;
+    refresh();
+    // Server moves to Completed ~3s later; poll once to pick it up
+    setTimeout(refresh, 3500);
   };
 
   const handleDownload = (exp: ExportRequest) => {
+    // No real file produced server-side; synthesize a client-side placeholder
     const content = `Data Export: ${exp.name}\nScope: ${exp.dataScope}\nFormat: ${exp.format}\nRequested: ${exp.requestedAt}\nReason: ${exp.reason}\n\nThis is a simulated export file.`;
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);

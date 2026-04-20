@@ -29,13 +29,16 @@ export type DocumentMinAggregateOutputType = {
   name: string | null
   templateId: string | null
   tenantId: string | null
+  tenant: string | null
   status: string | null
   format: string | null
   size: string | null
   createdBy: string | null
+  auditJson: string | null
   signedAt: Date | null
   signedBy: string | null
   createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type DocumentMaxAggregateOutputType = {
@@ -43,13 +46,16 @@ export type DocumentMaxAggregateOutputType = {
   name: string | null
   templateId: string | null
   tenantId: string | null
+  tenant: string | null
   status: string | null
   format: string | null
   size: string | null
   createdBy: string | null
+  auditJson: string | null
   signedAt: Date | null
   signedBy: string | null
   createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type DocumentCountAggregateOutputType = {
@@ -57,13 +63,16 @@ export type DocumentCountAggregateOutputType = {
   name: number
   templateId: number
   tenantId: number
+  tenant: number
   status: number
   format: number
   size: number
   createdBy: number
+  auditJson: number
   signedAt: number
   signedBy: number
   createdAt: number
+  updatedAt: number
   _all: number
 }
 
@@ -73,13 +82,16 @@ export type DocumentMinAggregateInputType = {
   name?: true
   templateId?: true
   tenantId?: true
+  tenant?: true
   status?: true
   format?: true
   size?: true
   createdBy?: true
+  auditJson?: true
   signedAt?: true
   signedBy?: true
   createdAt?: true
+  updatedAt?: true
 }
 
 export type DocumentMaxAggregateInputType = {
@@ -87,13 +99,16 @@ export type DocumentMaxAggregateInputType = {
   name?: true
   templateId?: true
   tenantId?: true
+  tenant?: true
   status?: true
   format?: true
   size?: true
   createdBy?: true
+  auditJson?: true
   signedAt?: true
   signedBy?: true
   createdAt?: true
+  updatedAt?: true
 }
 
 export type DocumentCountAggregateInputType = {
@@ -101,13 +116,16 @@ export type DocumentCountAggregateInputType = {
   name?: true
   templateId?: true
   tenantId?: true
+  tenant?: true
   status?: true
   format?: true
   size?: true
   createdBy?: true
+  auditJson?: true
   signedAt?: true
   signedBy?: true
   createdAt?: true
+  updatedAt?: true
   _all?: true
 }
 
@@ -188,13 +206,16 @@ export type DocumentGroupByOutputType = {
   name: string
   templateId: string | null
   tenantId: string | null
+  tenant: string
   status: string
   format: string
   size: string
   createdBy: string
+  auditJson: string
   signedAt: Date | null
   signedBy: string | null
   createdAt: Date
+  updatedAt: Date
   _count: DocumentCountAggregateOutputType | null
   _min: DocumentMinAggregateOutputType | null
   _max: DocumentMaxAggregateOutputType | null
@@ -223,14 +244,18 @@ export type DocumentWhereInput = {
   name?: Prisma.StringFilter<"Document"> | string
   templateId?: Prisma.StringNullableFilter<"Document"> | string | null
   tenantId?: Prisma.StringNullableFilter<"Document"> | string | null
+  tenant?: Prisma.StringFilter<"Document"> | string
   status?: Prisma.StringFilter<"Document"> | string
   format?: Prisma.StringFilter<"Document"> | string
   size?: Prisma.StringFilter<"Document"> | string
   createdBy?: Prisma.StringFilter<"Document"> | string
+  auditJson?: Prisma.StringFilter<"Document"> | string
   signedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
   signedBy?: Prisma.StringNullableFilter<"Document"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Document"> | Date | string
   template?: Prisma.XOR<Prisma.DocumentTemplateNullableScalarRelationFilter, Prisma.DocumentTemplateWhereInput> | null
+  signatures?: Prisma.DocumentSignatureListRelationFilter
 }
 
 export type DocumentOrderByWithRelationInput = {
@@ -238,14 +263,18 @@ export type DocumentOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   templateId?: Prisma.SortOrderInput | Prisma.SortOrder
   tenantId?: Prisma.SortOrderInput | Prisma.SortOrder
+  tenant?: Prisma.SortOrder
   status?: Prisma.SortOrder
   format?: Prisma.SortOrder
   size?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  auditJson?: Prisma.SortOrder
   signedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   signedBy?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   template?: Prisma.DocumentTemplateOrderByWithRelationInput
+  signatures?: Prisma.DocumentSignatureOrderByRelationAggregateInput
 }
 
 export type DocumentWhereUniqueInput = Prisma.AtLeast<{
@@ -256,14 +285,18 @@ export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Document"> | string
   templateId?: Prisma.StringNullableFilter<"Document"> | string | null
   tenantId?: Prisma.StringNullableFilter<"Document"> | string | null
+  tenant?: Prisma.StringFilter<"Document"> | string
   status?: Prisma.StringFilter<"Document"> | string
   format?: Prisma.StringFilter<"Document"> | string
   size?: Prisma.StringFilter<"Document"> | string
   createdBy?: Prisma.StringFilter<"Document"> | string
+  auditJson?: Prisma.StringFilter<"Document"> | string
   signedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
   signedBy?: Prisma.StringNullableFilter<"Document"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Document"> | Date | string
   template?: Prisma.XOR<Prisma.DocumentTemplateNullableScalarRelationFilter, Prisma.DocumentTemplateWhereInput> | null
+  signatures?: Prisma.DocumentSignatureListRelationFilter
 }, "id">
 
 export type DocumentOrderByWithAggregationInput = {
@@ -271,13 +304,16 @@ export type DocumentOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   templateId?: Prisma.SortOrderInput | Prisma.SortOrder
   tenantId?: Prisma.SortOrderInput | Prisma.SortOrder
+  tenant?: Prisma.SortOrder
   status?: Prisma.SortOrder
   format?: Prisma.SortOrder
   size?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  auditJson?: Prisma.SortOrder
   signedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   signedBy?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   _count?: Prisma.DocumentCountOrderByAggregateInput
   _max?: Prisma.DocumentMaxOrderByAggregateInput
   _min?: Prisma.DocumentMinOrderByAggregateInput
@@ -291,27 +327,34 @@ export type DocumentScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Document"> | string
   templateId?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
   tenantId?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  tenant?: Prisma.StringWithAggregatesFilter<"Document"> | string
   status?: Prisma.StringWithAggregatesFilter<"Document"> | string
   format?: Prisma.StringWithAggregatesFilter<"Document"> | string
   size?: Prisma.StringWithAggregatesFilter<"Document"> | string
   createdBy?: Prisma.StringWithAggregatesFilter<"Document"> | string
+  auditJson?: Prisma.StringWithAggregatesFilter<"Document"> | string
   signedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Document"> | Date | string | null
   signedBy?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Document"> | Date | string
+  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Document"> | Date | string
 }
 
 export type DocumentCreateInput = {
   id?: string
   name: string
   tenantId?: string | null
+  tenant?: string
   status?: string
   format?: string
   size?: string
   createdBy: string
+  auditJson?: string
   signedAt?: Date | string | null
   signedBy?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
   template?: Prisma.DocumentTemplateCreateNestedOneWithoutDocumentsInput
+  signatures?: Prisma.DocumentSignatureCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateInput = {
@@ -319,27 +362,35 @@ export type DocumentUncheckedCreateInput = {
   name: string
   templateId?: string | null
   tenantId?: string | null
+  tenant?: string
   status?: string
   format?: string
   size?: string
   createdBy: string
+  auditJson?: string
   signedAt?: Date | string | null
   signedBy?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
+  signatures?: Prisma.DocumentSignatureUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   format?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  auditJson?: Prisma.StringFieldUpdateOperationsInput | string
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   signedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   template?: Prisma.DocumentTemplateUpdateOneWithoutDocumentsNestedInput
+  signatures?: Prisma.DocumentSignatureUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateInput = {
@@ -347,13 +398,17 @@ export type DocumentUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   format?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  auditJson?: Prisma.StringFieldUpdateOperationsInput | string
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   signedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  signatures?: Prisma.DocumentSignatureUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateManyInput = {
@@ -361,26 +416,32 @@ export type DocumentCreateManyInput = {
   name: string
   templateId?: string | null
   tenantId?: string | null
+  tenant?: string
   status?: string
   format?: string
   size?: string
   createdBy: string
+  auditJson?: string
   signedAt?: Date | string | null
   signedBy?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type DocumentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   format?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  auditJson?: Prisma.StringFieldUpdateOperationsInput | string
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   signedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DocumentUncheckedUpdateManyInput = {
@@ -388,13 +449,16 @@ export type DocumentUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   format?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  auditJson?: Prisma.StringFieldUpdateOperationsInput | string
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   signedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DocumentCountOrderByAggregateInput = {
@@ -402,13 +466,16 @@ export type DocumentCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
+  tenant?: Prisma.SortOrder
   status?: Prisma.SortOrder
   format?: Prisma.SortOrder
   size?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  auditJson?: Prisma.SortOrder
   signedAt?: Prisma.SortOrder
   signedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type DocumentMaxOrderByAggregateInput = {
@@ -416,13 +483,16 @@ export type DocumentMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
+  tenant?: Prisma.SortOrder
   status?: Prisma.SortOrder
   format?: Prisma.SortOrder
   size?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  auditJson?: Prisma.SortOrder
   signedAt?: Prisma.SortOrder
   signedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type DocumentMinOrderByAggregateInput = {
@@ -430,13 +500,21 @@ export type DocumentMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
+  tenant?: Prisma.SortOrder
   status?: Prisma.SortOrder
   format?: Prisma.SortOrder
   size?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  auditJson?: Prisma.SortOrder
   signedAt?: Prisma.SortOrder
   signedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+}
+
+export type DocumentScalarRelationFilter = {
+  is?: Prisma.DocumentWhereInput
+  isNot?: Prisma.DocumentWhereInput
 }
 
 export type DocumentListRelationFilter = {
@@ -447,6 +525,20 @@ export type DocumentListRelationFilter = {
 
 export type DocumentOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type DocumentCreateNestedOneWithoutSignaturesInput = {
+  create?: Prisma.XOR<Prisma.DocumentCreateWithoutSignaturesInput, Prisma.DocumentUncheckedCreateWithoutSignaturesInput>
+  connectOrCreate?: Prisma.DocumentCreateOrConnectWithoutSignaturesInput
+  connect?: Prisma.DocumentWhereUniqueInput
+}
+
+export type DocumentUpdateOneRequiredWithoutSignaturesNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentCreateWithoutSignaturesInput, Prisma.DocumentUncheckedCreateWithoutSignaturesInput>
+  connectOrCreate?: Prisma.DocumentCreateOrConnectWithoutSignaturesInput
+  upsert?: Prisma.DocumentUpsertWithoutSignaturesInput
+  connect?: Prisma.DocumentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentUpdateToOneWithWhereWithoutSignaturesInput, Prisma.DocumentUpdateWithoutSignaturesInput>, Prisma.DocumentUncheckedUpdateWithoutSignaturesInput>
 }
 
 export type DocumentCreateNestedManyWithoutTemplateInput = {
@@ -491,30 +583,122 @@ export type DocumentUncheckedUpdateManyWithoutTemplateNestedInput = {
   deleteMany?: Prisma.DocumentScalarWhereInput | Prisma.DocumentScalarWhereInput[]
 }
 
-export type DocumentCreateWithoutTemplateInput = {
+export type DocumentCreateWithoutSignaturesInput = {
   id?: string
   name: string
   tenantId?: string | null
+  tenant?: string
   status?: string
   format?: string
   size?: string
   createdBy: string
+  auditJson?: string
   signedAt?: Date | string | null
   signedBy?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutDocumentsInput
+}
+
+export type DocumentUncheckedCreateWithoutSignaturesInput = {
+  id?: string
+  name: string
+  templateId?: string | null
+  tenantId?: string | null
+  tenant?: string
+  status?: string
+  format?: string
+  size?: string
+  createdBy: string
+  auditJson?: string
+  signedAt?: Date | string | null
+  signedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type DocumentCreateOrConnectWithoutSignaturesInput = {
+  where: Prisma.DocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentCreateWithoutSignaturesInput, Prisma.DocumentUncheckedCreateWithoutSignaturesInput>
+}
+
+export type DocumentUpsertWithoutSignaturesInput = {
+  update: Prisma.XOR<Prisma.DocumentUpdateWithoutSignaturesInput, Prisma.DocumentUncheckedUpdateWithoutSignaturesInput>
+  create: Prisma.XOR<Prisma.DocumentCreateWithoutSignaturesInput, Prisma.DocumentUncheckedCreateWithoutSignaturesInput>
+  where?: Prisma.DocumentWhereInput
+}
+
+export type DocumentUpdateToOneWithWhereWithoutSignaturesInput = {
+  where?: Prisma.DocumentWhereInput
+  data: Prisma.XOR<Prisma.DocumentUpdateWithoutSignaturesInput, Prisma.DocumentUncheckedUpdateWithoutSignaturesInput>
+}
+
+export type DocumentUpdateWithoutSignaturesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  format?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  auditJson?: Prisma.StringFieldUpdateOperationsInput | string
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  template?: Prisma.DocumentTemplateUpdateOneWithoutDocumentsNestedInput
+}
+
+export type DocumentUncheckedUpdateWithoutSignaturesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  format?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  auditJson?: Prisma.StringFieldUpdateOperationsInput | string
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type DocumentCreateWithoutTemplateInput = {
+  id?: string
+  name: string
+  tenantId?: string | null
+  tenant?: string
+  status?: string
+  format?: string
+  size?: string
+  createdBy: string
+  auditJson?: string
+  signedAt?: Date | string | null
+  signedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  signatures?: Prisma.DocumentSignatureCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutTemplateInput = {
   id?: string
   name: string
   tenantId?: string | null
+  tenant?: string
   status?: string
   format?: string
   size?: string
   createdBy: string
+  auditJson?: string
   signedAt?: Date | string | null
   signedBy?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
+  signatures?: Prisma.DocumentSignatureUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutTemplateInput = {
@@ -551,67 +735,113 @@ export type DocumentScalarWhereInput = {
   name?: Prisma.StringFilter<"Document"> | string
   templateId?: Prisma.StringNullableFilter<"Document"> | string | null
   tenantId?: Prisma.StringNullableFilter<"Document"> | string | null
+  tenant?: Prisma.StringFilter<"Document"> | string
   status?: Prisma.StringFilter<"Document"> | string
   format?: Prisma.StringFilter<"Document"> | string
   size?: Prisma.StringFilter<"Document"> | string
   createdBy?: Prisma.StringFilter<"Document"> | string
+  auditJson?: Prisma.StringFilter<"Document"> | string
   signedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
   signedBy?: Prisma.StringNullableFilter<"Document"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Document"> | Date | string
 }
 
 export type DocumentCreateManyTemplateInput = {
   id?: string
   name: string
   tenantId?: string | null
+  tenant?: string
   status?: string
   format?: string
   size?: string
   createdBy: string
+  auditJson?: string
   signedAt?: Date | string | null
   signedBy?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type DocumentUpdateWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   format?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  auditJson?: Prisma.StringFieldUpdateOperationsInput | string
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   signedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  signatures?: Prisma.DocumentSignatureUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   format?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  auditJson?: Prisma.StringFieldUpdateOperationsInput | string
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   signedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  signatures?: Prisma.DocumentSignatureUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateManyWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   format?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  auditJson?: Prisma.StringFieldUpdateOperationsInput | string
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   signedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+
+/**
+ * Count Type DocumentCountOutputType
+ */
+
+export type DocumentCountOutputType = {
+  signatures: number
+}
+
+export type DocumentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  signatures?: boolean | DocumentCountOutputTypeCountSignaturesArgs
+}
+
+/**
+ * DocumentCountOutputType without action
+ */
+export type DocumentCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentCountOutputType
+   */
+  select?: Prisma.DocumentCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * DocumentCountOutputType without action
+ */
+export type DocumentCountOutputTypeCountSignaturesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentSignatureWhereInput
+}
 
 
 export type DocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -619,14 +849,19 @@ export type DocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   name?: boolean
   templateId?: boolean
   tenantId?: boolean
+  tenant?: boolean
   status?: boolean
   format?: boolean
   size?: boolean
   createdBy?: boolean
+  auditJson?: boolean
   signedAt?: boolean
   signedBy?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   template?: boolean | Prisma.Document$templateArgs<ExtArgs>
+  signatures?: boolean | Prisma.Document$signaturesArgs<ExtArgs>
+  _count?: boolean | Prisma.DocumentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
 export type DocumentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -634,13 +869,16 @@ export type DocumentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   name?: boolean
   templateId?: boolean
   tenantId?: boolean
+  tenant?: boolean
   status?: boolean
   format?: boolean
   size?: boolean
   createdBy?: boolean
+  auditJson?: boolean
   signedAt?: boolean
   signedBy?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   template?: boolean | Prisma.Document$templateArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
@@ -649,13 +887,16 @@ export type DocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   name?: boolean
   templateId?: boolean
   tenantId?: boolean
+  tenant?: boolean
   status?: boolean
   format?: boolean
   size?: boolean
   createdBy?: boolean
+  auditJson?: boolean
   signedAt?: boolean
   signedBy?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   template?: boolean | Prisma.Document$templateArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
@@ -664,18 +905,23 @@ export type DocumentSelectScalar = {
   name?: boolean
   templateId?: boolean
   tenantId?: boolean
+  tenant?: boolean
   status?: boolean
   format?: boolean
   size?: boolean
   createdBy?: boolean
+  auditJson?: boolean
   signedAt?: boolean
   signedBy?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
 }
 
-export type DocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "templateId" | "tenantId" | "status" | "format" | "size" | "createdBy" | "signedAt" | "signedBy" | "createdAt", ExtArgs["result"]["document"]>
+export type DocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "templateId" | "tenantId" | "tenant" | "status" | "format" | "size" | "createdBy" | "auditJson" | "signedAt" | "signedBy" | "createdAt" | "updatedAt", ExtArgs["result"]["document"]>
 export type DocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   template?: boolean | Prisma.Document$templateArgs<ExtArgs>
+  signatures?: boolean | Prisma.Document$signaturesArgs<ExtArgs>
+  _count?: boolean | Prisma.DocumentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DocumentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   template?: boolean | Prisma.Document$templateArgs<ExtArgs>
@@ -688,19 +934,23 @@ export type $DocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   name: "Document"
   objects: {
     template: Prisma.$DocumentTemplatePayload<ExtArgs> | null
+    signatures: Prisma.$DocumentSignaturePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     name: string
     templateId: string | null
     tenantId: string | null
+    tenant: string
     status: string
     format: string
     size: string
     createdBy: string
+    auditJson: string
     signedAt: Date | null
     signedBy: string | null
     createdAt: Date
+    updatedAt: Date
   }, ExtArgs["result"]["document"]>
   composites: {}
 }
@@ -1096,6 +1346,7 @@ readonly fields: DocumentFieldRefs;
 export interface Prisma__DocumentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   template<T extends Prisma.Document$templateArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$templateArgs<ExtArgs>>): Prisma.Prisma__DocumentTemplateClient<runtime.Types.Result.GetResult<Prisma.$DocumentTemplatePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  signatures<T extends Prisma.Document$signaturesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$signaturesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentSignaturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1129,13 +1380,16 @@ export interface DocumentFieldRefs {
   readonly name: Prisma.FieldRef<"Document", 'String'>
   readonly templateId: Prisma.FieldRef<"Document", 'String'>
   readonly tenantId: Prisma.FieldRef<"Document", 'String'>
+  readonly tenant: Prisma.FieldRef<"Document", 'String'>
   readonly status: Prisma.FieldRef<"Document", 'String'>
   readonly format: Prisma.FieldRef<"Document", 'String'>
   readonly size: Prisma.FieldRef<"Document", 'String'>
   readonly createdBy: Prisma.FieldRef<"Document", 'String'>
+  readonly auditJson: Prisma.FieldRef<"Document", 'String'>
   readonly signedAt: Prisma.FieldRef<"Document", 'DateTime'>
   readonly signedBy: Prisma.FieldRef<"Document", 'String'>
   readonly createdAt: Prisma.FieldRef<"Document", 'DateTime'>
+  readonly updatedAt: Prisma.FieldRef<"Document", 'DateTime'>
 }
     
 
@@ -1553,6 +1807,30 @@ export type Document$templateArgs<ExtArgs extends runtime.Types.Extensions.Inter
    */
   include?: Prisma.DocumentTemplateInclude<ExtArgs> | null
   where?: Prisma.DocumentTemplateWhereInput
+}
+
+/**
+ * Document.signatures
+ */
+export type Document$signaturesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentSignature
+   */
+  select?: Prisma.DocumentSignatureSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentSignature
+   */
+  omit?: Prisma.DocumentSignatureOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentSignatureInclude<ExtArgs> | null
+  where?: Prisma.DocumentSignatureWhereInput
+  orderBy?: Prisma.DocumentSignatureOrderByWithRelationInput | Prisma.DocumentSignatureOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentSignatureWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentSignatureScalarFieldEnum | Prisma.DocumentSignatureScalarFieldEnum[]
 }
 
 /**

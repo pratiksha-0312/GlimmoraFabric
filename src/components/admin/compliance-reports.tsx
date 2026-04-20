@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Shield,
@@ -208,7 +208,17 @@ function Pagination({ current, total, onChange }: { current: number; total: numb
 // ============================================================================
 
 export function ComplianceReportsPage() {
-  const [reports, setReports] = useState(INITIAL_REPORTS);
+  const [reports, setReports] = useState<ComplianceReport[]>(INITIAL_REPORTS);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/compliance/reports")
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data: ComplianceReport[]) => { if (!cancelled) setReports(data); })
+      .catch(() => { /* keep fallback sample data */ });
+    return () => { cancelled = true; };
+  }, []);
+
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -235,40 +245,31 @@ export function ComplianceReportsPage() {
     avgScore: Math.round(reports.filter((r) => r.score > 0).reduce((a, r) => a + r.score, 0) / Math.max(1, reports.filter((r) => r.score > 0).length)),
   };
 
-  const handleGenerate = (data: { name: string; type: ComplianceReport["type"]; framework: string; period: string }) => {
-    const nr: ComplianceReport = {
-      id: `cr-${Date.now()}`,
-      name: data.name,
-      type: data.type,
-      status: "Pending",
-      date: new Date().toISOString().slice(0, 10),
-      size: "—",
-      findings: 0,
-      score: 0,
-      generatedBy: "Current User",
-      framework: data.framework,
-      period: data.period,
-    };
-    setReports((prev) => [nr, ...prev]);
+  const handleGenerate = async (data: { name: string; type: ComplianceReport["type"]; framework: string; period: string }) => {
     setGenerateModal(false);
-    setTimeout(() => {
-      setReports((prev) => prev.map((r) => r.id === nr.id ? { ...r, status: "Generated" as const, size: `${(1 + Math.random() * 3).toFixed(1)} MB`, score: 90 + Math.floor(Math.random() * 10), findings: Math.floor(Math.random() * 3) } : r));
-    }, 3000);
+    const res = await fetch("/api/compliance/reports/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return;
+    const created = (await res.json()) as ComplianceReport;
+    setReports((prev) => [created, ...prev]);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    setReports((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+    const id = deleteTarget.id;
     setDeleteTarget(null);
+    await fetch(`/api/compliance/reports/${id}`, { method: "DELETE" });
+    setReports((prev) => prev.filter((r) => r.id !== id));
   };
 
   const handleDownload = (report: ComplianceReport) => {
-    const content = `Compliance Report: ${report.name}\nType: ${report.type}\nFramework: ${report.framework}\nPeriod: ${report.period}\nDate: ${report.date}\nScore: ${report.score}%\nFindings: ${report.findings}\n\nThis is a simulated report download.`;
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `${report.name.replace(/\s+/g, "-").toLowerCase()}.txt`; a.click();
-    URL.revokeObjectURL(url);
+    a.href = `/api/compliance/reports/${report.id}/pdf`;
+    a.download = `${report.name.replace(/\s+/g, "-").toLowerCase()}.txt`;
+    a.click();
   };
 
   return (

@@ -53,7 +53,7 @@ type SortField = "timestamp" | "actor" | "action" | "entity";
 type SortDir = "asc" | "desc";
 
 // ============================================================================
-// SAMPLE DATA
+// SAMPLE DATA (fallback shown until /api/audit-logs responds)
 // ============================================================================
 
 const SAMPLE_LOGS: AuditLog[] = [
@@ -80,8 +80,6 @@ const SAMPLE_LOGS: AuditLog[] = [
 ];
 
 const ALL_ACTIONS: AuditLog["action"][] = ["Created", "Updated", "Deleted", "Accessed", "Exported", "Login", "Logout", "Permission Change", "Config Change"];
-const ALL_ENTITIES = [...new Set(SAMPLE_LOGS.map((l) => l.entity))].sort();
-const ALL_ACTORS = [...new Set(SAMPLE_LOGS.map((l) => l.actor))].sort();
 
 const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
   Created: { bg: "rgba(34,197,94,0.15)", text: "#22c55e" },
@@ -435,6 +433,21 @@ export function AuditLogViewer() {
   const userRole = user?.role ?? "tenant_member";
   const [view, setView] = useState<"table" | "timeline">("table");
 
+  // Logs fetched from /api/audit-logs
+  const [logs, setLogs] = useState<AuditLog[]>(SAMPLE_LOGS);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/audit-logs")
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data: AuditLog[]) => { if (!cancelled) setLogs(data); })
+      .catch(() => { /* keep fallback sample data */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const ALL_ENTITIES = useMemo(() => [...new Set(logs.map((l) => l.entity))].sort(), [logs]);
+  const ALL_ACTORS = useMemo(() => [...new Set(logs.map((l) => l.actor))].sort(), [logs]);
+
   // Filters
   const [search, setSearch] = useState("");
   const [actorFilter, setActorFilter] = useState("All");
@@ -453,7 +466,7 @@ export function AuditLogViewer() {
 
   // Filtered + sorted data
   const filtered = useMemo(() => {
-    let list = SAMPLE_LOGS;
+    let list = logs;
     if (search) {
       const q = search.toLowerCase();
       list = list.filter((l) =>
@@ -478,17 +491,18 @@ export function AuditLogViewer() {
     });
 
     return list;
-  }, [search, actorFilter, actionFilter, entityFilter, criticalOnly, sortField, sortDir]);
+  }, [logs, search, actorFilter, actionFilter, entityFilter, criticalOnly, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Stats
-  const totalEvents = SAMPLE_LOGS.length;
-  const criticalCount = SAMPLE_LOGS.filter((l) => l.isCritical).length;
-  const uniqueActors = new Set(SAMPLE_LOGS.map((l) => l.actor)).size;
-  const todayCount = SAMPLE_LOGS.filter((l) => l.timestamp.startsWith("2026-04-07")).length;
+  const today = new Date().toISOString().slice(0, 10);
+  const totalEvents = logs.length;
+  const criticalCount = logs.filter((l) => l.isCritical).length;
+  const uniqueActors = new Set(logs.map((l) => l.actor)).size;
+  const todayCount = logs.filter((l) => l.timestamp.startsWith(today)).length;
 
   const hasFilters = search || actorFilter !== "All" || actionFilter !== "All" || entityFilter !== "All" || criticalOnly;
 
@@ -510,32 +524,26 @@ export function AuditLogViewer() {
     return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   };
 
-  // Export handlers
-  const handleExport = (format: "csv" | "json") => {
-    const data = filtered;
-    let content: string;
-    let mimeType: string;
-    let filename: string;
-
-    if (format === "csv") {
-      const headers = "ID,Timestamp,Actor,Email,Role,Action,Entity,Entity ID,Details,IP,Critical";
-      const rows = data.map((l) =>
-        `"${l.id}","${l.timestamp}","${l.actor}","${l.actorEmail}","${l.actorRole}","${l.action}","${l.entity}","${l.entityId}","${l.details}","${l.ip}","${l.isCritical}"`
-      );
-      content = [headers, ...rows].join("\n");
-      mimeType = "text/csv";
-      filename = "audit-logs-export.csv";
-    } else {
-      content = JSON.stringify(data, null, 2);
-      mimeType = "application/json";
-      filename = "audit-logs-export.json";
-    }
-
-    const blob = new Blob([content], { type: mimeType });
+  // Export: call API so the filter set stays in sync server-side
+  const handleExport = async (format: "csv" | "json") => {
+    const res = await fetch("/api/audit-logs/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        format,
+        search,
+        actor: actorFilter,
+        action: actionFilter,
+        entity: entityFilter,
+        critical: criticalOnly,
+      }),
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = filename;
+    a.download = `audit-logs-export.${format}`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -635,7 +643,7 @@ export function AuditLogViewer() {
         )}
 
         {hasFilters && (
-          <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>Showing {filtered.length} of {SAMPLE_LOGS.length} events</p>
+          <p className="text-xs" style={{ color: "var(--gf-text-muted)" }}>Showing {filtered.length} of {logs.length} events</p>
         )}
       </div>
 

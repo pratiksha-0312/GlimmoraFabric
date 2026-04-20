@@ -332,15 +332,36 @@ model Document {
   templateId   String?
   template     DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   tenantId     String?
+  tenant       String    @default("") // denormalized tenant display name
   status       String    @default("generated") // generated, pending_sign, signed, expired
   format       String    @default("pdf")
   size         String    @default("")
   createdBy    String
+  auditJson    String    @default("[]") // JSON array: [{ action, actor, timestamp }]
   signedAt     DateTime?
   signedBy     String?
   createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  signatures   DocumentSignature[]
 
   @@map("documents")
+}
+
+model DocumentSignature {
+  id           String    @id @default(cuid())
+  documentId   String
+  document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  signerName   String
+  signerEmail  String
+  status       String    @default("pending") // pending, signed, declined
+  requestedAt  DateTime  @default(now())
+  signedAt     DateTime?
+  ip           String?
+  sortOrder    Int       @default(0)
+
+  @@index([documentId])
+  @@map("document_signatures")
 }
 
 model DocumentTemplate {
@@ -487,6 +508,131 @@ model PaymentGateway {
   updatedAt        DateTime @updatedAt
 
   @@map("payment_gateways")
+}
+
+// ---------------------------------------------------------------------------
+// Audit & Compliance models (P4-F01, P4-F02)
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  timestamp   DateTime @default(now())
+  actor       String   @default("")
+  actorEmail  String   @default("")
+  actorRole   String   @default("")
+  action      String   @default("Accessed") // Created, Updated, Deleted, Accessed, Exported, Login, Logout, Permission Change, Config Change
+  entity      String   @default("")
+  entityId    String   @default("")
+  details     String   @default("")
+  ip          String   @default("")
+  userAgent   String   @default("")
+  sessionId   String   @default("")
+  isCritical  Boolean  @default(false)
+  beforeJson  String   @default("") // JSON snapshot of entity before change
+  afterJson   String   @default("") // JSON snapshot of entity after change
+  createdAt   DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([actor])
+  @@index([action])
+  @@index([entity])
+  @@map("audit_logs")
+}
+
+model ComplianceReport {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   @default("Custom") // SOC2, GDPR, HIPAA, PCI-DSS, Security Assessment, Banking Audit, Custom
+  framework   String   @default("Custom Framework")
+  period      String   @default("")
+  status      String   @default("Pending") // Generated, Pending, Failed
+  date        String   @default("")
+  size        String   @default("—")
+  findings    Int      @default(0)
+  score       Int      @default(0)
+  generatedBy String   @default("System")
+  summary     String   @default("")
+  sections    String   @default("[]") // JSON array: [{ name, score, status, details }]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("compliance_reports")
+}
+
+model RetentionRule {
+  id              String   @id @default(cuid())
+  dataType        String
+  description     String   @default("")
+  retentionDays   Int      @default(365)
+  action          String   @default("archive") // delete, archive, anonymize
+  enabled         Boolean  @default(true)
+  lastPurge       String   @default("Never")
+  recordsAffected Int      @default(0)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("retention_rules")
+}
+
+model RetentionSettings {
+  id                 String   @id @default("global")
+  defaultRetention   Int      @default(365)
+  autoDeleteEnabled  Boolean  @default(true)
+  updatedAt          DateTime @updatedAt
+
+  @@map("retention_settings")
+}
+
+model DataExportRequest {
+  id           String    @id @default(cuid())
+  name         String
+  dataScope    String    @default("Audit Logs") // Audit Logs, User PII, Usage Metrics, Security Events, Compliance Data, Payment Data, Tenant Data, API Logs
+  format       String    @default("CSV") // CSV, JSON, PDF
+  status       String    @default("Queued") // Completed, Processing, Queued, Failed
+  requestedBy  String    @default("")
+  requestedAt  DateTime  @default(now())
+  completedAt  DateTime?
+  fileSize     String?
+  progress     Int       @default(0)
+  reason       String    @default("")
+
+  @@map("data_export_requests")
+}
+
+// ---------------------------------------------------------------------------
+// Feature flags (P7)
+// ---------------------------------------------------------------------------
+
+model FeatureFlag {
+  id                 String   @id @default(cuid())
+  key                String   @unique
+  name               String
+  description        String   @default("")
+  enabled            Boolean  @default(false)
+  rolloutPercentage  Int      @default(0) // 0-100
+  environment        String   @default("Production") // Production, Staging, Development
+  category           String   @default("Feature") // Feature, Experiment, Ops, Release
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  overrides          FeatureFlagOverride[]
+
+  @@map("feature_flags")
+}
+
+model FeatureFlagOverride {
+  id          String      @id @default(cuid())
+  flagId      String
+  flag        FeatureFlag @relation(fields: [flagId], references: [id], onDelete: Cascade)
+  tenantCode  String
+  tenantName  String      @default("")
+  enabled     Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  @@unique([flagId, tenantCode])
+  @@index([flagId])
+  @@map("feature_flag_overrides")
 }
 
 // ---------------------------------------------------------------------------

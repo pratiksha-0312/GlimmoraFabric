@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readFile } from "fs/promises";
+import { join } from "path";
+import { prisma } from "@/lib/prisma";
 
 // Colour palette for generated placeholder thumbnails
 const COLORS = [
@@ -18,23 +21,15 @@ function hashCode(s: string): number {
   return Math.abs(h);
 }
 
-// GET /api/files/:id/thumbnail — returns a generated SVG placeholder thumbnail
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-
-  const idx = hashCode(id) % COLORS.length;
+function placeholderSvg(seed: string): string {
+  const idx = hashCode(seed) % COLORS.length;
   const { bg, fg } = COLORS[idx];
-
-  // Derive initials from the file id (e.g. "file_002" → "F2")
-  const parts = id.replace(/[^a-zA-Z0-9]/g, " ").trim().split(/\s+/);
+  const parts = seed.replace(/[^a-zA-Z0-9]/g, " ").trim().split(/\s+/);
   const initials = parts.length >= 2
     ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    : id.slice(0, 2).toUpperCase();
+    : seed.slice(0, 2).toUpperCase();
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
   <rect width="200" height="200" rx="16" fill="${bg}"/>
   <rect x="40" y="50" width="120" height="80" rx="8" fill="${fg}" opacity="0.15"/>
   <circle cx="72" cy="78" r="12" fill="${fg}" opacity="0.3"/>
@@ -42,7 +37,29 @@ export async function GET(
   <polygon points="90,120 120,90 160,120" fill="${fg}" opacity="0.2"/>
   <text x="100" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="18" font-weight="600" fill="${fg}" opacity="0.6">${initials}</text>
 </svg>`;
+}
 
+// GET /api/files/:id/thumbnail — real image bytes if uploaded, else generated SVG placeholder
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const file = await prisma.file.findUnique({ where: { id } });
+
+  if (file && file.storagePath && file.storagePath.startsWith("/uploads/") && file.type === "image") {
+    try {
+      const diskPath = join(process.cwd(), "public", file.storagePath.replace(/^\//, ""));
+      const bytes = await readFile(diskPath);
+      return new NextResponse(new Uint8Array(bytes), {
+        headers: {
+          "Content-Type": file.mimeType || "application/octet-stream",
+          "Cache-Control": "public, max-age=86400",
+        },
+      });
+    } catch {
+      // Fall through to placeholder if the file is missing on disk.
+    }
+  }
+
+  const svg = placeholderSvg(file?.name ?? id);
   return new NextResponse(svg, {
     status: 200,
     headers: {

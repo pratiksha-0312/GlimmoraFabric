@@ -101,7 +101,6 @@ const navItems: NavItem[] = [
   ]},
   { label: "Document Templates", href: "#doc-templates", icon: FileText, visibleTo: ["super_admin", "tenant_admin", "auditor", "tenant_member", "billing_admin", "workflow_manager", "developer"], children: [
     { label: "All Templates", href: "/doc-templates", icon: FileText, visibleTo: ["super_admin", "tenant_admin"] },
-    { label: "Create Template", href: "/doc-templates/new", icon: File, visibleTo: ["super_admin"] },
     { label: "File Management", href: "/files", icon: File, visibleTo: ["super_admin", "tenant_admin", "auditor", "tenant_member", "billing_admin", "workflow_manager", "developer"] },
   ]},
   { label: "Document Library", href: "#documents", icon: File, visibleTo: ["tenant_member"], children: [

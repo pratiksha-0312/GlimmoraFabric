@@ -70,6 +70,7 @@ export const ModelName = {
   TaskComment: 'TaskComment',
   TaskHistory: 'TaskHistory',
   Document: 'Document',
+  DocumentSignature: 'DocumentSignature',
   DocumentTemplate: 'DocumentTemplate',
   DocumentTemplateVersion: 'DocumentTemplateVersion',
   NotificationTemplate: 'NotificationTemplate',
@@ -78,6 +79,13 @@ export const ModelName = {
   Plan: 'Plan',
   PaymentLink: 'PaymentLink',
   PaymentGateway: 'PaymentGateway',
+  AuditLog: 'AuditLog',
+  ComplianceReport: 'ComplianceReport',
+  RetentionRule: 'RetentionRule',
+  RetentionSettings: 'RetentionSettings',
+  DataExportRequest: 'DataExportRequest',
+  FeatureFlag: 'FeatureFlag',
+  FeatureFlagOverride: 'FeatureFlagOverride',
   Webhook: 'Webhook'
 } as const
 
@@ -390,16 +398,34 @@ export const DocumentScalarFieldEnum = {
   name: 'name',
   templateId: 'templateId',
   tenantId: 'tenantId',
+  tenant: 'tenant',
   status: 'status',
   format: 'format',
   size: 'size',
   createdBy: 'createdBy',
+  auditJson: 'auditJson',
   signedAt: 'signedAt',
   signedBy: 'signedBy',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type DocumentScalarFieldEnum = (typeof DocumentScalarFieldEnum)[keyof typeof DocumentScalarFieldEnum]
+
+
+export const DocumentSignatureScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  signerName: 'signerName',
+  signerEmail: 'signerEmail',
+  status: 'status',
+  requestedAt: 'requestedAt',
+  signedAt: 'signedAt',
+  ip: 'ip',
+  sortOrder: 'sortOrder'
+} as const
+
+export type DocumentSignatureScalarFieldEnum = (typeof DocumentSignatureScalarFieldEnum)[keyof typeof DocumentSignatureScalarFieldEnum]
 
 
 export const DocumentTemplateScalarFieldEnum = {
@@ -531,6 +557,121 @@ export const PaymentGatewayScalarFieldEnum = {
 } as const
 
 export type PaymentGatewayScalarFieldEnum = (typeof PaymentGatewayScalarFieldEnum)[keyof typeof PaymentGatewayScalarFieldEnum]
+
+
+export const AuditLogScalarFieldEnum = {
+  id: 'id',
+  timestamp: 'timestamp',
+  actor: 'actor',
+  actorEmail: 'actorEmail',
+  actorRole: 'actorRole',
+  action: 'action',
+  entity: 'entity',
+  entityId: 'entityId',
+  details: 'details',
+  ip: 'ip',
+  userAgent: 'userAgent',
+  sessionId: 'sessionId',
+  isCritical: 'isCritical',
+  beforeJson: 'beforeJson',
+  afterJson: 'afterJson',
+  createdAt: 'createdAt'
+} as const
+
+export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const ComplianceReportScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  type: 'type',
+  framework: 'framework',
+  period: 'period',
+  status: 'status',
+  date: 'date',
+  size: 'size',
+  findings: 'findings',
+  score: 'score',
+  generatedBy: 'generatedBy',
+  summary: 'summary',
+  sections: 'sections',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ComplianceReportScalarFieldEnum = (typeof ComplianceReportScalarFieldEnum)[keyof typeof ComplianceReportScalarFieldEnum]
+
+
+export const RetentionRuleScalarFieldEnum = {
+  id: 'id',
+  dataType: 'dataType',
+  description: 'description',
+  retentionDays: 'retentionDays',
+  action: 'action',
+  enabled: 'enabled',
+  lastPurge: 'lastPurge',
+  recordsAffected: 'recordsAffected',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RetentionRuleScalarFieldEnum = (typeof RetentionRuleScalarFieldEnum)[keyof typeof RetentionRuleScalarFieldEnum]
+
+
+export const RetentionSettingsScalarFieldEnum = {
+  id: 'id',
+  defaultRetention: 'defaultRetention',
+  autoDeleteEnabled: 'autoDeleteEnabled',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RetentionSettingsScalarFieldEnum = (typeof RetentionSettingsScalarFieldEnum)[keyof typeof RetentionSettingsScalarFieldEnum]
+
+
+export const DataExportRequestScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  dataScope: 'dataScope',
+  format: 'format',
+  status: 'status',
+  requestedBy: 'requestedBy',
+  requestedAt: 'requestedAt',
+  completedAt: 'completedAt',
+  fileSize: 'fileSize',
+  progress: 'progress',
+  reason: 'reason'
+} as const
+
+export type DataExportRequestScalarFieldEnum = (typeof DataExportRequestScalarFieldEnum)[keyof typeof DataExportRequestScalarFieldEnum]
+
+
+export const FeatureFlagScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  name: 'name',
+  description: 'description',
+  enabled: 'enabled',
+  rolloutPercentage: 'rolloutPercentage',
+  environment: 'environment',
+  category: 'category',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FeatureFlagScalarFieldEnum = (typeof FeatureFlagScalarFieldEnum)[keyof typeof FeatureFlagScalarFieldEnum]
+
+
+export const FeatureFlagOverrideScalarFieldEnum = {
+  id: 'id',
+  flagId: 'flagId',
+  tenantCode: 'tenantCode',
+  tenantName: 'tenantName',
+  enabled: 'enabled',
+  createdAt: 'createdAt'
+} as const
+
+export type FeatureFlagOverrideScalarFieldEnum = (typeof FeatureFlagOverrideScalarFieldEnum)[keyof typeof FeatureFlagOverrideScalarFieldEnum]
 
 
 export const WebhookScalarFieldEnum = {

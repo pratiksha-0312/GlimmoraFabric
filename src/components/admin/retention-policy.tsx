@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Database,
   Save,
@@ -81,17 +81,42 @@ function CustomSelect({ value, onChange, options }: { value: string; onChange: (
 // ============================================================================
 
 export function RetentionPolicySettings() {
-  const [rules, setRules] = useState(INITIAL_RULES);
+  const [rules, setRules] = useState<RetentionRule[]>(INITIAL_RULES);
   const [saved, setSaved] = useState(false);
   const [globalRetention, setGlobalRetention] = useState("365");
   const [autoDeleteEnabled, setAutoDeleteEnabled] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/compliance/retention")
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data: { rules: RetentionRule[]; settings: { defaultRetention: number; autoDeleteEnabled: boolean } }) => {
+        if (cancelled) return;
+        if (Array.isArray(data.rules)) setRules(data.rules);
+        if (data.settings) {
+          setGlobalRetention(String(data.settings.defaultRetention));
+          setAutoDeleteEnabled(data.settings.autoDeleteEnabled);
+        }
+      })
+      .catch(() => { /* keep fallback sample rules */ });
+    return () => { cancelled = true; };
+  }, []);
 
   const updateRule = (id: string, updates: Partial<RetentionRule>) => {
     setRules((prev) => prev.map((r) => r.id === id ? { ...r, ...updates } : r));
     setSaved(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const res = await fetch("/api/compliance/retention", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rules,
+        settings: { defaultRetention: parseInt(globalRetention), autoDeleteEnabled },
+      }),
+    });
+    if (!res.ok) return;
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };

@@ -113,6 +113,11 @@ export type TaskHistory = Prisma.TaskHistoryModel
  */
 export type Document = Prisma.DocumentModel
 /**
+ * Model DocumentSignature
+ * 
+ */
+export type DocumentSignature = Prisma.DocumentSignatureModel
+/**
  * Model DocumentTemplate
  * 
  */
@@ -152,6 +157,41 @@ export type PaymentLink = Prisma.PaymentLinkModel
  * 
  */
 export type PaymentGateway = Prisma.PaymentGatewayModel
+/**
+ * Model AuditLog
+ * 
+ */
+export type AuditLog = Prisma.AuditLogModel
+/**
+ * Model ComplianceReport
+ * 
+ */
+export type ComplianceReport = Prisma.ComplianceReportModel
+/**
+ * Model RetentionRule
+ * 
+ */
+export type RetentionRule = Prisma.RetentionRuleModel
+/**
+ * Model RetentionSettings
+ * 
+ */
+export type RetentionSettings = Prisma.RetentionSettingsModel
+/**
+ * Model DataExportRequest
+ * 
+ */
+export type DataExportRequest = Prisma.DataExportRequestModel
+/**
+ * Model FeatureFlag
+ * 
+ */
+export type FeatureFlag = Prisma.FeatureFlagModel
+/**
+ * Model FeatureFlagOverride
+ * 
+ */
+export type FeatureFlagOverride = Prisma.FeatureFlagOverrideModel
 /**
  * Model Webhook
  * 
