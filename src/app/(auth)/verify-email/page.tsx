@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, ArrowLeft, RefreshCw, CheckCircle2 } from "lucide-react";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "your email";
   const [cooldown, setCooldown] = useState(0);
@@ -64,5 +64,20 @@ export default function VerifyEmailPage() {
         Back to sign in
       </Link>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center text-center">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-teal-500/15">
+          <Mail className="h-10 w-10 text-teal-400" />
+        </div>
+        <h1 className="text-3xl font-bold text-white mb-2">Check your email</h1>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
