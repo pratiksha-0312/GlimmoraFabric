@@ -86,6 +86,11 @@ export const ModelName = {
   DataExportRequest: 'DataExportRequest',
   FeatureFlag: 'FeatureFlag',
   FeatureFlagOverride: 'FeatureFlagOverride',
+  StudioService: 'StudioService',
+  StudioEvent: 'StudioEvent',
+  StudioComponent: 'StudioComponent',
+  StudioStarter: 'StudioStarter',
+  StudioApiKey: 'StudioApiKey',
   Webhook: 'Webhook'
 } as const
 
@@ -672,6 +677,93 @@ export const FeatureFlagOverrideScalarFieldEnum = {
 } as const
 
 export type FeatureFlagOverrideScalarFieldEnum = (typeof FeatureFlagOverrideScalarFieldEnum)[keyof typeof FeatureFlagOverrideScalarFieldEnum]
+
+
+export const StudioServiceScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  name: 'name',
+  category: 'category',
+  description: 'description',
+  endpoint: 'endpoint',
+  method: 'method',
+  version: 'version',
+  status: 'status',
+  auth: 'auth',
+  docsMarkdown: 'docsMarkdown',
+  sampleRequest: 'sampleRequest',
+  sampleResponse: 'sampleResponse',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StudioServiceScalarFieldEnum = (typeof StudioServiceScalarFieldEnum)[keyof typeof StudioServiceScalarFieldEnum]
+
+
+export const StudioEventScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  name: 'name',
+  category: 'category',
+  description: 'description',
+  version: 'version',
+  schemaJson: 'schemaJson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StudioEventScalarFieldEnum = (typeof StudioEventScalarFieldEnum)[keyof typeof StudioEventScalarFieldEnum]
+
+
+export const StudioComponentScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  name: 'name',
+  category: 'category',
+  framework: 'framework',
+  description: 'description',
+  downloads: 'downloads',
+  version: 'version',
+  previewHtml: 'previewHtml',
+  installCmd: 'installCmd',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StudioComponentScalarFieldEnum = (typeof StudioComponentScalarFieldEnum)[keyof typeof StudioComponentScalarFieldEnum]
+
+
+export const StudioStarterScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  name: 'name',
+  category: 'category',
+  description: 'description',
+  repoUrl: 'repoUrl',
+  stars: 'stars',
+  language: 'language',
+  license: 'license',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StudioStarterScalarFieldEnum = (typeof StudioStarterScalarFieldEnum)[keyof typeof StudioStarterScalarFieldEnum]
+
+
+export const StudioApiKeyScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  keyPrefix: 'keyPrefix',
+  keyMasked: 'keyMasked',
+  scopes: 'scopes',
+  status: 'status',
+  lastUsed: 'lastUsed',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  revokedAt: 'revokedAt'
+} as const
+
+export type StudioApiKeyScalarFieldEnum = (typeof StudioApiKeyScalarFieldEnum)[keyof typeof StudioApiKeyScalarFieldEnum]
 
 
 export const WebhookScalarFieldEnum = {

@@ -636,6 +636,95 @@ model FeatureFlagOverride {
 }
 
 // ---------------------------------------------------------------------------
+// Developer Portal / Glimmora Studio (DEV-F01)
+// ---------------------------------------------------------------------------
+
+model StudioService {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  category        String   @default("General") // Auth, Billing, Workflow, Document, Notification, Admin, AI, General
+  description     String   @default("")
+  endpoint        String   @default("")
+  method          String   @default("GET") // GET, POST, PUT, DELETE, PATCH
+  version         String   @default("v1")
+  status          String   @default("stable") // stable, beta, deprecated, preview
+  auth            String   @default("Bearer") // Bearer, ApiKey, None
+  docsMarkdown    String   @default("")
+  sampleRequest   String   @default("") // JSON text
+  sampleResponse  String   @default("") // JSON text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category])
+  @@map("studio_services")
+}
+
+model StudioEvent {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  name         String
+  category     String   @default("System") // System, Billing, Workflow, Document, User
+  description  String   @default("")
+  version      String   @default("v1")
+  schemaJson   String   @default("{}") // Example event payload as JSON
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+  @@map("studio_events")
+}
+
+model StudioComponent {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  category     String   @default("UI") // UI, Auth, Billing, Data, Layout
+  framework    String   @default("React") // React, Vue, Svelte
+  description  String   @default("")
+  downloads    Int      @default(0)
+  version      String   @default("1.0.0")
+  previewHtml  String   @default("")
+  installCmd   String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("studio_components")
+}
+
+model StudioStarter {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  category     String   @default("Full-stack") // Full-stack, Frontend, Backend, Mobile, CLI
+  description  String   @default("")
+  repoUrl      String   @default("")
+  stars        Int      @default(0)
+  language     String   @default("TypeScript")
+  license      String   @default("MIT")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("studio_starters")
+}
+
+model StudioApiKey {
+  id          String    @id @default(cuid())
+  name        String
+  keyPrefix   String    @default("gf_")
+  keyMasked   String    @default("") // e.g. gf_live_••••abcd — safe to return
+  scopes      String    @default("[]") // JSON array of scope strings
+  status      String    @default("active") // active, revoked
+  lastUsed    DateTime?
+  createdBy   String    @default("")
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  @@index([status])
+  @@map("studio_api_keys")
+}
+
+// ---------------------------------------------------------------------------
 // Webhook registrations
 // ---------------------------------------------------------------------------
 

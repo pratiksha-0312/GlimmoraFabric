@@ -47,6 +47,13 @@ import {
   Globe,
   Mail,
   Send,
+  Package,
+  Terminal,
+  BookOpen,
+  Radio,
+  Blocks,
+  Rocket,
+  KeyRound,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/auth-context";
@@ -106,7 +113,20 @@ const navItems: NavItem[] = [
   { label: "Document Library", href: "#documents", icon: File, visibleTo: ["tenant_member"], children: [
     { label: "All Documents", href: "/documents", icon: File, visibleTo: ["tenant_member"] },
   ]},
-  { label: "AI Config & Analytics", href: "/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
+  { label: "AI Config & Analytics", href: "#ai", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"], children: [
+    { label: "AI Config", href: "/ai-config", icon: Cpu, visibleTo: ["super_admin", "ai_prompt_owner"] },
+    { label: "Model Performance", href: "/ai/analytics", icon: Brain, visibleTo: ["ai_prompt_owner"] },
+  ]},
+  { label: "Developer Portal", href: "#studio", icon: Terminal, visibleTo: ["developer", "product_designer", "platform_engineering_lead"], children: [
+    { label: "Service Catalog", href: "/studio/services", icon: Package, visibleTo: ["developer"] },
+    { label: "API Playground", href: "/studio/playground", icon: Terminal, visibleTo: ["developer"] },
+    { label: "SDK Reference", href: "/studio/docs", icon: BookOpen, visibleTo: ["developer"] },
+    { label: "Event Catalog", href: "/studio/events", icon: Radio, visibleTo: ["developer"] },
+    { label: "Component Marketplace", href: "/studio/components", icon: Blocks, visibleTo: ["developer", "product_designer"] },
+    { label: "Starter Repos", href: "/studio/starters", icon: Rocket, visibleTo: ["developer"] },
+    { label: "API Keys", href: "/studio/keys", icon: KeyRound, visibleTo: ["developer"] },
+    { label: "Platform Health", href: "/studio/health", icon: Activity, visibleTo: ["developer", "platform_engineering_lead"] },
+  ]},
   { label: "Compliance", href: "#compliance", icon: ShieldCheck, visibleTo: ["super_admin", "auditor"], children: [
     { label: "Audit Log Viewer", href: "/audit-logs", icon: ClipboardList, visibleTo: ["super_admin", "auditor"] },
     { label: "Compliance Reports", href: "/compliance/reports", icon: Shield, visibleTo: ["super_admin", "auditor"] },

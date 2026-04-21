@@ -217,6 +217,31 @@ export type FeatureFlag = Prisma.FeatureFlagModel
  */
 export type FeatureFlagOverride = Prisma.FeatureFlagOverrideModel
 /**
+ * Model StudioService
+ * 
+ */
+export type StudioService = Prisma.StudioServiceModel
+/**
+ * Model StudioEvent
+ * 
+ */
+export type StudioEvent = Prisma.StudioEventModel
+/**
+ * Model StudioComponent
+ * 
+ */
+export type StudioComponent = Prisma.StudioComponentModel
+/**
+ * Model StudioStarter
+ * 
+ */
+export type StudioStarter = Prisma.StudioStarterModel
+/**
+ * Model StudioApiKey
+ * 
+ */
+export type StudioApiKey = Prisma.StudioApiKeyModel
+/**
  * Model Webhook
  * 
  */
