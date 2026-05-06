@@ -26,15 +26,34 @@ export function StepPlanSelection({ defaultValue, onNext, onBack }: StepPlanSele
   const [selected, setSelected] = useState(defaultValue || "");
 
   useEffect(() => {
-    fetch("/api/plans")
-      .then((res) => res.json())
-      .then((data) => {
-        setPlans(data);
-        if (!selected && data.length > 0) {
-          setSelected(data[0].slug);
+    (async () => {
+      try {
+        const { plansApi } = await import("@/lib/api");
+        const list = await plansApi.list({ is_active: true, sort_by: "price", order: "asc", limit: 50 });
+        // Convert FastAPI Plan -> local UI shape (slug<->code, features
+        // dict -> list, billing_cycle case-insensitive).
+        const mapped: Plan[] = list.items.map((p) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.code,
+          price: p.price,
+          billingCycle: String(p.billing_cycle).charAt(0).toUpperCase() +
+            String(p.billing_cycle).slice(1).toLowerCase(),
+          currency: p.currency,
+          features: Object.entries(p.features)
+            .filter(([, v]) => v !== false && v !== null && v !== undefined)
+            .map(([k, v]) => (typeof v === "boolean" ? k : `${k}: ${v}`)),
+        }));
+        setPlans(mapped);
+        if (!selected && mapped.length > 0) {
+          setSelected(mapped[0].slug);
         }
-      })
-      .finally(() => setLoading(false));
+      } catch {
+        setPlans([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

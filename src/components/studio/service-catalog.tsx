@@ -40,11 +40,33 @@ export function StudioServiceCatalog() {
   const [category, setCategory] = useState("All");
 
   useEffect(() => {
-    fetch("/api/studio/services")
-      .then((r) => r.json())
-      .then((d: Service[]) => setServices(d))
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { serviceCatalogApi } = await import("@/lib/api");
+        const list = await serviceCatalogApi.list();
+        // The backend service catalog only exposes {id, name, description,
+        // version, status}. The legacy UI's `category`, `endpoint`, `method`
+        // etc. aren't tracked server-side — fill with placeholders so the
+        // table still renders without changing types.
+        setServices(
+          list.map((s) => ({
+            ...(s as unknown as Service),
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            version: s.version,
+            status: s.status,
+            category: (s as unknown as Service).category ?? "General",
+            endpoint: (s as unknown as Service).endpoint ?? "",
+            method: (s as unknown as Service).method ?? "GET",
+          })),
+        );
+      } catch {
+        /* ignore */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const categories = useMemo(() => ["All", ...Array.from(new Set(services.map((s) => s.category))).sort()], [services]);

@@ -39,11 +39,41 @@ export default function InvoiceDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/invoices/${id}`)
-      .then((r) => r.json())
-      .then((data) => setInv(data))
-      .catch(() => setInv(null))
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { invoicesApi } = await import("@/lib/api");
+        const r = await invoicesApi.get(id);
+        const status = (r.status === "paid" || r.status === "succeeded")
+          ? "Paid"
+          : r.status === "failed" || r.status === "void" || r.status === "cancelled"
+            ? "Failed"
+            : "Pending";
+        setInv({
+          id: r.id,
+          number: r.invoice_number,
+          date: r.issued_at
+            ? new Date(r.issued_at).toLocaleDateString()
+            : new Date(r.created_at).toLocaleDateString(),
+          dueDate: r.due_date ? new Date(r.due_date).toLocaleDateString() : "",
+          status,
+          tenant: r.tenant_id,
+          // The backend invoice schema doesn't carry per-line items; surface
+          // a single aggregate row so the existing layout still renders.
+          paymentMethod: "—",
+          billingPeriod: "—",
+          lineItems: [{ description: "Subscription charge", qty: 1, amount: r.amount }],
+          subtotal: r.amount,
+          tax: 0,
+          total: r.amount,
+          currency: r.currency,
+          paidAt: r.issued_at ?? r.created_at,
+        });
+      } catch {
+        setInv(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [id]);
 
   const cardStyle = { borderColor: "var(--gf-border)", backgroundColor: "var(--gf-bg-surface)" };

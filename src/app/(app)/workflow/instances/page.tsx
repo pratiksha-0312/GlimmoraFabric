@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, Eye, GitBranch, Filter, RefreshCw } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import type { UserRole } from "@/lib/roles";
+import { workflowInstancesApi, type ActiveInstance } from "@/lib/api";
 
 interface Instance {
   id: string;
@@ -42,10 +43,32 @@ export default function WorkflowInstancesPage() {
 
   const fetchInstances = () => {
     setLoading(true);
-    fetch("/api/workflow-instances")
-      .then((r) => r.json())
-      .then((d) => { setInstances(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    workflowInstancesApi
+      .listActive({ page: 1, page_size: 100 })
+      .then((d) => {
+        const mapStatus = (s: string): Instance["status"] => {
+          const v = s.toLowerCase();
+          if (v.includes("complete") || v === "succeeded") return "Completed";
+          if (v.includes("fail") || v === "error") return "Failed";
+          if (v.includes("cancel")) return "Cancelled";
+          return "Running";
+        };
+        setInstances(
+          d.items.map((i: ActiveInstance) => ({
+            id: i.instance_id,
+            workflowId: i.instance_id,
+            workflowName: i.workflow_name,
+            triggeredBy: i.started_by,
+            status: mapStatus(i.status),
+            currentStep: `Step ${i.current_step}`,
+            progress: 0,
+            startedAt: new Date(i.started_at).toLocaleString(),
+            sla: "N/A",
+          })),
+        );
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchInstances(); }, []);

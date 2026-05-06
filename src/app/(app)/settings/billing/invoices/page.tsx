@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import type { UserRole } from "@/lib/roles";
+import { invoicesApi, type Invoice as ApiInvoice } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,6 +22,27 @@ interface Invoice {
   currency: string;
   status: "Paid" | "Pending" | "Failed";
   plan: string;
+}
+
+function statusFromBackend(s: string): Invoice["status"] {
+  const v = s.toLowerCase();
+  if (v === "paid" || v === "succeeded") return "Paid";
+  if (v === "failed" || v === "void" || v === "cancelled") return "Failed";
+  return "Pending";
+}
+
+function toUiInvoice(inv: ApiInvoice): Invoice {
+  return {
+    id: inv.id,
+    number: inv.invoice_number,
+    date: inv.issued_at ? new Date(inv.issued_at).toLocaleDateString() : new Date(inv.created_at).toLocaleDateString(),
+    dueDate: inv.due_date ? new Date(inv.due_date).toLocaleDateString() : "",
+    amount: inv.amount,
+    currency: inv.currency,
+    status: statusFromBackend(inv.status),
+    // Plan name isn't on the invoice schema — reuse subscription_id as a hint.
+    plan: inv.subscription_id ? "Subscription" : "One-time",
+  };
 }
 
 const STATUS_COLORS: Record<string, string> = { Paid: "#22c55e", Pending: "#f59e0b", Failed: "#ef4444" };
@@ -38,9 +60,9 @@ export default function InvoicesPage() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetch("/api/invoices")
-      .then((r) => r.json())
-      .then((data) => { setInvoices(Array.isArray(data) ? data : []); })
+    invoicesApi
+      .list({ limit: 200 })
+      .then((data) => setInvoices(data.map(toUiInvoice)))
       .catch(() => setInvoices([]))
       .finally(() => setLoading(false));
   }, []);

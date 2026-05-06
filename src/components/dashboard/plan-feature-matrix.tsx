@@ -19,17 +19,30 @@ export function PlanFeatureMatrix({ planId }: { planId: string }) {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/plans/${planId}`).then((r) => r.json()),
-      fetch(`/api/plans`).then((r) => r.json()),
-    ])
-      .then(([one, all]) => {
-        setPlan(one);
-        setFeatures(one.features ?? []);
+    (async () => {
+      try {
+        const { plansApi } = await import("@/lib/api");
+        // Pull every plan once and resolve the editing target client-side.
+        const list = await plansApi.list({ limit: 100 });
+        // Convert each plan's `features` dict to the legacy string[] shape
+        // so the matrix renders identically.
+        const featuresOf = (p: typeof list.items[number]): string[] =>
+          Object.entries(p.features)
+            .filter(([, v]) => v !== false && v !== null && v !== undefined)
+            .map(([k, v]) => (typeof v === "boolean" ? k : `${k}: ${v}`));
+        const all: Plan[] = list.items.map((p) => ({
+          id: p.id, name: p.name, features: featuresOf(p),
+        }));
+        const found = all.find((p) => p.id === planId) ?? null;
         setAllPlans(all);
-      })
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false));
+        setPlan(found);
+        setFeatures(found?.features ?? []);
+      } catch {
+        /* ignore */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [planId]);
 
   const addFeature = () => {
@@ -47,14 +60,23 @@ export function PlanFeatureMatrix({ planId }: { planId: string }) {
   };
 
   const handleSave = async () => {
-    const res = await fetch(`/api/plans/${planId}/features`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ features }),
-    });
-    if (res.ok) {
+    try {
+      const { plansApi } = await import("@/lib/api");
+      // Backend's plan-feature matrix takes structured rows {feature_key,
+      // feature_name, is_enabled, limit_value}. We don't capture limits
+      // in this UI yet, so emit one row per feature with is_enabled=true.
+      await plansApi.upsertFeatures(
+        planId,
+        features.map((f) => ({
+          feature_key: f.toUpperCase().replace(/[^A-Z0-9]+/g, "_"),
+          feature_name: f,
+          is_enabled: true,
+        })),
+      );
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
+    } catch {
+      /* swallow — saved indicator stays off */
     }
   };
 

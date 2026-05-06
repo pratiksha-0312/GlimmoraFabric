@@ -31,11 +31,29 @@ export function StudioServiceDetail({ serviceId }: { serviceId: string }) {
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/studio/services/${serviceId}`)
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((data: Service) => setService(data))
-      .catch(() => { /* 404 handled below */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        // Backend has no `/studio/services/{id}` endpoint; pull the catalog
+        // list and resolve client-side.
+        const { serviceCatalogApi } = await import("@/lib/api");
+        const list = await serviceCatalogApi.list();
+        const found = list.find((s) => s.id === serviceId);
+        if (found) {
+          setService({
+            ...(found as unknown as Service),
+            id: found.id,
+            name: found.name,
+            description: found.description,
+            version: found.version,
+            status: found.status,
+          });
+        }
+      } catch {
+        /* 404 handled below */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [serviceId]);
 
   const copy = async (label: string, text: string) => {

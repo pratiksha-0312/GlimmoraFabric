@@ -58,26 +58,47 @@ export function OnboardingWizard() {
   const handleComplete = async (config: ConfigurationData) => {
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenantId: user?.tenantId,
-          organizationName: data.organization?.organizationName,
-          plan: data.plan,
-          domain: config.domain,
-          branding: {
-            color: config.brandColor,
-            logoUrl: config.logoUrl,
-            timezone: config.timezone,
-          },
-          invitedMembers: data.members,
-        }),
+      if (!user?.tenantId) {
+        throw new Error("No tenant context available");
+      }
+
+      const { onboardingApi, orgsApi, tenantsApi } = await import("@/lib/api");
+
+      // 1. Mark onboarding complete on the backend. The FastAPI endpoint
+      //    only takes `tenant_id` + `{name, industry?, size?}`.
+      await onboardingApi.start({
+        tenant_id: user.tenantId,
+        organization: {
+          name: data.organization?.organizationName ?? "",
+          industry: (data.organization as { industry?: string } | undefined)?.industry ?? "",
+          size: (data.organization as { size?: string } | undefined)?.size ?? "",
+        },
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to complete onboarding");
+      // 2. Push the configuration knobs the FastAPI tenant schema supports.
+      //    Plan + brand color + logoUrl + timezone aren't first-class fields
+      //    on the tenant row, so we fold them into `features` JSON until the
+      //    backend exposes dedicated columns.
+      await tenantsApi.update(user.tenantId, {
+        domain: config.domain || undefined,
+        features: {
+          plan: data.plan,
+          brand_color: config.brandColor,
+          logo_url: config.logoUrl,
+          timezone: config.timezone,
+        },
+      });
+
+      // 3. Fan out the team invitations.
+      if (data.members?.length) {
+        await Promise.allSettled(
+          data.members.map((m) =>
+            orgsApi.invite(user.tenantId!, {
+              email: m.email,
+              role_in_tenant: (m.role ?? "member").toLowerCase().replace(/\s+/g, "_"),
+            }),
+          ),
+        );
       }
 
       setData((prev) => ({ ...prev, configuration: config }));

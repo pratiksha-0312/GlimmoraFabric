@@ -45,10 +45,32 @@ function SuccessContent() {
 
   useEffect(() => {
     if (!paymentId) { setLoading(false); return; }
-    fetch(`/api/payments/${paymentId}`)
-      .then((r) => r.json())
-      .then((data) => { setPayment(data); setLoading(false); })
-      .catch(() => setLoading(false));
+    (async () => {
+      try {
+        const { paymentsApi } = await import("@/lib/api");
+        const p = await paymentsApi.get(paymentId);
+        // Map FastAPI Payment -> receipt UI. The backend doesn't track per-
+        // receipt billing details or card brand on the payment row, so we
+        // surface what we have and leave the rest blank.
+        setPayment({
+          id: p.id,
+          planName: "Subscription",
+          amount: p.amount,
+          currency: p.currency,
+          status: p.status,
+          paymentMethod: p.provider,
+          cardLast4: "****",
+          cardBrand: p.provider,
+          billing: { fullName: "", email: "", address: "", city: "", state: "", zip: "", country: "" },
+          createdAt: p.created_at,
+          receiptNumber: p.id.slice(0, 8).toUpperCase(),
+        });
+      } catch {
+        setPayment(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [paymentId]);
 
   const handleDownloadPdf = useCallback(() => {

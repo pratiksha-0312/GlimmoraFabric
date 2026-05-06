@@ -61,14 +61,15 @@ export function GdprConsentPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/consent");
-        if (!res.ok) return;
-        const data = (await res.json()) as { items: { id: string; enabled: boolean; lastUpdated: string }[] };
+        const { consentApi } = await import("@/lib/api");
+        // Backend stores consent as `{purpose, granted}` rows. We use the
+        // local item id as the purpose key so toggles round-trip cleanly.
+        const data = await consentApi.get();
         setConsents((prev) =>
           prev.map((c) => {
-            const s = data.items.find((x) => x.id === c.id);
-            return s ? { ...c, enabled: s.enabled, lastUpdated: s.lastUpdated } : c;
-          })
+            const s = data.items.find((x) => x.purpose === c.id);
+            return s ? { ...c, enabled: s.granted } : c;
+          }),
         );
       } catch {
         // ignore
@@ -84,15 +85,14 @@ export function GdprConsentPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch("/api/consent", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: consents.map((c) => ({ id: c.id, enabled: c.enabled, lastUpdated: c.lastUpdated })),
-        }),
-      });
+      const { consentApi } = await import("@/lib/api");
+      await consentApi.put(
+        consents.map((c) => ({ purpose: c.id, granted: c.enabled })),
+      );
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+    } catch {
+      /* swallow — saved indicator stays off */
     } finally {
       setSaving(false);
     }

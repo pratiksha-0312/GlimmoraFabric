@@ -21,18 +21,17 @@ export function DocTemplatePreview({ templateId }: { templateId: string }) {
   const renderPreview = useCallback(async (nextValues: Record<string, string>) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/doc-templates/${templateId}/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variables: nextValues }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: PreviewResponse = await res.json();
-      setPreview(data);
-      // Initialize any newly discovered vars with empty string so inputs appear.
+      const { docTemplatesApi } = await import("@/lib/api");
+      const data = await docTemplatesApi.preview(templateId, nextValues);
+      // Backend's preview returns just `{ preview }` — derive the variable
+      // list from the input keys so the form keeps re-rendering inputs.
+      setPreview({
+        preview: data.preview,
+        variables: Object.keys(nextValues),
+      } as PreviewResponse);
       setValues((prev) => {
         const merged = { ...prev };
-        for (const v of data.variables) if (!(v in merged)) merged[v] = "";
+        for (const v of Object.keys(nextValues)) if (!(v in merged)) merged[v] = nextValues[v];
         return merged;
       });
     } catch {

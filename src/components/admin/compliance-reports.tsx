@@ -212,9 +212,26 @@ export function ComplianceReportsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/compliance/reports")
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((data: ComplianceReport[]) => { if (!cancelled) setReports(data); })
+    import("@/lib/api").then(({ complianceApi }) => complianceApi.listReports())
+      .then((rows) => {
+        if (cancelled) return;
+        setReports(
+          rows.map((r) => ({
+            id: r.id,
+            // Backend stores type as "soc2"/"gdpr" — surface uppercase to match enum.
+            name: `${r.type.toUpperCase()} report`,
+            type: (r.type === "gdpr" ? "GDPR" : "SOC2") as ComplianceReport["type"],
+            framework: r.type === "gdpr" ? "GDPR" : "SOC 2",
+            status: (r.status === "completed" || r.status === "generated"
+              ? "Generated"
+              : "Pending") as ComplianceReport["status"],
+            generatedAt: r.created_at,
+            score: 0,
+            findings: 0,
+            period: "—",
+          })),
+        );
+      })
       .catch(() => { /* keep fallback sample data */ });
     return () => { cancelled = true; };
   }, []);
@@ -247,29 +264,47 @@ export function ComplianceReportsPage() {
 
   const handleGenerate = async (data: { name: string; type: ComplianceReport["type"]; framework: string; period: string }) => {
     setGenerateModal(false);
-    const res = await fetch("/api/compliance/reports/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) return;
-    const created = (await res.json()) as ComplianceReport;
-    setReports((prev) => [created, ...prev]);
+    try {
+      const { complianceApi } = await import("@/lib/api");
+      const created = data.type === "GDPR"
+        ? await complianceApi.generateGdpr()
+        : await complianceApi.generateSoc2();
+      setReports((prev) => [
+        {
+          id: created.id,
+          name: data.name,
+          type: data.type,
+          framework: data.framework,
+          status: "Generated",
+          generatedAt: created.created_at,
+          score: 0,
+          findings: 0,
+          period: data.period,
+        },
+        ...prev,
+      ]);
+    } catch {
+      /* keep current state */
+    }
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const id = deleteTarget.id;
     setDeleteTarget(null);
-    await fetch(`/api/compliance/reports/${id}`, { method: "DELETE" });
+    // Backend has no delete endpoint for compliance reports yet — remove
+    // the row optimistically from the local list only.
     setReports((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const handleDownload = (report: ComplianceReport) => {
-    const a = document.createElement("a");
-    a.href = `/api/compliance/reports/${report.id}/pdf`;
-    a.download = `${report.name.replace(/\s+/g, "-").toLowerCase()}.txt`;
-    a.click();
+  const handleDownload = async (report: ComplianceReport) => {
+    try {
+      const { complianceApi } = await import("@/lib/api");
+      const data = await complianceApi.getReportPdf(report.id);
+      if (data.file_path) window.open(data.file_path, "_blank");
+    } catch {
+      /* swallow */
+    }
   };
 
   return (

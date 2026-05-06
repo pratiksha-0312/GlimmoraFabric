@@ -37,12 +37,46 @@ export function StudioApiKeys() {
   const [copied, setCopied] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<string | null>(null);
 
+  // Backend has no `/studio/api-keys`; the equivalent surface is the auth
+  // router's `/auth/api-tokens` (basic CRUD) plus `/tokens/{id}` for
+  // analytics. We hit the auth endpoint via the shared apiClient here.
   const refresh = () => {
-    fetch("/api/studio/api-keys")
-      .then((r) => r.json())
-      .then((d: ApiKey[]) => setKeys(d))
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { apiClient } = await import("@/lib/api");
+        type BackendToken = {
+          id: string;
+          name: string;
+          scopes: string;
+          is_active: boolean;
+          token_prefix: string;
+          expires_at: string | null;
+          created_at: string;
+        };
+        const tokens = await apiClient.get<BackendToken[]>("/api/v1/auth/api-tokens");
+        setKeys(
+          tokens.map((t) => ({
+            id: t.id,
+            name: t.name,
+            keyPrefix: t.token_prefix,
+            keyMasked: `${t.token_prefix || "glm_"}…`,
+            scopes: t.scopes
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean),
+            status: t.is_active ? "active" : "revoked",
+            lastUsed: null,
+            createdBy: "you",
+            createdAt: t.created_at,
+            revokedAt: null,
+          })),
+        );
+      } catch {
+        /* ignore */
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   useEffect(() => { refresh(); }, []);
@@ -53,24 +87,59 @@ export function StudioApiKeys() {
 
   const create = async () => {
     if (!newName.trim()) return;
-    const res = await fetch("/api/studio/api-keys", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName.trim(), mode: newMode, scopes: newScopes }),
-    });
-    if (!res.ok) return;
-    const data: NewKeyResponse = await res.json();
-    setCreated(data);
-    setNewName("");
-    setNewScopes(["read:services"]);
-    refresh();
+    try {
+      const { apiClient } = await import("@/lib/api");
+      // Backend's auth tokens endpoint takes name + comma-separated scopes
+      // (or "*" for all). Mode is purely a client-side label here — we
+      // prefix the name so admins can tell test/live keys apart.
+      type Created = {
+        id: string;
+        name: string;
+        scopes: string;
+        is_active: boolean;
+        token_prefix: string;
+        expires_at: string | null;
+        created_at: string;
+        raw_token: string;
+      };
+      const created = await apiClient.post<Created>("/api/v1/auth/api-tokens", {
+        name: `[${newMode}] ${newName.trim()}`,
+        scopes: newScopes.length ? newScopes.join(",") : "*",
+      });
+      setCreated({
+        id: created.id,
+        name: created.name,
+        keyPrefix: created.token_prefix,
+        keyMasked: `${created.token_prefix || "glm_"}…`,
+        scopes: created.scopes
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        status: "active",
+        lastUsed: null,
+        createdBy: "you",
+        createdAt: created.created_at,
+        revokedAt: null,
+        key: created.raw_token,
+      });
+      setNewName("");
+      setNewScopes(["read:services"]);
+      refresh();
+    } catch {
+      /* leave the modal open so the user can retry */
+    }
   };
 
   const revoke = async () => {
     if (!revokeTarget) return;
     const id = revokeTarget;
     setRevokeTarget(null);
-    await fetch(`/api/studio/api-keys/${id}`, { method: "DELETE" });
+    try {
+      const { apiClient } = await import("@/lib/api");
+      await apiClient.delete<void>(`/api/v1/auth/api-tokens/${id}`);
+    } catch {
+      /* ignore */
+    }
     refresh();
   };
 

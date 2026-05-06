@@ -22,10 +22,27 @@ export default function WorkflowVersionHistoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/workflows/${workflowId}/versions`)
-      .then((r) => r.json())
-      .then((d) => { setVersions(d.versions); setLoading(false); })
-      .catch(() => setLoading(false));
+    (async () => {
+      try {
+        const { workflowsApi } = await import("@/lib/api");
+        const list = await workflowsApi.listVersions(workflowId);
+        setVersions(
+          list.map((v) => ({
+            version: v.version_number,
+            // Backend doesn't track Published/Draft; surface "Published" for
+            // every saved revision since the API only stores committed ones.
+            status: "Published",
+            changedBy: v.created_by,
+            changedAt: new Date(v.created_at).toLocaleString(),
+            summary: v.description ?? `${v.steps.length} step${v.steps.length === 1 ? "" : "s"}`,
+          })),
+        );
+      } catch {
+        /* leave empty */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [workflowId]);
 
   const STATUS_STYLES: Record<string, { bg: string; text: string }> = {

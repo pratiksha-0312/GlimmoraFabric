@@ -1,53 +1,56 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Mail, KeyRound, RefreshCw } from "lucide-react";
+import { KeyRound, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+
 import { useAuth } from "@/context/auth-context";
+import { ApiError } from "@/lib/api";
+
+interface PendingMfa {
+  email: string;
+  password: string;
+  rememberMe: boolean;
+}
+
+const PENDING_KEY = "glimmora_mfa_pending";
 
 export default function MfaVerificationPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { completeMfaLogin } = useAuth();
+
+  const [pending, setPending] = useState<PendingMfa | null>(null);
   const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [showRecovery, setShowRecovery] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showRecovery, setShowRecovery] = useState(false);
-  const [recoveryCode, setRecoveryCode] = useState("");
-  const [maskedEmail, setMaskedEmail] = useState("");
-  const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Redirect to login if no pending MFA session & extract email
+  // Recover the pending session and bounce out if not present.
   useEffect(() => {
-    const pending = sessionStorage.getItem("mfa-pending");
-    if (!pending) {
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    if (!raw) {
       router.replace("/login");
       return;
     }
-    const { email } = JSON.parse(pending);
-    if (email) {
-      const [user, domain] = email.split("@");
-      const masked = user.slice(0, 2) + "***@" + domain;
-      setMaskedEmail(masked);
+    try {
+      setPending(JSON.parse(raw) as PendingMfa);
+    } catch {
+      sessionStorage.removeItem(PENDING_KEY);
+      router.replace("/login");
     }
   }, [router]);
 
-  // Resend cooldown timer
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [resendCooldown]);
-
-  const handleResendCode = () => {
-    if (resendCooldown > 0) return;
-    setResendCooldown(30);
-    toast.success("Code sent!", {
-      description: `A new verification code has been sent to ${maskedEmail}`,
-    });
-  };
+  const maskedEmail = pending?.email
+    ? (() => {
+        const [user, domain] = pending.email.split("@");
+        if (!domain) return pending.email;
+        return `${user.slice(0, 2)}***@${domain}`;
+      })()
+    : "";
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -74,63 +77,51 @@ export default function MfaVerificationPage() {
     inputRefs.current[focusIdx]?.focus();
   };
 
-  const completeMfaLogin = () => {
-    const raw = sessionStorage.getItem("mfa-pending");
-    if (!raw) {
-      router.replace("/login");
-      return;
-    }
-    const { rememberMe, ...cred } = JSON.parse(raw);
-    sessionStorage.removeItem("mfa-pending");
-    login(cred, rememberMe);
-    toast.success("Welcome back!", {
-      description: `Signed in as ${cred.fullName}`,
-    });
-    router.push("/dashboard");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!pending) return;
+
     setError("");
     setIsLoading(true);
 
-    await new Promise((r) => setTimeout(r, 1200));
-
-    if (showRecovery) {
-      if (recoveryCode.trim().length >= 8) {
-        completeMfaLogin();
-        return;
-      }
-      setError("Invalid recovery code.");
-      toast.error("Invalid recovery code", {
-        description: "Please enter a valid recovery code.",
-      });
-    } else {
-      const entered = code.join("");
-      if (entered === "123456") {
-        completeMfaLogin();
-        return;
-      }
-      setError("Invalid verification code. Try 123456 for testing.");
-      toast.error("Invalid code", {
-        description: "The verification code is incorrect. Try 123456 for testing.",
-      });
+    const mfaCode = showRecovery ? recoveryCode.trim() : code.join("");
+    if ((showRecovery && mfaCode.length < 8) || (!showRecovery && mfaCode.length !== 6)) {
+      setError(showRecovery ? "Enter a valid recovery code." : "Enter the 6-digit code.");
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(false);
+
+    try {
+      const next = await completeMfaLogin({
+        email: pending.email,
+        password: pending.password,
+        mfaCode,
+        remember: pending.rememberMe,
+      });
+
+      sessionStorage.removeItem(PENDING_KEY);
+      toast.success("Welcome back!", { description: `Signed in as ${next.fullName || next.email}` });
+      router.push("/dashboard");
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "Verification failed.";
+      setError(msg);
+      toast.error("Invalid code", { description: msg });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="flex flex-col items-center">
-      {/* Icon */}
       <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-teal-500/15">
-        <Mail className="h-8 w-8 text-teal-400" />
+        <ShieldCheck className="h-8 w-8 text-teal-400" />
       </div>
 
-      <h1 className="text-3xl font-bold text-white mb-2">Check your email</h1>
+      <h1 className="text-3xl font-bold text-white mb-2">Two-factor authentication</h1>
       <p className="text-sm text-gray-400 mb-2 text-center">
         {showRecovery
           ? "Enter one of your recovery codes"
-          : "We sent a 6-digit verification code to"}
+          : "Enter the 6-digit code from your authenticator app"}
       </p>
       {!showRecovery && maskedEmail && (
         <p className="text-sm text-teal-400 font-medium mb-8">{maskedEmail}</p>
@@ -147,9 +138,12 @@ export default function MfaVerificationPage() {
         {showRecovery ? (
           <input
             type="text"
-            placeholder="XXXX-XXXX-XXXX"
+            placeholder="XXXXXXXX"
             value={recoveryCode}
-            onChange={(e) => { setRecoveryCode(e.target.value); setError(""); }}
+            onChange={(e) => {
+              setRecoveryCode(e.target.value);
+              setError("");
+            }}
             disabled={isLoading}
             className="w-full rounded-full border border-gray-700 bg-[#141927] px-5 py-3.5 text-sm text-white placeholder-gray-500 outline-none transition-colors focus:border-teal-500 text-center tracking-widest disabled:opacity-50"
           />
@@ -158,7 +152,9 @@ export default function MfaVerificationPage() {
             {code.map((digit, i) => (
               <input
                 key={i}
-                ref={(el) => { inputRefs.current[i] = el; }}
+                ref={(el) => {
+                  inputRefs.current[i] = el;
+                }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
@@ -178,37 +174,32 @@ export default function MfaVerificationPage() {
           className="w-full rounded-full bg-teal-500 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-teal-400 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {isLoading ? (
-            <><Loader2 className="h-4 w-4 animate-spin" />Verifying...</>
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Verifying...
+            </>
           ) : (
             "Verify"
           )}
         </button>
       </form>
 
-      {/* Resend code */}
-      {!showRecovery && (
-        <button
-          onClick={handleResendCode}
-          disabled={resendCooldown > 0}
-          className="mt-4 flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:hover:text-gray-400"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          {resendCooldown > 0
-            ? `Resend code in ${resendCooldown}s`
-            : "Didn\u2019t receive the code? Resend"}
-        </button>
-      )}
-
-      {/* Toggle recovery / email code */}
       <button
-        onClick={() => { setShowRecovery(!showRecovery); setError(""); }}
-        className="mt-3 flex items-center gap-2 text-sm text-teal-500 hover:text-teal-400 transition-colors"
+        onClick={() => {
+          setShowRecovery((v) => !v);
+          setError("");
+        }}
+        className="mt-4 flex items-center gap-2 text-sm text-teal-500 hover:text-teal-400 transition-colors"
       >
         <KeyRound className="h-4 w-4" />
-        {showRecovery ? "Use email code" : "Use recovery code instead"}
+        {showRecovery ? "Use authenticator code" : "Use recovery code instead"}
       </button>
 
-      <Link href="/login" className="mt-4 text-sm text-gray-400 hover:text-white transition-colors">
+      <Link
+        href="/login"
+        className="mt-4 text-sm text-gray-400 hover:text-white transition-colors"
+        onClick={() => sessionStorage.removeItem(PENDING_KEY)}
+      >
         Back to sign in
       </Link>
     </div>

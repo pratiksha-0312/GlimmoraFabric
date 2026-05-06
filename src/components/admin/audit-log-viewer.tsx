@@ -438,9 +438,48 @@ export function AuditLogViewer() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/audit-logs")
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((data: AuditLog[]) => { if (!cancelled) setLogs(data); })
+    import("@/lib/api").then(({ auditLogsApi }) => auditLogsApi.list({ limit: 200 }))
+      .then((rows) => {
+        if (cancelled) return;
+        // Adapt FastAPI shape -> local AuditLog UI shape.
+        const mapped: AuditLog[] = rows.map((r) => {
+          const meta = r.metadata ?? {};
+          const before = (meta as Record<string, unknown>).before as Record<string, string> | null;
+          const after = (meta as Record<string, unknown>).after as Record<string, string> | null;
+          const ip = ((meta as Record<string, unknown>).ip_address as string) ?? "";
+          const ua = ((meta as Record<string, unknown>).user_agent as string) ?? "";
+          // Map backend `action` strings to the closed UI enum.
+          const a = r.action.toLowerCase();
+          let action: AuditLog["action"] = "Updated";
+          if (a.includes("create") || a.includes("signup")) action = "Created";
+          else if (a.includes("delete")) action = "Deleted";
+          else if (a.includes("access") || a.includes("read")) action = "Accessed";
+          else if (a.includes("export")) action = "Exported";
+          else if (a.includes("login")) action = "Login";
+          else if (a.includes("logout")) action = "Logout";
+          else if (a.includes("permission") || a.includes("role")) action = "Permission Change";
+          else if (a.includes("config")) action = "Config Change";
+
+          return {
+            id: r.id,
+            timestamp: r.timestamp,
+            actor: r.actor_id ?? "system",
+            actorEmail: "",
+            actorRole: r.source ?? "",
+            action,
+            entity: r.entity_type,
+            entityId: r.entity_id,
+            details: `${r.action} on ${r.entity_type}`,
+            ip,
+            userAgent: ua,
+            sessionId: "",
+            isCritical: action === "Deleted" || action === "Permission Change",
+            before,
+            after,
+          };
+        });
+        setLogs(mapped);
+      })
       .catch(() => { /* keep fallback sample data */ });
     return () => { cancelled = true; };
   }, []);
@@ -526,17 +565,13 @@ export function AuditLogViewer() {
 
   // Export: call API so the filter set stays in sync server-side
   const handleExport = async (format: "csv" | "json") => {
-    const res = await fetch("/api/audit-logs/export", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        format,
-        search,
-        actor: actorFilter,
-        action: actionFilter,
-        entity: entityFilter,
-        critical: criticalOnly,
-      }),
+    const { auditLogsApi } = await import("@/lib/api");
+    const res = await auditLogsApi.export({
+      format,
+      q: search || undefined,
+      action: actionFilter !== "All" ? actionFilter : undefined,
+      entity_type: entityFilter !== "All" ? entityFilter : undefined,
+      limit: 10000,
     });
     if (!res.ok) return;
     const blob = await res.blob();

@@ -159,23 +159,39 @@ function CommentsSection({ taskId }: { taskId: string }) {
   const [posting, setPosting] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/tasks/${taskId}/comments`)
-      .then((r) => r.json())
-      .then(setComments)
-      .catch(() => {});
+    (async () => {
+      try {
+        const { tasksApi } = await import("@/lib/api");
+        const list = await tasksApi.listComments(taskId);
+        // Map the FastAPI comment shape to the local viewer shape.
+        setComments(
+          list.map((c) => ({
+            id: c.id,
+            author: c.created_by,
+            text: c.comment,
+            createdAt: c.created_at,
+          })),
+        );
+      } catch {
+        /* ignore */
+      }
+    })();
   }, [taskId]);
 
   const handlePost = async () => {
     if (!newComment.trim()) return;
     setPosting(true);
-    const res = await fetch(`/api/tasks/${taskId}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: newComment }),
-    });
-    const comment = await res.json();
-    setComments((prev) => [...prev, comment]);
-    setNewComment("");
+    try {
+      const { tasksApi } = await import("@/lib/api");
+      const c = await tasksApi.addComment(taskId, newComment);
+      setComments((prev) => [
+        ...prev,
+        { id: c.id, author: c.created_by, text: c.comment, createdAt: c.created_at },
+      ]);
+      setNewComment("");
+    } catch {
+      /* ignore */
+    }
     setPosting(false);
   };
 
@@ -245,27 +261,59 @@ export default function TaskDetailPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/tasks/${taskId}`)
-      .then((r) => r.json())
-      .then((d) => { setTask(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    (async () => {
+      try {
+        const { tasksApi } = await import("@/lib/api");
+        const d = await tasksApi.get(taskId);
+        // Map FastAPI TaskDetail to the local UI shape. The legacy form
+        // had richer fields (priority, requester, dueDate) that the
+        // backend doesn't track yet — leave those blank.
+        setTask({
+          id: d.task_id,
+          title: d.step_name,
+          status: (d.status.toLowerCase().includes("approve")
+            ? "Approved"
+            : d.status.toLowerCase().includes("reject")
+              ? "Rejected"
+              : "Pending") as TaskDetail["status"],
+          workflow: d.workflow_name,
+          workflowDescription: d.workflow_description ?? "",
+          instanceId: d.instance_id,
+          createdAt: d.created_at,
+          assignee: d.assigned_to ?? "",
+          priority: "Medium",
+          requester: "",
+          dueDate: "",
+        } as TaskDetail);
+      } catch {
+        /* leave loading state */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [taskId]);
 
   const handleApprove = async () => {
     setProcessing(true);
-    await fetch(`/api/tasks/${taskId}/approve`, { method: "POST" });
-    setTask((prev) => prev ? { ...prev, status: "Approved" } : null);
+    try {
+      const { tasksApi } = await import("@/lib/api");
+      await tasksApi.approve(taskId);
+      setTask((prev) => prev ? { ...prev, status: "Approved" } : null);
+    } catch {
+      /* ignore */
+    }
     setProcessing(false);
   };
 
   const handleReject = async (reason: string) => {
     setProcessing(true);
-    await fetch(`/api/tasks/${taskId}/reject`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason }),
-    });
-    setTask((prev) => prev ? { ...prev, status: "Rejected" } : null);
+    try {
+      const { tasksApi } = await import("@/lib/api");
+      await tasksApi.reject(taskId, reason);
+      setTask((prev) => prev ? { ...prev, status: "Rejected" } : null);
+    } catch {
+      /* ignore */
+    }
     setProcessing(false);
     setShowRejectModal(false);
   };

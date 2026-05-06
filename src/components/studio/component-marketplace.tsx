@@ -28,11 +28,17 @@ export function StudioComponentMarketplace() {
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/studio/components")
-      .then((r) => r.json())
-      .then((d: Component[]) => setComponents(d))
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { componentMarketplaceApi } = await import("@/lib/api");
+        const d = (await componentMarketplaceApi.list()) as Component[] | null;
+        if (Array.isArray(d)) setComponents(d);
+      } catch {
+        /* ignore */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const categories = useMemo(() => ["All", ...Array.from(new Set(components.map((c) => c.category))).sort()], [components]);

@@ -121,44 +121,57 @@ export function AllNotificationsPage() {
   const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
-    let ws: WebSocket | null = null;
+    let cleanup: (() => void) | undefined;
 
     const load = async () => {
       try {
-        const res = await fetch("/api/notifications?pageSize=100");
-        if (!res.ok) return;
-        const data = (await res.json()) as { items: ServerItem[] };
-        setNotifications(data.items.map(mapServerItem));
+        const { notificationsApi } = await import("@/lib/api");
+        const data = await notificationsApi.inApp.list({ limit: 100 });
+        setNotifications(
+          data.items.map((it) =>
+            mapServerItem({
+              id: it.id,
+              title: it.title,
+              description: it.body,
+              category: (it.payload?.category as string) ?? "general",
+              priority: (it.payload?.priority as string) ?? "low",
+              actor: (it.payload?.actor as string) ?? "system",
+              read: !!it.read_at,
+              timestamp: it.created_at,
+              link: (it.payload?.link as string) ?? undefined,
+            } as ServerItem),
+          ),
+        );
       } catch {
         // ignore
       }
     };
 
-    const connect = () => {
+    const connect = async () => {
       try {
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        ws = new WebSocket(`${protocol}//${window.location.host}/ws/notifications`);
-        ws.onopen = () => setWsConnected(true);
-        ws.onclose = () => setWsConnected(false);
-        ws.onerror = () => setWsConnected(false);
-        ws.onmessage = (ev) => {
-          try {
-            const msg = JSON.parse(ev.data);
-            if (msg.type === "read") {
-              setNotifications((prev) =>
-                prev.map((n) => (n.id === msg.id ? { ...n, read: true } : n))
-              );
-            } else if (msg.type === "read_all") {
-              setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-            } else if (msg.type === "created" && msg.notification) {
-              setNotifications((prev) => [mapServerItem(msg.notification), ...prev]);
+        const { connectNotificationSocket } = await import("@/lib/api");
+        const socket = connectNotificationSocket({
+          onStateChange: (s) => setWsConnected(s === "open"),
+          onMessage: (raw) => {
+            try {
+              const msg = raw as { type?: string; id?: string; notification?: ServerItem };
+              if (msg.type === "read" && msg.id) {
+                setNotifications((prev) =>
+                  prev.map((n) => (n.id === msg.id ? { ...n, read: true } : n)),
+                );
+              } else if (msg.type === "read_all") {
+                setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+              } else if (msg.type === "created" && msg.notification) {
+                setNotifications((prev) => [mapServerItem(msg.notification!), ...prev]);
+              }
+            } catch {
+              /* ignore */
             }
-          } catch {
-            // ignore
-          }
-        };
+          },
+        });
+        cleanup = () => socket.close();
       } catch {
-        // ignore
+        // No active session — leave the socket disconnected.
       }
     };
 
@@ -166,7 +179,7 @@ export function AllNotificationsPage() {
     connect();
 
     return () => {
-      ws?.close();
+      cleanup?.();
     };
   }, []);
 
@@ -186,12 +199,21 @@ export function AllNotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAsRead = async (id: string) => {
-    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
-    await fetch(`/api/notifications/${id}/read`, { method: "PUT" });
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    try {
+      const { notificationsApi } = await import("@/lib/api");
+      await notificationsApi.inApp.markRead(id);
+    } catch { /* swallow */ }
   };
   const markAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    await fetch(`/api/notifications/all/read`, { method: "PUT" });
+    // Backend has no bulk-mark-read endpoint yet; mark each unread row.
+    try {
+      const { notificationsApi } = await import("@/lib/api");
+      await Promise.all(
+        notifications.filter((n) => !n.read).map((n) => notificationsApi.inApp.markRead(n.id)),
+      );
+    } catch { /* swallow */ }
   };
 
   return (

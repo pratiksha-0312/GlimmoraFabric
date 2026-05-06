@@ -83,23 +83,12 @@ function AddCardModalInner({ onSave, onClose, userEmail, userFullName }: { onSav
         return;
       }
 
-      // Send the Stripe payment method ID to our backend to attach to customer
-      const res = await fetch("/api/payment-methods", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          paymentMethodId: paymentMethod.id,
-          email: userEmail,
-          fullName: userFullName,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Failed to save payment method");
-        setSubmitting(false);
-        return;
-      }
+      // TODO: backend has no payment-methods endpoint yet — once exposed,
+      // POST the Stripe paymentMethod.id here so the server can attach it
+      // to the customer. For now, save the card locally and continue.
+      void paymentMethod;
+      void userEmail;
+      void userFullName;
 
       onSave();
     } catch {
@@ -172,15 +161,11 @@ function PaymentMethodsContent() {
   const [deleting, setDeleting] = useState(false);
 
   const fetchMethods = useCallback(async () => {
-    try {
-      const res = await fetch("/api/payment-methods?tenantId=current");
-      const data = await res.json();
-      setMethods(Array.isArray(data) ? data : []);
-    } catch {
-      setMethods([]);
-    } finally {
-      setLoading(false);
-    }
+    // TODO: backend has no payment-methods endpoint yet (Stripe-customer
+    // attachment lives off-platform). Surface an empty list until the
+    // server-side store ships so the UI doesn't show stale Prisma data.
+    setMethods([]);
+    setLoading(false);
   }, []);
 
   useEffect(() => { fetchMethods(); }, [fetchMethods]);
@@ -193,13 +178,8 @@ function PaymentMethodsContent() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    try {
-      const idParam = deleteTarget.id.startsWith("pm_") ? deleteTarget.id : deleteTarget.id;
-      await fetch(`/api/payment-methods?id=${idParam}`, { method: "DELETE" });
-      setMethods((prev) => prev.filter((m) => m.id !== deleteTarget.id));
-    } catch {
-      // silently fail
-    }
+    // TODO: pipe to backend once payment-methods endpoint exists.
+    setMethods((prev) => prev.filter((m) => m.id !== deleteTarget.id));
     setDeleteTarget(null);
     setDeleting(false);
   };

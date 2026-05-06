@@ -22,11 +22,35 @@ export function PlanEditor({ planId }: { planId: string }) {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/plans/${planId}`)
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((data: Plan) => { setPlan(data); setForm(data); })
-      .catch(() => { /* handled below */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { plansApi } = await import("@/lib/api");
+        // Backend has no GET-by-id; pull from the list and filter.
+        const list = await plansApi.list({ limit: 100 });
+        const found = list.items.find((p) => p.id === planId);
+        if (!found) return;
+        const featureList = Object.entries(found.features)
+          .filter(([, v]) => v !== false && v !== null && v !== undefined)
+          .map(([k, v]) => (typeof v === "boolean" ? k : `${k}: ${v}`));
+        const mapped: Plan = {
+          id: found.id,
+          name: found.name,
+          slug: found.code,
+          price: found.price,
+          billingCycle: String(found.billing_cycle).charAt(0).toUpperCase() +
+            String(found.billing_cycle).slice(1).toLowerCase(),
+          currency: found.currency,
+          features: featureList,
+          isActive: found.is_active,
+        };
+        setPlan(mapped);
+        setForm(mapped);
+      } catch {
+        /* handled below */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [planId]);
 
   const update = <K extends keyof Plan>(key: K, value: Plan[K]) => {
@@ -37,24 +61,34 @@ export function PlanEditor({ planId }: { planId: string }) {
 
   const handleSave = async () => {
     if (!form) return;
-    const res = await fetch(`/api/plans/${planId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      const { plansApi } = await import("@/lib/api");
+      // Map the editor's billingCycle ("Monthly"/"Yearly") to the backend's
+      // pattern (^(monthly|yearly|MONTHLY|YEARLY)$). The backend's update
+      // doesn't accept feature lists here — those go through the matrix.
+      const updated = await plansApi.update(planId, {
         name: form.name,
-        slug: form.slug,
+        code: form.slug,
         price: form.price,
-        billingCycle: form.billingCycle,
         currency: form.currency,
-        isActive: form.isActive,
-      }),
-    });
-    if (res.ok) {
-      const updated = await res.json();
-      setPlan(updated);
-      setForm(updated);
+        billing_cycle: form.billingCycle.toLowerCase() as "monthly" | "yearly",
+        is_active: form.isActive,
+      });
+      const next: Plan = {
+        ...form,
+        name: updated.name,
+        slug: updated.code,
+        price: updated.price,
+        billingCycle: form.billingCycle,
+        currency: updated.currency,
+        isActive: updated.is_active,
+      };
+      setPlan(next);
+      setForm(next);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
+    } catch {
+      /* swallow — saved indicator stays off */
     }
   };
 

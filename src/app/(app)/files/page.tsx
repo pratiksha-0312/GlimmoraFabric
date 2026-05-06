@@ -61,26 +61,20 @@ export default function FilesPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  // Backend has no /api/files endpoint yet (the closest is the Knowledge
+  // Base under /api/v1/ai/knowledge — different domain). Surface the local
+  // sample list for now; once a tenant-scoped file store ships we can swap
+  // this in. Documenting the gap here intentionally.
   const fetchFiles = () => {
-    fetch("/api/files")
-      .then((r) => r.json())
-      .then((d) => { setFiles(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    setLoading(false);
   };
 
   useEffect(() => { fetchFiles(); }, []);
 
   const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/files?id=${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setFiles(prev => prev.filter(f => f.id !== id));
-        setDeleteConfirm(null);
-        setPreviewFile(null);
-      }
-    } catch {
-      // Silently handle
-    }
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+    setDeleteConfirm(null);
+    setPreviewFile(null);
   };
 
   const handleUploadComplete = () => {

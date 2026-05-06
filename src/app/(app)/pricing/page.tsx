@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ArrowRight, Loader2 } from "lucide-react";
+import { plansApi, type Plan as ApiPlan } from "@/lib/api";
 
 interface Plan {
   id: string;
@@ -14,6 +15,23 @@ interface Plan {
   features: string[];
 }
 
+function toUiPlan(p: ApiPlan): Plan {
+  // Backend stores `features` as a dict of flag → value. Convert to a list of
+  // human-readable strings: enabled flags become bullet points.
+  const featureList = Object.entries(p.features)
+    .filter(([, v]) => v !== false && v !== null && v !== undefined)
+    .map(([k, v]) => (typeof v === "boolean" ? k : `${k}: ${v}`));
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.code,
+    price: p.price,
+    billingCycle: String(p.billing_cycle).charAt(0).toUpperCase() + String(p.billing_cycle).slice(1).toLowerCase(),
+    currency: p.currency,
+    features: featureList,
+  };
+}
+
 export default function PricingPage() {
   const router = useRouter();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -21,10 +39,11 @@ export default function PricingPage() {
   const [billing, setBilling] = useState<"Monthly" | "Annual">("Monthly");
 
   useEffect(() => {
-    fetch("/api/plans")
-      .then((r) => r.json())
-      .then((d) => { setPlans(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    plansApi
+      .list({ is_active: true, sort_by: "price", order: "asc", limit: 50 })
+      .then((d) => setPlans(d.items.map(toUiPlan)))
+      .catch(() => setPlans([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const planColors: Record<string, string> = {

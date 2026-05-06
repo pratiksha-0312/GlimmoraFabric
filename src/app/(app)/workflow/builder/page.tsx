@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import type { UserRole } from "@/lib/roles";
+import { ApiError, workflowsApi } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -386,30 +387,62 @@ export default function WorkflowBuilderPage() {
     if (errs.length > 0) return;
 
     setSaving(true);
-    const payload = {
-      name,
-      nodes: nodes.map((n) => ({ id: n.id, type: n.data.nodeType, label: n.data.label, x: n.position.x, y: n.position.y, config: n.data.config })),
-      edges: edges.map((e) => ({ id: e.id, from: e.source, to: e.target })),
-      status: publish ? "Published" : "Draft",
-    };
+    try {
+      // Topologically sort nodes by edge ordering so the steps go to the
+      // backend in execution order. Falls back to declaration order if the
+      // graph has cycles or disconnected nodes.
+      const adj = new Map<string, string[]>();
+      const incoming = new Map<string, number>();
+      nodes.forEach((n) => {
+        adj.set(n.id, []);
+        incoming.set(n.id, 0);
+      });
+      edges.forEach((e) => {
+        adj.get(e.source)?.push(e.target);
+        incoming.set(e.target, (incoming.get(e.target) ?? 0) + 1);
+      });
+      const queue: string[] = [];
+      incoming.forEach((c, id) => {
+        if (c === 0) queue.push(id);
+      });
+      const ordered: string[] = [];
+      while (queue.length) {
+        const id = queue.shift()!;
+        ordered.push(id);
+        for (const next of adj.get(id) ?? []) {
+          incoming.set(next, (incoming.get(next) ?? 0) - 1);
+          if (incoming.get(next) === 0) queue.push(next);
+        }
+      }
+      const orderedIds = ordered.length === nodes.length ? ordered : nodes.map((n) => n.id);
+      const steps = orderedIds.map((id, idx) => {
+        const n = nodes.find((x) => x.id === id);
+        return { step_name: (n?.data.label as string) ?? `Step ${idx + 1}`, order: idx + 1 };
+      });
 
-    if (editId) {
-      await fetch("/api/workflows", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editId, ...payload }),
-      });
-    } else {
-      await fetch("/api/workflows", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const payload = {
+        name,
+        description: publish ? "Published workflow" : "Draft workflow",
+        steps,
+      };
+
+      if (editId) {
+        await workflowsApi.update(editId, payload);
+      } else {
+        await workflowsApi.create(payload);
+      }
+
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        if (publish) router.push("/workflow");
+      }, 1500);
+    } catch (err) {
+      // Surface as a console error; the existing UI doesn't have a toast slot.
+      console.error("Failed to save workflow:", err instanceof ApiError ? err.message : err);
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => { setSaved(false); if (publish) router.push("/workflow"); }, 1500);
   };
 
   return (

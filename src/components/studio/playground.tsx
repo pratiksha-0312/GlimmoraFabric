@@ -34,28 +34,42 @@ function PlaygroundInner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/studio/services")
-      .then((r) => r.json())
-      .then((d: Service[]) => {
-        setServices(d);
-        if (!selected && d.length > 0) {
-          const initial = deepSlug ? d.find((s) => s.slug === deepSlug) : undefined;
-          setSelected((initial ?? d[0]).slug);
+    (async () => {
+      try {
+        const { serviceCatalogApi } = await import("@/lib/api");
+        const list = await serviceCatalogApi.list();
+        // Backend catalog only carries {id, name, description, version,
+        // status}. The legacy UI's `slug`, `category`, `endpoint`, `method`
+        // aren't tracked yet — derive a slug from id/name and default the
+        // method to GET so the picker still works.
+        const mapped: Service[] = list.map((s) => ({
+          id: s.id,
+          slug: s.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          name: s.name,
+          category: "General",
+          endpoint: "/",
+          method: "GET",
+          status: s.status,
+        }));
+        setServices(mapped);
+        if (!selected && mapped.length > 0) {
+          const initial = deepSlug ? mapped.find((s) => s.slug === deepSlug) : undefined;
+          setSelected((initial ?? mapped[0]).slug);
         }
-      })
-      .catch(() => setError("Failed to load services"));
+      } catch {
+        setError("Failed to load services");
+      }
+    })();
   }, [deepSlug, selected]);
 
   const active = useMemo(() => services.find((s) => s.slug === selected), [services, selected]);
   const hasBody = !!active && (active.method === "POST" || active.method === "PUT" || active.method === "PATCH");
 
-  // When service changes, fetch a detail to populate sampleRequest body.
+  // Backend has no per-service detail with a `sampleRequest` body — reset
+  // the editor to an empty JSON object whenever the user picks a service.
   useEffect(() => {
     if (!selected) return;
-    fetch(`/api/studio/services/${selected}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.sampleRequest) setBodyText(d.sampleRequest); else setBodyText("{}"); })
-      .catch(() => setBodyText("{}"));
+    setBodyText("{}");
   }, [selected]);
 
   const run = async () => {
@@ -67,18 +81,25 @@ function PlaygroundInner() {
       try { parsed = JSON.parse(bodyText); } catch { setError("Request body is not valid JSON"); setRunning(false); return; }
     }
     try {
-      const res = await fetch("/api/studio/sandbox", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serviceId: active.slug,
-          method: active.method,
-          endpoint: active.endpoint,
-          body: parsed,
-        }),
+      const startedAt = performance.now();
+      const { sandboxApi } = await import("@/lib/api");
+      const out = await sandboxApi.execute({
+        method: active.method as "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
+        endpoint: active.endpoint,
+        body: (parsed as Record<string, unknown> | null) ?? undefined,
       });
-      const data = await res.json();
-      setResult(data);
+      // Adapt sandbox result into the legacy PlaygroundResponse shape so
+      // the renderer doesn't need any changes.
+      setResult({
+        request: { method: active.method, endpoint: active.endpoint, body: parsed },
+        response: {
+          status: out.status_code,
+          statusText: out.status_code >= 200 && out.status_code < 300 ? "OK" : "Error",
+          body: out.response,
+        },
+        latencyMs: Math.round(performance.now() - startedAt),
+        executedAt: new Date().toISOString(),
+      });
     } catch {
       setError("Sandbox request failed");
     } finally {

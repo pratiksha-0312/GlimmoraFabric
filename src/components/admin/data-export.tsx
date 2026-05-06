@@ -189,10 +189,10 @@ export function DataExportPage() {
   const [page, setPage] = useState(1);
 
   const refresh = () => {
-    fetch("/api/compliance/data-export")
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((data: ExportRequest[]) => setExports(data))
-      .catch(() => { /* ignore */ });
+    // The FastAPI compliance endpoint only handles inline GDPR exports
+    // (POST /compliance/data-export), not a job queue. We surface the local
+    // sample data; queued-export tracking would need a new backend table.
+    /* no-op refresh */
   };
 
   useEffect(() => {
@@ -212,16 +212,23 @@ export function DataExportPage() {
   };
 
   const handleNewExport = async (data: { name: string; dataScope: string; format: ExportRequest["format"]; reason: string }) => {
+    // The backend's GDPR export takes a user_id and returns the data inline.
+    // The current UI form doesn't capture a user_id, so for now we just add
+    // the request to the local list as "Queued" and let the operator follow
+    // up via the backend admin tools.
     setShowModal(false);
-    const res = await fetch("/api/compliance/data-export", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) return;
-    refresh();
-    // Server moves to Completed ~3s later; poll once to pick it up
-    setTimeout(refresh, 3500);
+    const stub: ExportRequest = {
+      id: `EX-${Date.now()}`,
+      name: data.name,
+      dataScope: data.dataScope,
+      format: data.format,
+      status: "Queued",
+      requestedAt: new Date().toISOString(),
+      requestedBy: "current-user",
+      fileSize: null,
+      reason: data.reason,
+    };
+    setExports((prev) => [stub, ...prev]);
   };
 
   const handleDownload = (exp: ExportRequest) => {

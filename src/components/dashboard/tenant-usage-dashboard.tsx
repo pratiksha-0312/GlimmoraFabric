@@ -36,13 +36,40 @@ export function TenantUsageDashboard({ tenantId }: { tenantId: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/tenants/${tenantId}`).then((r) => r.ok ? r.json() : null),
-      fetch(`/api/tenants/${tenantId}/usage`).then((r) => r.ok ? r.json() : null),
-    ])
-      .then(([t, u]) => { setTenant(t); setUsage(u); })
-      .catch(() => { /* handled in render */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { tenantsApi } = await import("@/lib/api");
+        const [t, usageRows] = await Promise.all([
+          tenantsApi.get(tenantId).catch(() => null),
+          tenantsApi.getUsage(tenantId).catch(() => [] as Awaited<ReturnType<typeof tenantsApi.getUsage>>),
+        ]);
+        if (t) {
+          // The backend tenant doesn't carry a "plan" field on the row —
+          // surface a placeholder until we wire the tenant→subscription
+          // join through entitlementsApi.
+          setTenant({ id: t.id, name: t.name, plan: "—" });
+        }
+        // Aggregate usage rows by resource_type. Backend doesn't return a
+        // limit on the usage endpoint, so we surface limit:-1 ("unlimited")
+        // and callers can layer entitlementsApi.check() on top for quotas.
+        if (Array.isArray(usageRows) && usageRows.length > 0) {
+          const sumByType: Record<string, number> = {};
+          for (const row of usageRows) {
+            sumByType[row.resource_type] = (sumByType[row.resource_type] ?? 0) + row.used;
+          }
+          setUsage({
+            users: { used: sumByType.users ?? 0, limit: -1, label: "Users" },
+            apiCalls: { used: sumByType.api_calls ?? sumByType.apiCalls ?? 0, limit: -1, label: "API Calls" },
+            storage: { used: sumByType.storage ?? 0, limit: -1, label: "Storage (GB)" },
+            workflows: { used: sumByType.workflows ?? 0, limit: -1, label: "Workflows" },
+          });
+        }
+      } catch {
+        /* handled in render */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [tenantId]);
 
   if (loading) return <div className="p-10 text-center text-sm" style={{ color: "var(--gf-text-muted)" }}>Loading usage…</div>;

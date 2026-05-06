@@ -91,10 +91,26 @@ export function WebhookManagementPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/webhooks");
-        if (!res.ok) return;
-        const data = (await res.json()) as Webhook[];
-        setWebhooks(data);
+        const { webhooksApi } = await import("@/lib/api");
+        const data = await webhooksApi.list();
+        setWebhooks(
+          data.map((w) => ({
+            id: w.id,
+            name: w.url,
+            url: w.url,
+            events: w.events,
+            status: w.is_active ? "active" : "inactive",
+            secret: "",
+            createdAt: w.created_at,
+            lastTriggered: null,
+            successRate: 0,
+            totalDeliveries: 0,
+            failedDeliveries: 0,
+            retryPolicy: "exponential",
+            timeout: 30,
+            headers: {},
+          })),
+        );
       } catch {
         // ignore
       }
@@ -131,21 +147,33 @@ export function WebhookManagementPage() {
   const handleCreate = async () => {
     if (!newName || !newUrl || newEvents.length === 0) return;
     try {
-      const res = await fetch("/api/webhooks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { webhooksApi } = await import("@/lib/api");
+      const created = await webhooksApi.register({
+        url: newUrl,
+        events: newEvents,
+        is_active: true,
+      });
+      setWebhooks((prev) => [
+        {
+          id: created.id,
           name: newName,
-          url: newUrl,
-          events: newEvents,
+          url: created.url,
+          events: created.events,
+          status: created.is_active ? "active" : "inactive",
+          // Backend returns the secret only once on creation — surface it
+          // here so the user can copy it; subsequent reads return empty.
+          secret: created.secret,
+          createdAt: created.created_at,
+          lastTriggered: null,
+          successRate: 0,
+          totalDeliveries: 0,
+          failedDeliveries: 0,
           retryPolicy: newRetry,
           timeout: newTimeout,
-        }),
-      });
-      if (res.ok) {
-        const created = (await res.json()) as Webhook;
-        setWebhooks(prev => [created, ...prev]);
-      }
+          headers: {},
+        },
+        ...prev,
+      ]);
     } catch {
       // ignore
     }
@@ -154,30 +182,19 @@ export function WebhookManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    setWebhooks(prev => prev.filter(w => w.id !== id));
+    // The backend has no DELETE /webhooks/{id} endpoint yet — remove from
+    // local state only. TODO: wire when the backend ships a delete route.
+    setWebhooks((prev) => prev.filter((w) => w.id !== id));
     setActionMenu(null);
-    try {
-      await fetch(`/api/webhooks?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    } catch {
-      // ignore
-    }
   };
 
   const toggleStatus = async (id: string) => {
-    const target = webhooks.find(w => w.id === id);
+    const target = webhooks.find((w) => w.id === id);
     if (!target) return;
     const nextStatus: Webhook["status"] = target.status === "active" ? "inactive" : "active";
-    setWebhooks(prev => prev.map(w => w.id === id ? { ...w, status: nextStatus } : w));
+    // No PATCH endpoint either — keep this client-side only.
+    setWebhooks((prev) => prev.map((w) => (w.id === id ? { ...w, status: nextStatus } : w)));
     setActionMenu(null);
-    try {
-      await fetch("/api/webhooks", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: nextStatus }),
-      });
-    } catch {
-      // ignore
-    }
   };
 
   const toggleEventSelection = (event: string) => {

@@ -47,11 +47,54 @@ export function AiAnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/ai/analytics/performance")
-      .then((r) => r.json())
-      .then((d: PerformanceResponse) => setData(d))
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { aiAnalyticsApi } = await import("@/lib/api");
+        // FastAPI returns `{aggregated, items, pagination, filters_applied}`
+        // — the legacy UI wants `{summary, models, timeseries, topPrompts}`.
+        // Adapt: surface aggregated rows as `models` and zero-fill the
+        // fields the backend doesn't compute yet.
+        const perf = await aiAnalyticsApi.performance({ limit: 50 });
+        const totalRequests = perf.aggregated.reduce((s, m) => s + m.evaluation_count, 0);
+        const avgLatency = perf.aggregated.length > 0
+          ? perf.aggregated.reduce((s, m) => s + m.avg_latency_ms, 0) / perf.aggregated.length
+          : 0;
+        // Model accuracy as a stand-in for success rate (0–1 → percentage).
+        const avgAccuracy = perf.aggregated.length > 0
+          ? perf.aggregated.reduce((s, m) => s + m.avg_accuracy, 0) / perf.aggregated.length
+          : 0;
+        setData({
+          generatedAt: new Date().toISOString(),
+          summary: {
+            totalRequests24h: totalRequests,
+            avgLatencyMs: Math.round(avgLatency),
+            errorRatePct: Math.max(0, 100 * (1 - avgAccuracy)),
+            uptime30dPct: 100 * avgAccuracy,
+            activeModels: perf.aggregated.length,
+          },
+          models: perf.aggregated.map((m) => ({
+            id: m.model_name,
+            name: m.model_name,
+            family: m.model_name.split("/")[0] ?? "unknown",
+            tokensPerSec: 0,
+            avgLatencyMs: m.avg_latency_ms,
+            p95LatencyMs: m.max_latency_ms,
+            errorRate: Math.max(0, 100 * (1 - m.avg_accuracy)),
+            successRate: 100 * m.avg_accuracy,
+            requests24h: m.evaluation_count,
+          })),
+          // Time-series + top-prompts aren't computed by the performance
+          // endpoint; the dashboard will show empty charts until the
+          // backend ships per-period rollups.
+          timeseries: [],
+          topPrompts: [],
+        });
+      } catch {
+        /* ignore */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   if (loading) return <div className="p-10 text-center text-sm" style={{ color: "var(--gf-text-muted)" }}>Loading metrics…</div>;

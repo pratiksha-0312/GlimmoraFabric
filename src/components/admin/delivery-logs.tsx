@@ -104,10 +104,27 @@ export function DeliveryLogsPage() {
 
   const loadLogs = async () => {
     try {
-      const res = await fetch("/api/notifications/delivery-logs");
-      if (!res.ok) return;
-      const data = (await res.json()) as DeliveryLog[];
-      setLogs(data);
+      // FastAPI exposes notifications via the hub (`notificationsApi.list`).
+      // The shape is much narrower than the legacy DeliveryLog — fill the
+      // missing fields with sensible defaults so the UI keeps working.
+      const { notificationsApi } = await import("@/lib/api");
+      const data = await notificationsApi.list({ limit: 200 });
+      setLogs(
+        data.map((n) => ({
+          id: n.id,
+          templateId: "",
+          templateName: "",
+          channel: (n.channel as DeliveryLog["channel"]) ?? "email",
+          recipient: n.recipient,
+          subject: "",
+          status: (n.status as DeliveryLog["status"]) ?? "pending",
+          sentAt: n.created_at,
+          deliveredAt: null,
+          openedAt: null,
+          retryCount: n.attempts ?? 0,
+          errorMessage: null,
+        })),
+      );
     } catch {
       // ignore
     }

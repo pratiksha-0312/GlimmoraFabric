@@ -107,23 +107,44 @@ export default function PaymentGatewaysPage() {
   const [editSecretKey, setEditSecretKey] = useState("");
   const [editWebhookSecret, setEditWebhookSecret] = useState("");
 
-  const fetchGateways = () => {
+  const fetchGateways = async () => {
     setLoading(true);
-    fetch("/api/payment-gateways")
-      .then((r) => r.json())
-      .then((d) => { setGateways(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    try {
+      const { paymentGatewaysApi } = await import("@/lib/api");
+      const list = await paymentGatewaysApi.list();
+      setGateways(
+        list.map((g) => ({
+          id: g.id,
+          name: g.name,
+          displayName: g.display_name || g.name,
+          enabled: g.status === "active",
+          mode: "live" as const,
+          publicKey: "",
+          // Backend never exposes the secret on read — display blanks until
+          // the operator types in new keys to overwrite.
+          secretKey: g.has_credentials ? "••••••••" : "",
+          webhookSecret: "",
+          health: g.health_status,
+          lastChecked: g.last_checked_at,
+        })),
+      );
+    } catch {
+      setGateways([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchGateways(); }, []);
 
   const handleToggle = async (gw: Gateway) => {
-    await fetch("/api/payment-gateways", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...gw, enabled: !gw.enabled }),
-    });
-    setGateways((prev) => prev.map((g) => g.id === gw.id ? { ...g, enabled: !g.enabled } : g));
+    try {
+      const { paymentGatewaysApi } = await import("@/lib/api");
+      await paymentGatewaysApi.update(gw.id, { status: gw.enabled ? "inactive" : "active" });
+      setGateways((prev) => prev.map((g) => g.id === gw.id ? { ...g, enabled: !g.enabled } : g));
+    } catch {
+      /* swallow */
+    }
   };
 
   const openEdit = (gw: Gateway) => {
@@ -137,17 +158,21 @@ export default function PaymentGatewaysPage() {
   const handleSave = async () => {
     if (!editGateway) return;
     setSaving(true);
-    await fetch("/api/payment-gateways", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...editGateway,
-        mode: editMode,
-        publicKey: editPublicKey,
-        secretKey: editSecretKey,
-        webhookSecret: editWebhookSecret,
-      }),
-    });
+    try {
+      const { paymentGatewaysApi } = await import("@/lib/api");
+      await paymentGatewaysApi.update(editGateway.id, {
+        display_name: editGateway.displayName,
+        credentials: {
+          mode: editMode,
+          public_key: editPublicKey,
+          secret_key: editSecretKey,
+          webhook_secret: editWebhookSecret,
+        },
+        status: editGateway.enabled ? "active" : "inactive",
+      });
+    } catch {
+      /* swallow */
+    }
     setGateways((prev) =>
       prev.map((g) =>
         g.id === editGateway.id

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   ROLE_LABELS, isInternalTeam, type UserRole, type EndUserRole, type InternalSystemRole,
 } from "@/lib/roles";
+import { ApiError, rolesApi } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -87,26 +88,27 @@ export default function CreateRolePage() {
     if (!roleName) { setError("Please select a role name."); return; }
     setError("");
     setIsSubmitting(true);
-    const res = await fetch("/api/roles", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: roleCode,
-        name: ROLE_LABELS[roleName as UserRole] ?? roleName,
-        type: userType === "end-user" ? "end_user" : "internal",
-        description,
-        status: status === "active" ? "Active" : "Inactive",
-        permissions: perms,
-      }),
-    });
-    setIsSubmitting(false);
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "Failed to create role");
-      return;
+    try {
+      // Convert the matrix to "module.action" permission strings, dropping
+      // unchecked entries. The backend stores them as a JSON array on the role.
+      const permissionList = Object.entries(perms)
+        .filter(([, on]) => on)
+        .map(([k]) => k.replace(":", ".").toLowerCase());
+
+      await rolesApi.create({
+        // Backend's role name must be unique — use the role-key for stable
+        // lookup, and surface the human label via description.
+        name: roleName,
+        description: `${ROLE_LABELS[roleName as UserRole] ?? roleName}${description ? ` — ${description}` : ""}`,
+        permissions: permissionList,
+      });
+      toast.success("Role created successfully");
+      router.push("/roles");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to create role");
+    } finally {
+      setIsSubmitting(false);
     }
-    toast.success("Role created successfully");
-    router.push("/roles");
   };
 
   const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" };

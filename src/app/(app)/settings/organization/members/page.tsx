@@ -50,13 +50,25 @@ export default function MembersPage() {
 
   const fetchMembers = useCallback(async () => {
     if (!tenantId) return;
-    const res = await fetch(`/api/orgs/${tenantId}/members`);
-    const data = await res.json();
-    setMembers(data.map((m: Record<string, string>) => ({
-      ...m,
-      lastActive: m.lastLogin ?? "—",
-    })));
-    setLoading(false);
+    try {
+      const { orgsApi } = await import("@/lib/api");
+      const list = await orgsApi.listMembers(tenantId);
+      setMembers(
+        list.map((m) => ({
+          id: m.user_id,
+          name: m.full_name || m.email,
+          email: m.email,
+          role: m.role_in_tenant as UserRole,
+          status: m.is_active ? "Active" : "Inactive",
+          joinedDate: new Date(m.joined_at).toLocaleDateString(),
+          lastLogin: "—",
+        })),
+      );
+    } catch {
+      setMembers([]);
+    } finally {
+      setLoading(false);
+    }
   }, [tenantId]);
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
@@ -77,9 +89,14 @@ export default function MembersPage() {
 
   const handleRemove = async () => {
     if (!removeTarget || !tenantId) return;
-    await fetch(`/api/orgs/${tenantId}/members/${removeTarget.id}`, { method: "DELETE" });
+    try {
+      const { orgsApi } = await import("@/lib/api");
+      await orgsApi.removeMember(tenantId, removeTarget.id);
+      toast.success("Member removed successfully");
+    } catch {
+      toast.error("Failed to remove member");
+    }
     setRemoveTarget(null);
-    toast.success("Member removed successfully");
     fetchMembers();
   };
 
@@ -230,22 +247,22 @@ function InviteModal({ tenantId, onClose, onInvited }: { tenantId: string; onClo
   const handleSend = async () => {
     if (!email) return;
     setIsLoading(true);
-    const res = await fetch(`/api/orgs/${tenantId}/invite`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, message }),
-    });
-    const data = await res.json();
-    setIsLoading(false);
-
-    if (!res.ok) {
-      toast.error(data.error);
-      return;
+    try {
+      const { orgsApi } = await import("@/lib/api");
+      const inv = await orgsApi.invite(tenantId, { email });
+      // The backend returns the raw invitation token only on creation —
+      // build a deep link the recipient can follow.
+      const token = inv.invitation_token ?? inv.id;
+      setInviteUrl(`${window.location.origin}/invite/${token}`);
+      void message;
+      void memberId;
+      setSent(true);
+      setTimeout(() => { onInvited(); }, 2000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send invitation");
+    } finally {
+      setIsLoading(false);
     }
-
-    setInviteUrl(window.location.origin + data.inviteUrl);
-    setSent(true);
-    setTimeout(() => { onInvited(); }, 2000);
   };
 
   const copyLink = () => {

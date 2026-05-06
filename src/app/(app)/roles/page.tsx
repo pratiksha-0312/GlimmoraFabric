@@ -11,6 +11,7 @@ import {
   isInternalTeam, type UserRole,
 } from "@/lib/roles";
 import { useAuth } from "@/context/auth-context";
+import { ApiError, usersApi } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // All roles from roles.ts
@@ -61,24 +62,24 @@ export default function RolesPage() {
   const [userPage, setUserPage] = useState(1);
 
   const fetchUsers = useCallback(async () => {
-    // Fetch platform users
-    const usersRes = await fetch("/api/users");
-    const platformUsers: AssignedUser[] = usersRes.ok ? await usersRes.json() : [];
-
-    // Fetch tenants (they are tenant admins)
-    const tenantsRes = await fetch("/api/tenants");
-    const tenants = tenantsRes.ok ? await tenantsRes.json() : [];
-    const tenantUsers: AssignedUser[] = tenants.map((t: Record<string, string>) => ({
-      id: `tenant-${t.id}`,
-      name: t.name,
-      email: t.email || t.username,
-      role: "Tenant Admin",
-      status: t.status === "Active" ? "Active" : t.status,
-      joinedDate: t.created || "",
-      tenant: t.name,
-    }));
-
-    setAllUsers([...tenantUsers, ...platformUsers]);
+    try {
+      const resp = await usersApi.list({ page: 1, page_size: 100 });
+      const rows: AssignedUser[] = resp.users.map((u) => ({
+        id: u.id,
+        name: u.full_name || u.email,
+        email: u.email,
+        role: ROLE_LABELS[u.role as UserRole] ?? u.role,
+        status: u.is_active ? "Active" : "Inactive",
+        joinedDate: new Date(u.created_at).toLocaleDateString(),
+        tenant: "",
+      }));
+      setAllUsers(rows);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // Permission denied → leave empty list rather than blocking the roles tab.
+        if (err.status === 403) setAllUsers([]);
+      }
+    }
   }, []);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);

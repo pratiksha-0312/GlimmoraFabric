@@ -45,10 +45,29 @@ export default function TenantUserDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/users/${userId}`)
-      .then((r) => r.json())
-      .then((data) => { setUser(data); setLoading(false); })
-      .catch(() => setLoading(false));
+    (async () => {
+      try {
+        const { usersApi } = await import("@/lib/api");
+        const u = await usersApi.get(userId);
+        setUser({
+          id: u.id,
+          code: u.id.slice(0, 8).toUpperCase(),
+          name: u.full_name || u.email,
+          email: u.email,
+          password: "",
+          role: u.role as UserRole,
+          status: u.is_active ? "Active" : "Inactive",
+          mfa: u.mfa_enabled,
+          lastLogin: u.last_login ?? "—",
+          tenant: "",
+          joinedDate: u.created_at,
+        });
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [userId]);
 
   const fieldStyle = {

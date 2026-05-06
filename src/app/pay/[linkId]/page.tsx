@@ -12,6 +12,7 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
+import { checkoutApi } from "@/lib/api";
 
 interface PaymentLink {
   id: string;
@@ -72,29 +73,26 @@ function PaymentForm({ link }: { link: PaymentLink }) {
     setFormError(null);
 
     try {
-      // 1. Create PaymentIntent on server
-      const res = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId: link.planId,
-          planName: link.planName,
-          amount: link.amount,
-          currency: link.currency,
-          billing: { email, fullName: "" },
-        }),
-      });
+      // 1. Initiate the payment via the public checkout endpoint. The
+      //    backend returns the provider order, including Stripe's
+      //    client_secret on the response payload.
+      const data = (await checkoutApi.pay(link.id, "stripe")) as {
+        client_secret?: string;
+        id?: string;
+        payment_id?: string;
+      };
+      const clientSecret = data.client_secret ?? "";
+      const paymentId = data.payment_id ?? data.id ?? link.id;
 
-      const data = await res.json();
-      if (!res.ok) {
-        setFormError(data.error ?? "Failed to create payment.");
+      if (!clientSecret) {
+        setFormError("Failed to create payment.");
         setProcessing(false);
         return;
       }
 
       // 2. Confirm payment with Stripe.js (handles 3DS automatically)
       const { error, paymentIntent } = await stripeHook.confirmCardPayment(
-        data.clientSecret,
+        clientSecret,
         {
           payment_method: {
             card: cardElement,
@@ -110,7 +108,7 @@ function PaymentForm({ link }: { link: PaymentLink }) {
       }
 
       if (paymentIntent?.status === "succeeded") {
-        router.push(`/checkout/success?paymentId=${data.id}`);
+        router.push(`/checkout/success?paymentId=${paymentId}`);
       } else {
         setFormError("Payment could not be completed. Please try again.");
         setProcessing(false);
@@ -198,13 +196,24 @@ function PaymentLinkContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/payment-links/${linkId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Link not found");
-        return r.json();
+    checkoutApi
+      .getDetails(linkId)
+      .then((d) => {
+        setLink({
+          id: d.link_id,
+          planId: d.link_id,
+          planName: d.description || "Payment",
+          amount: d.amount,
+          currency: d.currency,
+          billingCycle: "one-time",
+          description: d.description || "Payment",
+          features: [],
+          active: d.status?.toLowerCase() === "active",
+          createdBy: "",
+        });
       })
-      .then((data) => { setLink(data); setLoading(false); })
-      .catch(() => { setError("This payment link is invalid or has expired."); setLoading(false); });
+      .catch(() => setError("This payment link is invalid or has expired."))
+      .finally(() => setLoading(false));
   }, [linkId]);
 
   if (loading) {

@@ -36,11 +36,17 @@ export function StudioHealthDashboard() {
   const [loading, setLoading] = useState(true);
 
   const refresh = () => {
-    fetch("/api/studio/health")
-      .then((r) => r.json())
-      .then((d: HealthResponse) => setHealth(d))
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { healthDashboardApi } = await import("@/lib/api");
+        const d = (await healthDashboardApi.get()) as HealthResponse | null;
+        if (d) setHealth(d);
+      } catch {
+        /* ignore */
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   useEffect(() => {

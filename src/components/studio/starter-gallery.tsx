@@ -30,11 +30,12 @@ export function StudioStarterGallery() {
   const [category, setCategory] = useState("All");
 
   useEffect(() => {
-    fetch("/api/studio/starters")
-      .then((r) => r.json())
-      .then((d: Starter[]) => setStarters(d))
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false));
+    // FastAPI has no `/studio/starters` endpoint yet — surface an empty
+    // gallery so the page renders cleanly. The legacy Next.js route used
+    // a static seed file; once the backend ships a starter catalog we can
+    // swap this to `apiClient.get("/api/studio/starters")`.
+    setStarters([]);
+    setLoading(false);
   }, []);
 
   const categories = useMemo(() => ["All", ...Array.from(new Set(starters.map((s) => s.category))).sort()], [starters]);

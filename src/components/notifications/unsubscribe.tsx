@@ -16,9 +16,12 @@ export function UnsubscribePage({ token }: { token: string }) {
   const handleUnsubscribe = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/notifications/unsubscribe/${encodeURIComponent(token)}`);
-      const data = await res.json();
-      setStatus(res.ok && data.valid ? "success" : "error");
+      const { notificationsApi } = await import("@/lib/api");
+      // The unsubscribe endpoint is public (no auth, no tenant header) and
+      // returns the resulting preference flags. We treat any successful
+      // response as a confirmation.
+      const prefs = await notificationsApi.preferences.unsubscribe(token);
+      setStatus(prefs ? "success" : "error");
     } catch {
       setStatus("error");
     } finally {

@@ -90,13 +90,14 @@ export function ReportViewer({ reportId }: { reportId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/compliance/reports/${reportId}`)
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((data: ReportData) => {
+    // Backend exposes only the report metadata + PDF link, not the parsed
+    // sections used by this viewer. Fetch the metadata so we display the
+    // correct timestamp / status, but keep the structured sections from
+    // the local fallback templates.
+    import("@/lib/api").then(({ complianceApi }) => complianceApi.getReportPdf(reportId))
+      .then((meta) => {
         if (cancelled) return;
-        // API may return sections=[]; fall back to DEFAULT_REPORT sections so the UI isn't empty
-        const sections = Array.isArray(data.sections) && data.sections.length > 0 ? data.sections : DEFAULT_REPORT.sections;
-        setReport({ ...data, sections });
+        setReport((prev) => ({ ...prev, id: meta.id, status: meta.status }));
       })
       .catch(() => { /* keep fallback */ });
     return () => { cancelled = true; };

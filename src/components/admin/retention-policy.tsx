@@ -88,15 +88,13 @@ export function RetentionPolicySettings() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/compliance/retention")
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((data: { rules: RetentionRule[]; settings: { defaultRetention: number; autoDeleteEnabled: boolean } }) => {
+    import("@/lib/api").then(({ complianceApi }) => complianceApi.getRetentionPolicy())
+      .then((policy) => {
         if (cancelled) return;
-        if (Array.isArray(data.rules)) setRules(data.rules);
-        if (data.settings) {
-          setGlobalRetention(String(data.settings.defaultRetention));
-          setAutoDeleteEnabled(data.settings.autoDeleteEnabled);
-        }
+        // Backend models retention as a single tenant-wide policy. Per-rule
+        // configuration is purely client-side; we only sync the global setting.
+        setGlobalRetention(String(policy.retention_days));
+        setAutoDeleteEnabled(policy.auto_purge_enabled);
       })
       .catch(() => { /* keep fallback sample rules */ });
     return () => { cancelled = true; };
@@ -108,15 +106,15 @@ export function RetentionPolicySettings() {
   };
 
   const handleSave = async () => {
-    const res = await fetch("/api/compliance/retention", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        rules,
-        settings: { defaultRetention: parseInt(globalRetention), autoDeleteEnabled },
-      }),
-    });
-    if (!res.ok) return;
+    try {
+      const { complianceApi } = await import("@/lib/api");
+      await complianceApi.updateRetentionPolicy({
+        retention_days: parseInt(globalRetention),
+        auto_purge_enabled: autoDeleteEnabled,
+      });
+    } catch {
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };

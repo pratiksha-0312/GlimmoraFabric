@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import type { UserRole } from "@/lib/roles";
+import { ApiError, refundsApi, type Refund as ApiRefund } from "@/lib/api";
 
 interface Refund {
   id: string;
@@ -25,6 +26,27 @@ interface Refund {
   status: "Completed" | "Pending" | "Rejected";
   createdAt: string;
   processedAt: string | null;
+}
+
+function statusLabel(s: string): Refund["status"] {
+  const v = s.toLowerCase();
+  if (v === "succeeded" || v === "completed") return "Completed";
+  if (v === "failed" || v === "rejected") return "Rejected";
+  return "Pending";
+}
+
+function toUiRefund(r: ApiRefund): Refund {
+  return {
+    id: r.id,
+    paymentId: r.payment_id,
+    tenant: r.tenant_id,
+    amount: r.amount,
+    currency: r.currency,
+    reason: r.reason ?? "",
+    status: statusLabel(r.status),
+    createdAt: new Date(r.created_at).toLocaleDateString(),
+    processedAt: r.updated_at,
+  };
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
@@ -47,12 +69,16 @@ export default function RefundManagementPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchRefunds = () => {
+  const fetchRefunds = async () => {
     setLoading(true);
-    fetch("/api/refunds")
-      .then((r) => r.json())
-      .then((d) => { setRefunds(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    try {
+      const list = await refundsApi.list({ limit: 200 });
+      setRefunds(list.map(toUiRefund));
+    } catch {
+      setRefunds([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchRefunds(); }, []);
@@ -75,24 +101,23 @@ export default function RefundManagementPage() {
     if (Object.keys(e).length > 0) return;
 
     setSubmitting(true);
-    const res = await fetch("/api/refunds", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        paymentId: formPaymentId,
-        tenant: formTenant,
+    try {
+      const created = await refundsApi.initiate({
+        payment_id: formPaymentId,
         amount: Number(formAmount),
         reason: formReason,
-      }),
-    });
-    const newRefund = await res.json();
-    setRefunds((prev) => [newRefund, ...prev]);
-    setShowModal(false);
-    setFormPaymentId("");
-    setFormTenant("");
-    setFormAmount("");
-    setFormReason("");
-    setSubmitting(false);
+      });
+      setRefunds((prev) => [toUiRefund(created), ...prev]);
+      setShowModal(false);
+      setFormPaymentId("");
+      setFormTenant("");
+      setFormAmount("");
+      setFormReason("");
+    } catch (err) {
+      setFormErrors({ submit: err instanceof ApiError ? err.message : "Failed to issue refund" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const fieldStyle = {

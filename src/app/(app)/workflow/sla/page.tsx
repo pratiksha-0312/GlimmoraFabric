@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import type { UserRole } from "@/lib/roles";
+import { workflowsApi } from "@/lib/api";
 
 interface SlaData {
   summary: {
@@ -56,10 +57,37 @@ export default function SlaStatusDashboard() {
 
   const fetchData = () => {
     setLoading(true);
-    fetch("/api/workflows/sla-status")
-      .then((r) => r.json())
-      .then((d) => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    workflowsApi
+      .getSlaStatus()
+      .then((res) => {
+        const items = res.items;
+        const total = items.reduce((s, i) => s + i.total, 0);
+        const within = items.reduce((s, i) => s + i.within_sla, 0);
+        const atRisk = items.reduce((s, i) => s + i.near_breach, 0);
+        const breached = items.reduce((s, i) => s + i.breached, 0);
+        setData({
+          summary: {
+            totalActive: total,
+            withinSLA: within,
+            atRisk,
+            breached,
+            complianceRate: total > 0 ? Math.round((within / total) * 100) : 0,
+          },
+          byWorkflow: items.map((i) => ({
+            workflow: i.workflow_name,
+            total: i.total,
+            withinSLA: i.within_sla,
+            atRisk: i.near_breach,
+            breached: i.breached,
+            avgCompletion: "—",
+            slaTarget: "—",
+          })),
+          // Trend data isn't computed by the backend yet — leave empty.
+          trend: [],
+        });
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchData(); }, []);

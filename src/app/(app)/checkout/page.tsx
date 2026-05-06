@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Loader2,
 } from "lucide-react";
+import { paymentsApi, plansApi, type Plan as ApiPlan } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -375,23 +376,30 @@ function StripePaymentForm({
     setPaymentError(null);
 
     try {
-      // 1. Create PaymentIntent on the server
-      const res = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId: plan.id,
-          planName: plan.name,
-          amount: plan.price,
-          currency: plan.currency,
-          billing,
-        }),
+      // 1. Create payment via FastAPI. The backend returns metadata that
+      //    includes the Stripe client_secret on the provider order.
+      const created = await paymentsApi.create({
+        amount: plan.price,
+        currency: plan.currency,
+        provider: "stripe",
+        metadata: {
+          plan_id: plan.id,
+          plan_name: plan.name,
+          billing_email: billing.email,
+          billing_name: billing.fullName,
+        },
       });
 
-      const data = await res.json();
+      // The provider order is opaque from the typed client — pull the
+      // client_secret from the raw provider_order_id payload (the backend
+      // stores Stripe's client_secret there for stripe orders).
+      const clientSecret =
+        (created as unknown as { client_secret?: string }).client_secret ??
+        created.provider_order_id ??
+        "";
 
-      if (!res.ok) {
-        setPaymentError(data.error ?? "Failed to create payment. Please try again.");
+      if (!clientSecret) {
+        setPaymentError("Failed to create payment. Please try again.");
         setProcessing(false);
         return;
       }
@@ -399,7 +407,7 @@ function StripePaymentForm({
       // 2. Confirm the payment on the client with Stripe.js
       //    Stripe handles 3D Secure automatically here
       const { error, paymentIntent } = await stripeHook.confirmCardPayment(
-        data.clientSecret,
+        clientSecret,
         {
           payment_method: {
             card: cardElement,
@@ -427,7 +435,7 @@ function StripePaymentForm({
       }
 
       if (paymentIntent?.status === "succeeded") {
-        onSuccess(data.id);
+        onSuccess(created.id);
       } else {
         setPaymentError("Payment could not be completed. Please try again.");
         setProcessing(false);
@@ -593,7 +601,26 @@ function CheckoutFlow() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    fetch("/api/plans").then((r) => r.json()).then(setPlans);
+    plansApi
+      .list({ is_active: true, sort_by: "price", order: "asc", limit: 50 })
+      .then((d) =>
+        setPlans(
+          d.items.map((p: ApiPlan) => ({
+            id: p.id,
+            name: p.name,
+            slug: p.code,
+            price: p.price,
+            billingCycle:
+              String(p.billing_cycle).charAt(0).toUpperCase() +
+              String(p.billing_cycle).slice(1).toLowerCase(),
+            currency: p.currency,
+            features: Object.entries(p.features)
+              .filter(([, v]) => v !== false && v !== null && v !== undefined)
+              .map(([k, v]) => (typeof v === "boolean" ? k : `${k}: ${v}`)),
+          })),
+        ),
+      )
+      .catch(() => setPlans([]));
   }, []);
 
   const validateBilling = () => {

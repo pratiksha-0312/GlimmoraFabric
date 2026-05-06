@@ -178,17 +178,9 @@ export function TemplateEditorPage({ templateId }: { templateId: string }) {
 
   useEffect(() => {
     if (templateId === "new") return;
-    (async () => {
-      try {
-        const res = await fetch("/api/notification-templates");
-        if (!res.ok) return;
-        const list = (await res.json()) as TemplateData[];
-        const found = list.find((t) => t.id === templateId);
-        if (found) setTemplate({ ...template, ...found });
-      } catch {
-        // ignore
-      }
-    })();
+    // No GET /notification-templates list endpoint on the backend yet — the
+    // editor opens with the seed template state. Once the backend ships a
+    // list/get endpoint we can hydrate from `notificationTemplatesApi`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateId]);
 
@@ -200,26 +192,18 @@ export function TemplateEditorPage({ templateId }: { templateId: string }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`/api/notification-templates/${templateId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: template.name,
-          subject: template.subject,
-          channel: template.channel,
-          category: template.category,
-          status: template.status,
-          bodyHtml: template.bodyHtml,
-          bodyText: template.bodyText,
-          variables: template.variables,
-        }),
+      const { notificationTemplatesApi } = await import("@/lib/api");
+      // Backend uses a single Jinja2 body — pick HTML for email, text otherwise.
+      const body = template.channel === "email" ? template.bodyHtml : template.bodyText;
+      await notificationTemplatesApi.upsert({
+        id: templateId === "new" ? undefined : templateId,
+        slug: template.name,
+        description: template.category ?? "",
+        subject: template.subject,
+        body,
       });
-      if (res.ok) {
-        const updated = (await res.json()) as TemplateData;
-        setTemplate((prev) => ({ ...prev, ...updated }));
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } finally {
       setSaving(false);
     }
@@ -227,18 +211,13 @@ export function TemplateEditorPage({ templateId }: { templateId: string }) {
 
   useEffect(() => {
     if (!showPreview || templateId === "new") return;
-    const t = setTimeout(() => {
-      fetch(`/api/notification-templates/${templateId}/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: template.subject,
-          body: template.channel === "email" ? template.bodyHtml : template.bodyText,
-          channel: template.channel,
-        }),
-      }).catch(() => {
+    const t = setTimeout(async () => {
+      try {
+        const { notificationTemplatesApi } = await import("@/lib/api");
+        await notificationTemplatesApi.preview(templateId, { variables: {} });
+      } catch {
         // ignore — local preview still renders
-      });
+      }
     }, 300);
     return () => clearTimeout(t);
   }, [showPreview, templateId, template.subject, template.bodyHtml, template.bodyText, template.channel]);

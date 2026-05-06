@@ -111,15 +111,54 @@ export default function InstanceDetailPage() {
   const nodeTypes: NodeTypes = useMemo(() => ({ readonlyStep: ReadonlyStepNode }), []);
 
   useEffect(() => {
-    fetch(`/api/workflow-instances/${instanceId}`)
-      .then((r) => r.json())
-      .then((d) => { setInstance(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    (async () => {
+      try {
+        const { workflowInstancesApi } = await import("@/lib/api");
+        const d = await workflowInstancesApi.get(instanceId);
+        // Map FastAPI execution detail -> local UI shape. Step types
+        // aren't tracked server-side, so default to "task" with start/end
+        // markers at the boundaries.
+        const stepCount = d.steps.length;
+        setInstance({
+          id: d.instance_id,
+          workflowId: d.workflow_definition_id,
+          workflowName: d.workflow_name,
+          triggeredBy: d.started_by,
+          status: d.status,
+          startedAt: new Date(d.started_at).toLocaleString(),
+          sla: "—",
+          steps: d.steps.map((s, idx) => ({
+            id: s.id,
+            name: s.step_name,
+            type: idx === 0 ? "start" : idx === stepCount - 1 ? "end" : "task",
+            status: (
+              s.status.toLowerCase().includes("complete") ? "completed" :
+              s.is_current ? "running" :
+              s.status.toLowerCase().includes("fail") ? "failed" :
+              "pending"
+            ) as Step["status"],
+            assignee: s.assigned_to ?? undefined,
+            startedAt: s.created_at,
+            completedAt: undefined,
+            result: undefined,
+          })),
+        });
+      } catch {
+        /* leave loading state */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [instanceId]);
 
   const handleCancel = async () => {
     setCancelling(true);
-    await fetch(`/api/workflow-instances/${instanceId}/cancel`, { method: "POST" });
+    try {
+      const { workflowInstancesApi } = await import("@/lib/api");
+      await workflowInstancesApi.cancel(instanceId);
+    } catch {
+      /* ignore */
+    }
     setCancelling(false);
     setShowCancel(false);
     setInstance((prev) => prev ? { ...prev, status: "Cancelled" } : null);

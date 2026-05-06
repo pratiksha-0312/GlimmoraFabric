@@ -36,17 +36,39 @@ export function FeatureFlagOverridePage({ flagId }: { flagId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/feature-flags/${flagId}`)
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((data: FeatureFlag) => {
-        if (cancelled) return;
-        setFlag(data);
-        setOverrides(data.tenantOverrides);
-        setRollout(data.rolloutPercentage);
-        setEnabled(data.enabled);
-      })
-      .catch(() => { /* 404 / network */ })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    (async () => {
+      try {
+        const { featureFlagsApi } = await import("@/lib/api");
+        // The backend's flags endpoint is `GET /feature-flags/` (list).
+        // There's no per-id GET, so fetch the list and filter client-side.
+        const list = await featureFlagsApi.list({ limit: 100 });
+        const ff = list.items.find((f) => f.id === flagId);
+        if (!ff || cancelled) return;
+        setFlag({
+          id: ff.id,
+          key: ff.key,
+          name: ff.name,
+          description: ff.description,
+          enabled: ff.is_enabled,
+          rolloutPercentage: ff.rollout_percentage ?? 0,
+          environment: ff.environment,
+          category: "",
+          created: ff.created_at,
+          updatedAt: ff.updated_at ?? ff.created_at,
+          // Per-tenant overrides aren't returned in the list response —
+          // they're upserted via setOverride. Surface an empty array; admins
+          // can re-add via the form.
+          tenantOverrides: [],
+        });
+        setOverrides([]);
+        setRollout(ff.rollout_percentage ?? 0);
+        setEnabled(ff.is_enabled);
+      } catch {
+        /* 404 / network */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
   }, [flagId]);
 
@@ -70,16 +92,29 @@ export function FeatureFlagOverridePage({ flagId }: { flagId: string }) {
   };
 
   const handleSave = async () => {
-    await fetch(`/api/feature-flags/${flagId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rolloutPercentage: rollout, enabled }),
-    });
-    await fetch(`/api/feature-flags/${flagId}/overrides`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ overrides }),
-    });
+    try {
+      const { featureFlagsApi } = await import("@/lib/api");
+      await featureFlagsApi.update(flagId, {
+        is_enabled: enabled,
+        rollout_percentage: rollout,
+      });
+      // The backend's per-tenant override endpoint takes one tenant id at a
+      // time; iterate. The legacy code stored a `tenantCode` (human label),
+      // but the backend wants a UUID — so this only works once the override
+      // form captures real tenant IDs. Until then, skip overrides whose
+      // code isn't UUID-shaped.
+      const isUuid = /^[0-9a-f-]{36}$/i;
+      for (const o of overrides) {
+        if (!isUuid.test(o.tenantCode)) continue;
+        await featureFlagsApi.setOverride(flagId, {
+          tenant_id: o.tenantCode,
+          is_enabled: o.enabled,
+        });
+      }
+    } catch {
+      /* swallow — the saved indicator stays off */
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };

@@ -38,11 +38,22 @@ export function StudioSdkDocs() {
   const [active, setActive] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/studio/docs")
-      .then((r) => r.json())
-      .then((d: SdkDocsResponse) => { setDocs(d); setActive(d.sections[0]?.category ?? null); })
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { sdkDocsApi } = await import("@/lib/api");
+        // Response shape is loose on the typed client — cast to the local
+        // interface and trust the renderer to handle missing sections.
+        const d = (await sdkDocsApi.list()) as SdkDocsResponse;
+        if (d && Array.isArray(d.sections)) {
+          setDocs(d);
+          setActive(d.sections[0]?.category ?? null);
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const activeSection = useMemo(() => docs?.sections.find((s) => s.category === active), [docs, active]);

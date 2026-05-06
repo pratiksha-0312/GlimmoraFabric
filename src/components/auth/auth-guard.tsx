@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2, ShieldAlert } from "lucide-react";
+
 import { useAuth } from "@/context/auth-context";
 import type { UserRole } from "@/lib/roles";
-import { ShieldAlert } from "lucide-react";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -12,14 +13,26 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isReady } = useAuth();
   const router = useRouter();
 
+  // Wait for the initial hydration + refresh cycle before deciding to redirect.
   useEffect(() => {
+    if (!isReady) return;
     if (!isAuthenticated) {
       router.replace("/login");
     }
-  }, [isAuthenticated, router]);
+  }, [isReady, isAuthenticated, router]);
+
+  // While the auth context is still hydrating (e.g., first paint, refresh in flight),
+  // show a quiet spinner instead of redirecting prematurely.
+  if (!isReady) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated || !user) return null;
 

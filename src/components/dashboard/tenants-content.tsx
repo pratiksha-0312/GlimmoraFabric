@@ -903,10 +903,36 @@ function nextTenantCode(tenants: Tenant[]): string {
 export function TenantsContent() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
 
-  const refreshTenants = () =>
-    fetch("/api/tenants")
-      .then((r) => r.json())
-      .then(setTenants);
+  const refreshTenants = async () => {
+    try {
+      const { tenantsApi } = await import("@/lib/api");
+      const resp = await tenantsApi.list({ page: 1, limit: 100 });
+      // Map FastAPI Tenant -> legacy UI Tenant shape. Fields the backend
+      // doesn't track (plan, users, apiCalls, billing) get default values.
+      const list: Tenant[] = resp.items.map((t) => ({
+        id: t.id,
+        code: t.code,
+        name: t.name,
+        username: t.contact_email,
+        password: "",
+        plan: "Starter" as Tenant["plan"],
+        users: 0,
+        status: (t.status === "ACTIVE"
+          ? "Active"
+          : t.status === "SUSPENDED"
+            ? "Suspended"
+            : "Inactive") as Tenant["status"],
+        apiCalls: "—",
+        created: new Date(t.created_at).toLocaleDateString("en-US", {
+          month: "short", day: "2-digit", year: "numeric",
+        }),
+        description: t.address ?? "",
+      }));
+      setTenants(list);
+    } catch {
+      setTenants([]);
+    }
+  };
 
   useEffect(() => {
     refreshTenants();
@@ -964,59 +990,63 @@ export function TenantsContent() {
 
   const handleCreate = async (data: { name: string; username: string; password: string; plan: Tenant["plan"]; billingCycle: string; users: number; features: string[] }) => {
     const code = nextTenantCode(tenants);
-    const newTenant = {
-      code,
-      name: data.name,
-      username: data.username,
-      password: data.password,
-      plan: data.plan,
-      users: data.users,
-      status: "Provisioning" as const,
-      apiCalls: "—",
-      created: new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-      description: `${data.plan} plan • ${data.billingCycle} billing • ${data.features.join(", ")}`,
-    };
-    await fetch("/api/tenants", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newTenant),
-    });
-    await refreshTenants();
+    try {
+      const { tenantsApi } = await import("@/lib/api");
+      // Map UI form to the FastAPI tenant schema. `username` is treated as
+      // contact_email; legacy plan/billing fields land in `features`.
+      await tenantsApi.create({
+        name: data.name,
+        code,
+        contact_email: data.username,
+        features: { plan: data.plan, billing_cycle: data.billingCycle, addons: data.features },
+      });
+      await refreshTenants();
+      toast.success(`Tenant ${code} created successfully ✓`);
+    } catch {
+      toast.error("Failed to create tenant");
+    }
     setShowCreate(false);
-    toast.success(`Tenant ${code} created successfully ✓`);
   };
 
   const handleDetailSave = async (data: Partial<Tenant>) => {
     if (!viewTenant) return;
-    await fetch(`/api/tenants/${viewTenant.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    await refreshTenants();
+    try {
+      const { tenantsApi } = await import("@/lib/api");
+      await tenantsApi.update(viewTenant.id, {
+        name: data.name,
+        contact_email: data.username,
+        address: data.description,
+      });
+      await refreshTenants();
+    } catch { /* ignore */ }
     setViewTenant((prev) => (prev ? { ...prev, ...data } : null));
   };
 
   const handleDelete = async () => {
     if (!deleteModal) return;
     const name = deleteModal.name;
-    await fetch(`/api/tenants/${deleteModal.id}`, { method: "DELETE" });
-    await refreshTenants();
+    try {
+      const { tenantsApi } = await import("@/lib/api");
+      await tenantsApi.remove(deleteModal.id);
+      await refreshTenants();
+      toast.error("Tenant deleted ✓", { description: name });
+    } catch {
+      toast.error("Failed to delete tenant");
+    }
     setDeleteModal(null);
     if (viewTenant?.id === deleteModal.id) setViewTenant(null);
-    toast.error("Tenant deleted ✓", { description: name });
   };
 
   const handleStatusChange = async () => {
     if (!statusModal) return;
     const isSuspend = statusModal.action === "suspend";
     const newStatus: Tenant["status"] = isSuspend ? "Suspended" : "Active";
-    await fetch(`/api/tenants/${statusModal.tenant.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    await refreshTenants();
+    try {
+      const { tenantsApi } = await import("@/lib/api");
+      if (isSuspend) await tenantsApi.suspend(statusModal.tenant.id);
+      else await tenantsApi.activate(statusModal.tenant.id);
+      await refreshTenants();
+    } catch { /* ignore */ }
     if (viewTenant?.id === statusModal.tenant.id) {
       setViewTenant((prev) => (prev ? { ...prev, status: newStatus } : null));
     }

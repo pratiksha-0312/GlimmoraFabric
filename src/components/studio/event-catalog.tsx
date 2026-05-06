@@ -30,11 +30,17 @@ export function StudioEventCatalog() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/studio/events")
-      .then((r) => r.json())
-      .then((d: StudioEvent[]) => setEvents(d))
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { eventCatalogApi } = await import("@/lib/api");
+        const d = (await eventCatalogApi.list()) as StudioEvent[] | null;
+        if (Array.isArray(d)) setEvents(d);
+      } catch {
+        /* ignore */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const categories = useMemo(() => ["All", ...Array.from(new Set(events.map((e) => e.category))).sort()], [events]);

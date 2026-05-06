@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { tasksApi, type TaskItem as ApiTask } from "@/lib/api";
 
 interface Task {
   id: string;
@@ -55,10 +56,34 @@ export default function TaskInboxPage() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetch("/api/tasks/my")
-      .then((r) => r.json())
-      .then((d) => { setTasks(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    tasksApi
+      .myTasks({ page: 1, page_size: 100 })
+      .then((d) => {
+        const mapStatus = (s: string): Task["status"] => {
+          const v = s.toLowerCase();
+          if (v.includes("approve")) return "Approved";
+          if (v.includes("reject")) return "Rejected";
+          if (v.includes("complete")) return "Completed";
+          return "Pending";
+        };
+        setTasks(
+          d.items.map((t: ApiTask) => ({
+            id: t.task_id,
+            title: t.step_name,
+            type: "task",
+            workflow: t.workflow_name,
+            // Priority isn't tracked at the task level on the backend.
+            priority: "Medium",
+            status: mapStatus(t.status),
+            assignee: "",
+            requester: "",
+            dueDate: "",
+            createdAt: new Date(t.created_at).toLocaleDateString(),
+          })),
+        );
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = tasks.filter((t) => {

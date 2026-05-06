@@ -14,6 +14,7 @@ import {
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { useAuth } from "@/context/auth-context";
 import type { UserRole } from "@/lib/roles";
+import { paymentGatewaysApi, type BillingAnalytics } from "@/lib/api";
 
 interface Analytics {
   mrr: number;
@@ -153,10 +154,36 @@ export default function AdminBillingDashboard() {
 
   const fetchData = () => {
     setLoading(true);
-    fetch("/api/billing/analytics")
-      .then((r) => r.json())
-      .then((d) => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    paymentGatewaysApi
+      .analytics()
+      .then((a: BillingAnalytics) => {
+        // Map FastAPI billing analytics shape to the legacy UI shape.
+        // MRR / churn metrics aren't computed server-side yet — surface
+        // zeros and mark them in the UI.
+        setData({
+          mrr: 0,
+          arr: 0,
+          churnRate: 0,
+          activeSubscriptions: a.active_subscriptions,
+          totalRevenue: a.total_revenue,
+          avgRevenuePerUser:
+            a.active_subscriptions > 0 ? a.total_revenue / a.active_subscriptions : 0,
+          newSubscriptions: 0,
+          cancelledSubscriptions: 0,
+          mrrGrowth: 0,
+          revenueByPlan: Object.entries(a.revenue_by_gateway).map(([plan, revenue]) => ({
+            plan,
+            revenue,
+            subscribers: 0,
+            percentage:
+              a.total_revenue > 0 ? Math.round((revenue / a.total_revenue) * 100) : 0,
+          })),
+          monthlyRevenue: [],
+          churnHistory: [],
+        });
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchData(); }, []);

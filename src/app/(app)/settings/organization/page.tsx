@@ -23,18 +23,25 @@ export default function OrganizationSettingsPage() {
 
   useEffect(() => {
     if (!user?.tenantId) { setLoading(false); return; }
-    fetch(`/api/orgs/${user.tenantId}`)
-      .then((r) => r.json())
-      .then((data) => {
+    (async () => {
+      try {
+        const { tenantsApi } = await import("@/lib/api");
+        const t = await tenantsApi.get(user.tenantId!);
         setForm({
-          name: data.name ?? "",
-          domain: data.domain ?? "",
-          description: data.description ?? "",
+          name: t.name,
+          domain: t.domain ?? "",
+          // Backend tenants don't track free-form description; address is the
+          // closest field — surface it here for editing.
+          description: t.address ?? "",
           industry: "Technology",
           website: "",
         });
-      })
-      .finally(() => setLoading(false));
+      } catch {
+        /* keep blank form */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [user?.tenantId]);
 
   const update = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
@@ -42,14 +49,22 @@ export default function OrganizationSettingsPage() {
   const handleSave = async () => {
     if (!user?.tenantId) return;
     setIsLoading(true);
-    await fetch(`/api/orgs/${user.tenantId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: form.name, domain: form.domain, description: form.description }),
-    });
-    setIsLoading(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      const { tenantsApi } = await import("@/lib/api");
+      await tenantsApi.update(user.tenantId, {
+        name: form.name,
+        domain: form.domain || undefined,
+        // Free-form description is stored as `address` since the backend
+        // schema doesn't have a dedicated description column.
+        address: form.description || undefined,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      /* swallow */
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fieldStyle = { backgroundColor: "var(--gf-bg-base)", borderColor: "var(--gf-border)", color: "var(--gf-text-primary)" };

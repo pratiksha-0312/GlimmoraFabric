@@ -141,6 +141,24 @@ export const ROLE_BADGE_CLASSES: Record<UserRole, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Role normalization
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve an arbitrary backend role string to a known UserRole.
+ * Falls back to "developer" when the value is missing or unrecognized,
+ * so UI lookups against ROLE_LABELS / ROLE_COLORS / ROLE_BADGE_CLASSES
+ * never return undefined.
+ */
+export function normalizeRole(raw: string | null | undefined): UserRole {
+  if (raw && raw in ROLE_LABELS) return raw as UserRole;
+  // Common backend aliases
+  if (raw === "admin") return "super_admin";
+  if (raw === "user" || raw === "member") return "tenant_member";
+  return "developer";
+}
+
+// ---------------------------------------------------------------------------
 // Permission & Identity Helpers
 // ---------------------------------------------------------------------------
 

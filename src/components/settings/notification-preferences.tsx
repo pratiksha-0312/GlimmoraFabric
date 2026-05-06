@@ -81,23 +81,22 @@ export function NotificationPreferences() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/notifications/preferences");
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          channels: { id: string; enabled: boolean }[];
-          categories: { id: string; channels: CategoryPreference["channels"] }[];
-        };
+        const { notificationsApi } = await import("@/lib/api");
+        // Backend stores per-channel master toggles only:
+        //   email_enabled / sms_enabled / push_enabled / whatsapp_enabled / in_app_enabled
+        // The legacy UI also has per-category × per-channel toggles, which
+        // the backend doesn't track. Surface the master toggles here and
+        // leave the local category state as-is — saving still updates the
+        // backend channel master values.
+        const prefs = await notificationsApi.preferences.get();
         setChannels((prev) =>
           prev.map((c) => {
-            const server = data.channels.find((x) => x.id === c.id);
-            return server ? { ...c, enabled: server.enabled } : c;
-          })
-        );
-        setCategories((prev) =>
-          prev.map((c) => {
-            const server = data.categories.find((x) => x.id === c.id);
-            return server ? { ...c, channels: server.channels } : c;
-          })
+            if (c.id === "email") return { ...c, enabled: prefs.email_enabled };
+            if (c.id === "sms") return { ...c, enabled: prefs.sms_enabled };
+            if (c.id === "push") return { ...c, enabled: prefs.push_enabled };
+            if (c.id === "inApp") return { ...c, enabled: prefs.in_app_enabled };
+            return c;
+          }),
         );
       } catch {
         // ignore
@@ -118,16 +117,21 @@ export function NotificationPreferences() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch("/api/notifications/preferences", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          channels: channels.map((c) => ({ id: c.id, enabled: c.enabled })),
-          categories: categories.map((c) => ({ id: c.id, channels: c.channels })),
-        }),
+      const { notificationsApi } = await import("@/lib/api");
+      const find = (id: string) => channels.find((c) => c.id === id)?.enabled ?? false;
+      // Per-category × per-channel toggles aren't supported server-side yet;
+      // we persist only the per-channel master toggles. Category state stays
+      // local until the backend exposes a richer schema.
+      await notificationsApi.preferences.update({
+        email_enabled: find("email"),
+        sms_enabled: find("sms"),
+        push_enabled: find("push"),
+        in_app_enabled: find("inApp"),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+    } catch {
+      /* swallow */
     } finally {
       setSaving(false);
     }

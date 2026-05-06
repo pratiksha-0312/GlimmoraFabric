@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Mail } from "lucide-react";
+import { toast } from "sonner";
+
+import { ApiError, authApi } from "@/lib/api";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -13,22 +16,22 @@ export function ForgotPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
+
     setIsLoading(true);
 
-    // TODO: Replace with actual Identity & Access Service API call
-    // API: requestPasswordReset(email)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      if (!email) {
-        setError("Please enter your email address.");
-        return;
-      }
-
-      console.log("Password reset requested for:", email);
+      await authApi.forgotPassword(email.trim());
+      // Backend always returns success even if the email doesn't exist (anti-enumeration).
       setIsSubmitted(true);
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "Something went wrong. Please try again.";
+      setError(msg);
+      toast.error("Couldn't send reset link", { description: msg });
     } finally {
       setIsLoading(false);
     }
@@ -37,15 +40,13 @@ export function ForgotPasswordForm() {
   if (isSubmitted) {
     return (
       <div className="flex flex-col items-center">
-        {/* Mail Icon */}
         <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-teal-500/10">
           <Mail className="h-6 w-6 text-teal-500" />
         </div>
 
         <h1 className="text-3xl font-bold text-white mb-2">Check your email</h1>
         <p className="text-sm text-gray-400 mb-8 text-center">
-          We sent a password reset link to{" "}
-          <span className="text-white">{email}</span>
+          If an account exists for <span className="text-white">{email}</span>, we&apos;ve sent a password reset link.
         </p>
 
         <Link
@@ -61,23 +62,9 @@ export function ForgotPasswordForm() {
 
   return (
     <div className="flex flex-col items-center">
-      {/* Lock Icon */}
       <div className="mb-6">
-        <svg
-          width="48"
-          height="48"
-          viewBox="0 0 48 48"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <rect
-            x="10"
-            y="22"
-            width="28"
-            height="20"
-            rx="4"
-            fill="url(#lock-gradient)"
-          />
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="22" width="28" height="20" rx="4" fill="url(#lock-gradient)" />
           <path
             d="M16 22V16C16 11.58 19.58 8 24 8C28.42 8 32 11.58 32 16V22"
             stroke="url(#lock-gradient)"
@@ -87,14 +74,7 @@ export function ForgotPasswordForm() {
           />
           <circle cx="24" cy="32" r="3" fill="#0a0e1a" />
           <defs>
-            <linearGradient
-              id="lock-gradient"
-              x1="24"
-              y1="8"
-              x2="24"
-              y2="42"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="lock-gradient" x1="24" y1="8" x2="24" y2="42" gradientUnits="userSpaceOnUse">
               <stop stopColor="#f59e0b" />
               <stop offset="1" stopColor="#f97316" />
             </linearGradient>
@@ -102,20 +82,17 @@ export function ForgotPasswordForm() {
         </svg>
       </div>
 
-      {/* Header */}
       <h1 className="text-3xl font-bold text-white mb-2">Forgot password?</h1>
       <p className="text-sm text-gray-400 mb-8 text-center">
         No worries, we&apos;ll send you reset instructions
       </p>
 
-      {/* Error */}
       {error && (
         <div className="w-full mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
           {error}
         </div>
       )}
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="w-full space-y-4">
         <div>
           <input
@@ -140,12 +117,11 @@ export function ForgotPasswordForm() {
               Sending...
             </>
           ) : (
-            "Reset password"
+            "Send reset link"
           )}
         </button>
       </form>
 
-      {/* Back to login */}
       <Link
         href="/login"
         className="mt-6 flex items-center gap-2 text-sm text-teal-500 hover:text-teal-400 transition-colors"

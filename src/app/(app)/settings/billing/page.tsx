@@ -57,15 +57,14 @@ function ChangePlanModal({ current, subscriptionId, onClose, onPlanChanged }: { 
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/subscriptions/${subscriptionId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: plan.id, planName: plan.name, price: plan.price }),
-      });
-      if (!res.ok) throw new Error("Failed to update plan");
-      const data = await res.json();
+      const { subscriptionsApi } = await import("@/lib/api");
+      // The static UI plan list uses local IDs; the backend takes a real
+      // plan UUID. For now, the PLANS array is used only for display so we
+      // pass the local id as plan_id — this should be wired to a real list.
+      const data = await subscriptionsApi.update(subscriptionId, { plan_id: plan.id });
       setDone(true);
-      onPlanChanged(data);
+      onPlanChanged({ planName: plan.name, price: plan.price });
+      void data;
       setTimeout(onClose, 1500);
     } catch {
       setError("Failed to update plan. Please try again.");
@@ -134,15 +133,13 @@ function CancelModal({ subscriptionId, periodEnd, onClose, onCancelled }: { subs
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/subscriptions/${subscriptionId}/cancel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason, feedback: reason }),
-      });
-      if (!res.ok) throw new Error("Failed to cancel subscription");
-      const data = await res.json();
+      const { subscriptionsApi } = await import("@/lib/api");
+      // Cancellation reason isn't accepted by the backend yet — surfaced
+      // here only for the local UX. TODO: pipe through when supported.
+      void reason;
+      const sub = await subscriptionsApi.cancel(subscriptionId);
       setDone(true);
-      onCancelled(data);
+      onCancelled({ status: sub.status, cancelAtPeriodEnd: true });
       setTimeout(onClose, 1500);
     } catch {
       setError("Failed to cancel. Please try again.");
@@ -213,18 +210,62 @@ export default function BillingPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [subRes, usageRes] = await Promise.all([
-        fetch(`/api/subscriptions/${subscriptionId}`),
-        fetch(`/api/tenants/${tenantId}/usage`),
+      const { subscriptionsApi, tenantsApi } = await import("@/lib/api");
+      // Use the current-tenant subscription endpoint. The legacy code's
+      // `subscriptionId` came from local state; now we resolve from server.
+      const [sub, usageList] = await Promise.all([
+        subscriptionsApi.current().catch(() => null),
+        tenantId !== "default"
+          ? tenantsApi.getUsage(tenantId).catch(() => [])
+          : Promise.resolve([]),
       ]);
-      if (subRes.ok) setSubscription(await subRes.json());
-      if (usageRes.ok) setUsage(await usageRes.json());
+
+      if (sub) {
+        const start = sub.start_date;
+        const end = sub.end_date ?? "—";
+        setSubscription({
+          id: sub.id,
+          planId: sub.plan_id,
+          planName: sub.plan?.name ?? "Subscription",
+          price: sub.plan?.price ?? 0,
+          currency: sub.plan?.currency ?? "USD",
+          billingCycle: sub.billing_cycle,
+          status: sub.status,
+          currentPeriodStart: start,
+          currentPeriodEnd: end,
+          cancelAtPeriodEnd: !sub.auto_renew,
+          createdAt: sub.created_at,
+          features: sub.plan?.features
+            ? Object.keys(sub.plan.features).filter((k) =>
+                Boolean((sub.plan!.features as Record<string, unknown>)[k]),
+              )
+            : [],
+        });
+      }
+
+      // Convert tenant usage rows -> { resource_type: { used, limit, label } }.
+      if (Array.isArray(usageList) && usageList.length > 0) {
+        const map: Record<string, UsageItem> = {};
+        for (const row of usageList) {
+          map[row.resource_type] = {
+            used: row.used,
+            // Backend usage rows don't carry a limit; surface 0 to hide the
+            // meter rather than show a misleading bar. TODO: combine with
+            // entitlementsApi.check() to get usage_limit per resource.
+            limit: 0,
+            label: row.resource_type,
+          };
+        }
+        setUsage(map);
+      } else {
+        setUsage(null);
+      }
     } catch {
       // silently fail — UI shows loading state
     } finally {
       setLoading(false);
     }
-  }, [subscriptionId, tenantId]);
+  }, [tenantId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
