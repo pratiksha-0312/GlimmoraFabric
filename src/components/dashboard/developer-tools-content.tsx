@@ -23,52 +23,17 @@ import {
 
 // ── Data ──────────────────────────────────────────────────────────────
 
-const SDKS = [
-  { name: "JavaScript / TypeScript", pkg: "@glimmora/fabric-sdk", version: "3.4.1", downloads: "1.2M", status: "Stable" as const, install: "npm install @glimmora/fabric-sdk" },
-  { name: "Python", pkg: "glimmora-fabric", version: "3.3.0", downloads: "840K", status: "Stable" as const, install: "pip install glimmora-fabric" },
-  { name: "Go", pkg: "github.com/glimmora/fabric-go", version: "3.2.0", downloads: "310K", status: "Stable" as const, install: "go get github.com/glimmora/fabric-go" },
-  { name: "Java", pkg: "com.glimmora:fabric-sdk", version: "3.1.2", downloads: "520K", status: "Stable" as const, install: "mvn install com.glimmora:fabric-sdk:3.1.2" },
-  { name: "Ruby", pkg: "glimmora_fabric", version: "2.9.0-beta.3", downloads: "95K", status: "Beta" as const, install: "gem install glimmora_fabric" },
-  { name: "PHP", pkg: "glimmora/fabric-php", version: "2.8.1-beta.1", downloads: "78K", status: "Beta" as const, install: "composer require glimmora/fabric-php" },
-];
+const SDKS = [];
 
-const REPOS = [
-  { name: "fabric-starter-next", desc: "Next.js starter with auth, dashboards & theming", stack: "Next.js, TypeScript, Tailwind", stars: 2340, url: "https://github.com/glimmora/fabric-starter-next" },
-  { name: "fabric-starter-express", desc: "Express API starter with middleware & validation", stack: "Node.js, Express, Prisma", stars: 1870, url: "https://github.com/glimmora/fabric-starter-express" },
-  { name: "fabric-starter-django", desc: "Django REST starter with Celery & Redis", stack: "Python, Django, PostgreSQL", stars: 1450, url: "https://github.com/glimmora/fabric-starter-django" },
-  { name: "fabric-starter-go", desc: "Go microservice starter with gRPC & protobuf", stack: "Go, gRPC, Docker", stars: 980, url: "https://github.com/glimmora/fabric-starter-go" },
-  { name: "fabric-starter-mobile", desc: "React Native mobile starter with Expo", stack: "React Native, Expo, TypeScript", stars: 760, url: "https://github.com/glimmora/fabric-starter-mobile" },
-  { name: "fabric-infra-terraform", desc: "Terraform modules for AWS/GCP deployment", stack: "Terraform, AWS, GCP", stars: 640, url: "https://github.com/glimmora/fabric-infra-terraform" },
-];
+const REPOS = [];
 
-const ENDPOINTS = [
-  { method: "GET" as const, path: "/api/v1/orders", service: "Commerce", desc: "List orders with status filtering" },
-  { method: "PUT" as const, path: "/api/v1/orders/:id", service: "Commerce", desc: "Update order status or details" },
-  { method: "DELETE" as const, path: "/api/v1/orders/:id", service: "Commerce", desc: "Cancel and delete an order" },
-  { method: "POST" as const, path: "/api/v1/events/publish", service: "EventBus", desc: "Publish a domain event to the bus" },
-  { method: "GET" as const, path: "/api/v1/analytics/metrics", service: "Analytics", desc: "Retrieve aggregated platform metrics" },
-  { method: "POST" as const, path: "/api/v1/notifications/send", service: "Notifications", desc: "Send push/email/SMS notification" },
-];
+const ENDPOINTS = [];
 
 const METHOD_COLORS: Record<string, string> = { GET: "#22c55e", POST: "#3b82f6", PUT: "#f59e0b", DELETE: "#ef4444" };
 
-const EVENTS = [
-  { name: "order.placed", source: "Commerce", schemaVersion: "3.0.1", subscribers: 8, lastEmitted: "2026-03-31T09:12:30Z" },
-  { name: "order.fulfilled", source: "Commerce", schemaVersion: "3.0.1", subscribers: 4, lastEmitted: "2026-03-31T08:55:00Z" },
-  { name: "payment.completed", source: "Billing", schemaVersion: "1.4.0", subscribers: 6, lastEmitted: "2026-03-31T09:10:00Z" },
-  { name: "notification.sent", source: "Notifications", schemaVersion: "1.2.0", subscribers: 2, lastEmitted: "2026-03-31T09:08:00Z" },
-  { name: "analytics.aggregated", source: "Analytics", schemaVersion: "1.0.0", subscribers: 3, lastEmitted: "2026-03-31T08:00:00Z" },
-  { name: "inventory.low", source: "Commerce", schemaVersion: "1.1.0", subscribers: 3, lastEmitted: "2026-03-31T06:30:00Z" },
-];
+const EVENTS = [];
 
-const INITIAL_SANDBOXES = [
-  { id: "sb-001", name: "Dev Environment", status: "Running" as const, services: ["Commerce", "EventBus"], url: "https://sb-001.sandbox.glimmora.dev", createdBy: "admin@glimmora.io" },
-  { id: "sb-002", name: "QA Integration", status: "Running" as const, services: ["Commerce", "Analytics", "Notifications"], url: "https://sb-002.sandbox.glimmora.dev", createdBy: "qa-lead@glimmora.io" },
-  { id: "sb-003", name: "Staging Mirror", status: "Stopped" as const, services: ["Commerce", "Billing", "Analytics", "EventBus", "Notifications"], url: "https://sb-003.sandbox.glimmora.dev", createdBy: "admin@glimmora.io" },
-  { id: "sb-004", name: "Load Testing", status: "Stopped" as const, services: ["Commerce", "Analytics"], url: "https://sb-004.sandbox.glimmora.dev", createdBy: "devops@glimmora.io" },
-  { id: "sb-005", name: "Feature Branch A", status: "Running" as const, services: ["Commerce"], url: "https://sb-005.sandbox.glimmora.dev", createdBy: "dev1@glimmora.io" },
-  { id: "sb-006", name: "Demo Showcase", status: "Stopped" as const, services: ["Commerce", "Analytics", "Notifications"], url: "https://sb-006.sandbox.glimmora.dev", createdBy: "sales@glimmora.io" },
-];
+const INITIAL_SANDBOXES = [];
 
 const ALL_SERVICES = ["Commerce", "Billing", "Analytics", "EventBus", "Notifications"];
 

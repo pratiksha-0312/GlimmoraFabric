@@ -58,61 +58,9 @@ interface FeatureFlag {
 const ENVIRONMENTS: FeatureFlag["environment"][] = ["Production", "Staging", "Development"];
 const CATEGORIES: FeatureFlag["category"][] = ["Feature", "Experiment", "Ops", "Release"];
 
-const SAMPLE_TENANTS = [
-  { code: "TENT001", name: "Acme Corporation" },
-  { code: "TENT002", name: "Globex Inc" },
-  { code: "TENT003", name: "Initech Systems" },
-  { code: "TENT004", name: "Wonka Ltd" },
-  { code: "TENT005", name: "Umbrella Co" },
-  { code: "TENT006", name: "Cyberdyne Inc" },
-];
+const SAMPLE_TENANTS = [];
 
-const INITIAL_FLAGS: FeatureFlag[] = [
-  {
-    id: "ff1", key: "ai_copilot_v2", name: "AI Copilot V2", description: "Next-gen AI copilot with multi-modal support",
-    enabled: true, rolloutPercentage: 75, environment: "Production", category: "Feature",
-    tenantOverrides: [
-      { tenantCode: "TENT001", tenantName: "Acme Corporation", enabled: true },
-      { tenantCode: "TENT004", tenantName: "Wonka Ltd", enabled: false },
-    ],
-    created: "Feb 10, 2026", updatedAt: "Mar 28, 2026",
-  },
-  {
-    id: "ff2", key: "new_billing_flow", name: "New Billing Flow", description: "Redesigned billing checkout with Stripe integration",
-    enabled: true, rolloutPercentage: 100, environment: "Production", category: "Release",
-    tenantOverrides: [],
-    created: "Jan 15, 2026", updatedAt: "Mar 01, 2026",
-  },
-  {
-    id: "ff3", key: "dark_mode_v3", name: "Dark Mode V3", description: "Updated dark theme with improved contrast ratios",
-    enabled: true, rolloutPercentage: 50, environment: "Staging", category: "Experiment",
-    tenantOverrides: [
-      { tenantCode: "TENT002", tenantName: "Globex Inc", enabled: true },
-    ],
-    created: "Mar 05, 2026", updatedAt: "Mar 30, 2026",
-  },
-  {
-    id: "ff4", key: "maintenance_banner", name: "Maintenance Banner", description: "Show scheduled maintenance notification to all users",
-    enabled: false, rolloutPercentage: 0, environment: "Production", category: "Ops",
-    tenantOverrides: [],
-    created: "Mar 20, 2026", updatedAt: "Mar 20, 2026",
-  },
-  {
-    id: "ff5", key: "workflow_automation", name: "Workflow Automation", description: "Automated workflow triggers based on events",
-    enabled: true, rolloutPercentage: 30, environment: "Development", category: "Feature",
-    tenantOverrides: [
-      { tenantCode: "TENT003", tenantName: "Initech Systems", enabled: true },
-      { tenantCode: "TENT006", tenantName: "Cyberdyne Inc", enabled: true },
-    ],
-    created: "Mar 12, 2026", updatedAt: "Apr 01, 2026",
-  },
-  {
-    id: "ff6", key: "advanced_analytics", name: "Advanced Analytics", description: "Enhanced analytics dashboard with real-time metrics",
-    enabled: false, rolloutPercentage: 0, environment: "Staging", category: "Feature",
-    tenantOverrides: [],
-    created: "Mar 25, 2026", updatedAt: "Mar 25, 2026",
-  },
-];
+const INITIAL_FLAGS: FeatureFlag[] = [];
 
 const CATEGORY_COLORS: Record<FeatureFlag["category"], { bg: string; color: string }> = {
   Feature: { bg: "rgba(59, 130, 246, 0.15)", color: "#3b82f6" },

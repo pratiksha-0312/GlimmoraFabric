@@ -71,59 +71,7 @@ const DEFAULT_FEATURES: PlanFeature[] = [
   { name: "Advanced Analytics", enabled: false, limit: "" },
 ];
 
-const INITIAL_PLANS: Plan[] = [
-  {
-    id: "p1", name: "Starter", slug: "starter", price: 29, billingCycle: "Monthly",
-    maxUsers: 10, maxStorage: "5 GB", maxApiCalls: "10K/mo", status: "Active",
-    features: [
-      { name: "AI Platform", enabled: true, limit: "100 requests/day" },
-      { name: "Workflows", enabled: true, limit: "5 workflows" },
-      { name: "Documents", enabled: true, limit: "1 GB storage" },
-      { name: "Payments", enabled: false },
-      { name: "API Access", enabled: true, limit: "10K calls/mo" },
-      { name: "Custom Branding", enabled: false },
-      { name: "Priority Support", enabled: false },
-      { name: "SSO / SAML", enabled: false },
-      { name: "Audit Logs", enabled: false },
-      { name: "Advanced Analytics", enabled: false },
-    ],
-    tenantsCount: 2, description: "For small teams getting started", created: "Jan 01, 2026",
-  },
-  {
-    id: "p2", name: "Pro", slug: "pro", price: 99, billingCycle: "Monthly",
-    maxUsers: 50, maxStorage: "50 GB", maxApiCalls: "100K/mo", status: "Active",
-    features: [
-      { name: "AI Platform", enabled: true, limit: "1,000 requests/day" },
-      { name: "Workflows", enabled: true, limit: "Unlimited" },
-      { name: "Documents", enabled: true, limit: "25 GB storage" },
-      { name: "Payments", enabled: true, limit: "2.5% fee" },
-      { name: "API Access", enabled: true, limit: "100K calls/mo" },
-      { name: "Custom Branding", enabled: true },
-      { name: "Priority Support", enabled: true },
-      { name: "SSO / SAML", enabled: false },
-      { name: "Audit Logs", enabled: true, limit: "30-day retention" },
-      { name: "Advanced Analytics", enabled: false },
-    ],
-    tenantsCount: 2, description: "For growing businesses", created: "Jan 01, 2026",
-  },
-  {
-    id: "p3", name: "Enterprise", slug: "enterprise", price: 249, billingCycle: "Monthly",
-    maxUsers: 500, maxStorage: "500 GB", maxApiCalls: "Unlimited", status: "Active",
-    features: [
-      { name: "AI Platform", enabled: true, limit: "Unlimited" },
-      { name: "Workflows", enabled: true, limit: "Unlimited" },
-      { name: "Documents", enabled: true, limit: "500 GB storage" },
-      { name: "Payments", enabled: true, limit: "1.5% fee" },
-      { name: "API Access", enabled: true, limit: "Unlimited" },
-      { name: "Custom Branding", enabled: true },
-      { name: "Priority Support", enabled: true },
-      { name: "SSO / SAML", enabled: true },
-      { name: "Audit Logs", enabled: true, limit: "1-year retention" },
-      { name: "Advanced Analytics", enabled: true },
-    ],
-    tenantsCount: 2, description: "For large-scale operations", created: "Jan 01, 2026",
-  },
-];
+const INITIAL_PLANS: Plan[] = [];
 
 const PLAN_COLORS: Record<string, { bg: string; color: string }> = {
   Starter: { bg: "rgba(245, 158, 11, 0.15)", color: "#f59e0b" },

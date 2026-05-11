@@ -80,40 +80,11 @@ interface SecurityEvent {
 // INITIAL DATA
 // ============================================================================
 
-const INITIAL_AUDIT_EVENTS: AuditEvent[] = [
-  { id: "ae1", timestamp: "2026-03-30 10:42 AM", actor: "Super Admin", action: "Updated", entity: "User Role", details: "Changed User 1 from Member to Admin", isCritical: false, ip: "192.168.1.10", before: "Role: Member", after: "Role: Admin", sessionId: "sess_a1b2c3", userAgent: "Chrome 124 / Windows 11" },
-  { id: "ae2", timestamp: "2026-03-30 10:38 AM", actor: "System", action: "Created", entity: "API Token", details: "Token for VerifAI service", isCritical: false, ip: "—", before: undefined, after: "Token: tk_verifai_***", sessionId: "sys_auto", userAgent: "System Process" },
-  { id: "ae3", timestamp: "2026-03-30 10:15 AM", actor: "Super Admin", action: "Deleted", entity: "Team Member", details: "Removed User 7", isCritical: false, ip: "192.168.1.22", before: "User: User 7 (Active)", after: "User: User 7 (Removed)", sessionId: "sess_d4e5f6", userAgent: "Firefox 125 / macOS" },
-  { id: "ae4", timestamp: "2026-03-30 09:58 AM", actor: "System", action: "Alert", entity: "Security", details: "Failed login attempt from 45.33.x.x", isCritical: true, ip: "45.33.12.89", before: undefined, after: undefined, sessionId: "sys_alert", userAgent: "Unknown" },
-  { id: "ae5", timestamp: "2026-03-30 09:30 AM", actor: "Super Admin", action: "Modified", entity: "Settings", details: "Updated MFA policy", isCritical: false, ip: "192.168.1.10", before: "MFA: Optional", after: "MFA: Required for Admins", sessionId: "sess_g7h8i9", userAgent: "Chrome 124 / Windows 11" },
-  { id: "ae6", timestamp: "2026-03-30 09:12 AM", actor: "Super Admin", action: "Created", entity: "Workflow", details: "New approval flow for invoices", isCritical: false, ip: "192.168.1.35", before: undefined, after: "Workflow: invoice-approval-v1", sessionId: "sess_j0k1l2", userAgent: "Chrome 124 / Linux" },
-  { id: "ae7", timestamp: "2026-03-29 08:45 AM", actor: "System", action: "Triggered", entity: "Notification", details: "Payment failed alert sent", isCritical: true, ip: "—", before: "Payment: Processing", after: "Payment: Failed", sessionId: "sys_notify", userAgent: "System Process" },
-  { id: "ae8", timestamp: "2026-03-29 08:20 AM", actor: "Super Admin", action: "Created", entity: "Tenant", details: "Onboarded Diamond Corp", isCritical: false, ip: "192.168.1.10", before: undefined, after: "Tenant: Diamond Corp (Pro)", sessionId: "sess_m3n4o5", userAgent: "Chrome 124 / Windows 11" },
-  { id: "ae9", timestamp: "2026-03-29 07:55 AM", actor: "Super Admin", action: "Exported", entity: "Report", details: "Exported SOC2 compliance report", isCritical: false, ip: "192.168.1.48", before: undefined, after: "File: soc2-2026-03.pdf", sessionId: "sess_p6q7r8", userAgent: "Safari 17 / macOS" },
-  { id: "ae10", timestamp: "2026-03-29 06:30 AM", actor: "System", action: "Alert", entity: "Security", details: "Unusual API volume detected on token tk_29x", isCritical: true, ip: "203.0.113.42", before: "Rate: 50 req/min", after: "Rate: 890 req/min", sessionId: "sys_alert", userAgent: "API Client" },
-  { id: "ae11", timestamp: "2026-03-28 11:20 PM", actor: "Super Admin", action: "Accessed", entity: "Configuration", details: "Viewed production secrets page", isCritical: false, ip: "192.168.1.22", before: undefined, after: undefined, sessionId: "sess_s9t0u1", userAgent: "Firefox 125 / macOS" },
-  { id: "ae12", timestamp: "2026-03-28 10:00 PM", actor: "Super Admin", action: "Updated", entity: "Workflow", details: "Modified payment approval threshold", isCritical: false, ip: "192.168.1.55", before: "Threshold: $500", after: "Threshold: $1000", sessionId: "sess_v2w3x4", userAgent: "Chrome 124 / Windows 11" },
-];
+const INITIAL_AUDIT_EVENTS: AuditEvent[] = [];
 
-const INITIAL_REPORTS: ComplianceReport[] = [
-  { id: "cr1", name: "SOC2 Type II", type: "SOC2", status: "Generated", date: "2026-03-28", size: "2.4 MB", findings: 0, score: 98 },
-  { id: "cr2", name: "GDPR Assessment", type: "GDPR", status: "Generated", date: "2026-03-25", size: "1.8 MB", findings: 2, score: 94 },
-  { id: "cr3", name: "Banking Audit Q1", type: "Banking Audit", status: "Pending", date: "2026-03-30", size: "—", findings: 0, score: 0 },
-  { id: "cr4", name: "Security Assessment", type: "Security Assessment", status: "Generated", date: "2026-03-20", size: "3.1 MB", findings: 1, score: 96 },
-  { id: "cr5", name: "PCI-DSS Compliance", type: "PCI-DSS", status: "Generated", date: "2026-03-15", size: "1.5 MB", findings: 0, score: 100 },
-  { id: "cr6", name: "HIPAA Review", type: "HIPAA", status: "Failed", date: "2026-03-22", size: "—", findings: 0, score: 0 },
-];
+const INITIAL_REPORTS: ComplianceReport[] = [];
 
-const INITIAL_SECURITY: SecurityEvent[] = [
-  { id: "se1", timestamp: "2026-03-30 10:58 AM", type: "Failed Login", actor: "unknown@external.io", details: "3 failed attempts from IP 45.33.x.x", severity: "high", status: "Open", ip: "45.33.12.89", location: "Mumbai, IN" },
-  { id: "se2", timestamp: "2026-03-30 10:42 AM", type: "Permission Change", actor: "Super Admin", details: "Elevated User 1 to Admin role", severity: "medium", status: "Acknowledged", ip: "192.168.1.10", location: "Office LAN" },
-  { id: "se3", timestamp: "2026-03-30 09:30 AM", type: "MFA Event", actor: "Super Admin", details: "MFA policy updated - enforced for all users", severity: "low", status: "Resolved", ip: "192.168.1.10", location: "Office LAN" },
-  { id: "se4", timestamp: "2026-03-30 08:15 AM", type: "Suspicious Activity", actor: "System", details: "Unusual API call volume from token tk_29x", severity: "high", status: "Escalated", ip: "203.0.113.42", location: "Unknown VPN" },
-  { id: "se5", timestamp: "2026-03-29 11:45 PM", type: "Failed Login", actor: "user7@glimmora.com", details: "Account locked after 5 failed attempts", severity: "high", status: "Open", ip: "182.73.22.11", location: "Pune, IN" },
-  { id: "se6", timestamp: "2026-03-29 06:10 PM", type: "Permission Change", actor: "Super Admin", details: "Revoked API access for staging environment", severity: "medium", status: "Resolved", ip: "192.168.1.22", location: "Office LAN" },
-  { id: "se7", timestamp: "2026-03-29 02:30 PM", type: "Suspicious Activity", actor: "System", details: "Data export of 50K records by non-admin user", severity: "high", status: "Open", ip: "192.168.1.55", location: "Office LAN" },
-  { id: "se8", timestamp: "2026-03-28 09:00 PM", type: "MFA Event", actor: "Super Admin", details: "MFA disabled by user", severity: "medium", status: "Open", ip: "192.168.1.40", location: "Office LAN" },
-];
+const INITIAL_SECURITY: SecurityEvent[] = [];
 
 const ACTIONS: AuditEvent["action"][] = ["Created", "Updated", "Deleted", "Modified", "Alert", "Triggered", "Accessed", "Exported"];
 const ACTORS = ["Super Admin", "User 1", "User 2", "User 3", "User 4", "System"];

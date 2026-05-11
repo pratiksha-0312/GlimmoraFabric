@@ -49,49 +49,16 @@ interface Guardrail {
 // Sample Data
 // ---------------------------------------------------------------------------
 
-const INITIAL_MODELS: ModelConfig[] = [
-  { id: "m1", name: "GPT-4o", provider: "OpenAI", modelId: "gpt-4o", enabled: true, maxTokens: 4096, temperature: 0.7, rateLimit: 100, costPer1kTokens: 0.005 },
-  { id: "m2", name: "Claude Sonnet", provider: "Anthropic", modelId: "claude-sonnet-4-6", enabled: true, maxTokens: 8192, temperature: 0.5, rateLimit: 80, costPer1kTokens: 0.003 },
-  { id: "m3", name: "Gemini Pro", provider: "Google", modelId: "gemini-2.5-pro", enabled: false, maxTokens: 4096, temperature: 0.6, rateLimit: 60, costPer1kTokens: 0.004 },
-  { id: "m4", name: "Claude Haiku", provider: "Anthropic", modelId: "claude-haiku-4-5", enabled: true, maxTokens: 4096, temperature: 0.3, rateLimit: 200, costPer1kTokens: 0.001 },
-];
+const INITIAL_MODELS: ModelConfig[] = [];
 
-const INITIAL_GUARDRAILS: Guardrail[] = [
-  { id: "g1", name: "PII Detection", description: "Block requests containing personally identifiable information", enabled: true, severity: "Block", scope: "All" },
-  { id: "g2", name: "Toxic Content Filter", description: "Filter responses with toxic, harmful, or offensive content", enabled: true, severity: "Block", scope: "All" },
-  { id: "g3", name: "Token Limit Enforcement", description: "Enforce maximum token limits per request", enabled: true, severity: "Warn", scope: "Production" },
-  { id: "g4", name: "Cost Threshold Alert", description: "Alert when tenant costs exceed daily threshold", enabled: true, severity: "Warn", scope: "Production" },
-  { id: "g5", name: "Prompt Injection Detection", description: "Detect and block prompt injection attempts", enabled: true, severity: "Block", scope: "All" },
-  { id: "g6", name: "Rate Limiting", description: "Enforce per-tenant API rate limits", enabled: true, severity: "Block", scope: "All" },
-  { id: "g7", name: "Debug Logging", description: "Log all prompts and responses for debugging", enabled: false, severity: "Log", scope: "Staging" },
-];
+const INITIAL_GUARDRAILS: Guardrail[] = [];
 
 // Mock analytics data
-const TOKEN_USAGE_7D = [
-  { day: "Mon", input: 124000, output: 89000 },
-  { day: "Tue", input: 98000, output: 72000 },
-  { day: "Wed", input: 152000, output: 110000 },
-  { day: "Thu", input: 138000, output: 95000 },
-  { day: "Fri", input: 167000, output: 121000 },
-  { day: "Sat", input: 54000, output: 38000 },
-  { day: "Sun", input: 42000, output: 31000 },
-];
+const TOKEN_USAGE_7D = [];
 
-const COST_BY_TENANT = [
-  { tenant: "Acme Corp", code: "TENT001", cost: 124.50, tokens: 2480000, pct: 35 },
-  { tenant: "Initech Systems", code: "TENT003", cost: 89.20, tokens: 1784000, pct: 25 },
-  { tenant: "Umbrella Co", code: "TENT005", cost: 67.80, tokens: 1356000, pct: 19 },
-  { tenant: "Globex Inc", code: "TENT002", cost: 42.30, tokens: 846000, pct: 12 },
-  { tenant: "Cyberdyne Inc", code: "TENT006", cost: 21.40, tokens: 428000, pct: 6 },
-  { tenant: "Wonka Ltd", code: "TENT004", cost: 10.80, tokens: 216000, pct: 3 },
-];
+const COST_BY_TENANT = [];
 
-const MODEL_PERF = [
-  { model: "GPT-4o", avgLatency: 1.2, p95Latency: 2.8, successRate: 99.4, totalRequests: 12400, avgTokens: 820 },
-  { model: "Claude Sonnet", avgLatency: 0.9, p95Latency: 2.1, successRate: 99.7, totalRequests: 8900, avgTokens: 1050 },
-  { model: "Claude Haiku", avgLatency: 0.3, p95Latency: 0.8, successRate: 99.9, totalRequests: 15200, avgTokens: 420 },
-  { model: "Gemini Pro", avgLatency: 1.5, p95Latency: 3.4, successRate: 98.8, totalRequests: 2100, avgTokens: 780 },
-];
+const MODEL_PERF = [];
 
 const SEVERITY_COLORS: Record<Guardrail["severity"], { bg: string; color: string }> = {
   Block: { bg: "rgba(239, 68, 68, 0.15)", color: "#ef4444" },

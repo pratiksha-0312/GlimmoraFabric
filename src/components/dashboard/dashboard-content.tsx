@@ -19,24 +19,11 @@ import {
 import { useAuth } from "@/context/auth-context";
 import { ROLE_LABELS, ROLE_COLORS, type UserRole } from "@/lib/roles";
 
-const stats = [
-  { label: "Total Tenants", value: "24", change: "+3 this month", icon: Building2 },
-  { label: "Active Users", value: "1,482", change: "+127 this week", icon: Users },
-  { label: "API Usage", value: "3.2K/min", change: "Peak: 5.1K/min", icon: Activity },
-  { label: "Service Health", value: "7/8 Up", change: "1 degraded", icon: Shield },
-];
+const stats = [];
 
 type HealthStatus = "Operational" | "Degraded" | "Down";
 
-const serviceHealth: { name: string; status: HealthStatus; uptime: string; latency: string }[] = [
-  { name: "Payment Service", status: "Operational", uptime: "99.99%", latency: "230ms" },
-  { name: "Notification Hub", status: "Operational", uptime: "99.95%", latency: "120ms" },
-  { name: "Workflow Engine", status: "Operational", uptime: "99.92%", latency: "85ms" },
-  { name: "Document Service", status: "Operational", uptime: "99.96%", latency: "340ms" },
-  { name: "AI Platform", status: "Degraded", uptime: "99.90%", latency: "1.8s" },
-  { name: "Audit Service", status: "Operational", uptime: "99.98%", latency: "32ms" },
-  { name: "API Gateway", status: "Operational", uptime: "99.99%", latency: "12ms" },
-];
+const serviceHealth: { name: string; status: HealthStatus; uptime: string; latency: string }[] = [];
 
 const healthColors: Record<HealthStatus, string> = {
   Operational: "#22c55e",
@@ -44,20 +31,9 @@ const healthColors: Record<HealthStatus, string> = {
   Down: "#ef4444",
 };
 
-const recentActivities = [
-  { action: "Tenant 'VerifAI' subscription upgraded to Enterprise", user: "System", time: "5 min ago", icon: Building2 },
-  { action: "New user invited: user1@techvault.com", user: "Super Admin", time: "12 min ago", icon: Users },
-  { action: "Payment gateway failover triggered (Stripe → Adyen)", user: "System", time: "28 min ago", icon: CreditCard },
-  { action: "Workflow 'vendor-onboarding-v2' deployed to production", user: "Super Admin", time: "1 hr ago", icon: GitBranch },
-  { action: "AI model routing updated: Claude Opus 4.6 set as primary", user: "Super Admin", time: "2 hr ago", icon: Brain },
-  { action: "Audit compliance report generated for Q1 2026", user: "Super Admin", time: "3 hr ago", icon: FileText },
-];
+const recentActivities = [];
 
-const alerts = [
-  { severity: "Critical", message: "AI Platform latency exceeding 2s threshold on Claude API route", time: "28 min ago", service: "AI Platform" },
-  { severity: "Warning", message: "Tenant 'GlobalFinance' approaching 90% of API rate limit quota", time: "1 hr ago", service: "API Gateway" },
-  { severity: "Warning", message: "SMS delivery rate dropped to 94% — Twilio region EU experiencing delays", time: "2 hr ago", service: "Notification Hub" },
-];
+const alerts = [];
 
 const severityColors: Record<string, string> = {
   Critical: "#ef4444",

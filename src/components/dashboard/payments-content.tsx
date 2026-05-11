@@ -36,12 +36,7 @@ import {
 // Stats data
 // ---------------------------------------------------------------------------
 
-const baseStats = [
-  { label: "Revenue (MTD)", value: "$124,500", icon: DollarSign },
-  { label: "Transactions", value: "2,847", icon: ArrowUpDown },
-  { label: "Success Rate", value: "99.2%", icon: CreditCard },
-  { label: "Pending Refunds", value: "", icon: RefreshCw },
-];
+const baseStats = [];
 
 // ---------------------------------------------------------------------------
 // Gateway data
@@ -62,44 +57,7 @@ type Gateway = {
   description: string;
 };
 
-const initialGateways: Gateway[] = [
-  {
-    name: "Stripe",
-    status: "Active",
-    isPrimary: true,
-    share: "68% of transactions",
-    apiKey: "sk_live_••••••••••••4242",
-    webhookSecret: "whsec_••••••••••••abcd",
-    region: "Global",
-    currency: "USD",
-    maxRetry: 3,
-    description: "Primary gateway for all USD transactions",
-  },
-  {
-    name: "Razorpay",
-    status: "Active",
-    isPrimary: false,
-    share: "28% of transactions",
-    apiKey: "rzp_live_••••••••••••8819",
-    webhookSecret: "whsec_••••••••••••efgh",
-    region: "India",
-    currency: "INR",
-    maxRetry: 3,
-    description: "India region gateway for INR transactions",
-  },
-  {
-    name: "Adyen",
-    status: "Standby",
-    isPrimary: false,
-    share: "4% of transactions",
-    apiKey: "adyen_live_••••••••••••3782",
-    webhookSecret: "whsec_••••••••••••ijkl",
-    region: "Europe",
-    currency: "EUR",
-    maxRetry: 2,
-    description: "Failover gateway for high availability",
-  },
-];
+const initialGateways: Gateway[] = [];
 
 // ---------------------------------------------------------------------------
 // Recent transactions data

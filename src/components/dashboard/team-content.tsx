@@ -20,56 +20,7 @@ interface TeamMember {
   status: "active" | "inactive";
 }
 
-const teamMembers: TeamMember[] = [
-  {
-    name: "Super Admin",
-    email: "superadmin@glimmora.com",
-    role: "super_admin",
-    status: "active",
-  },
-  {
-    name: "User 1",
-    email: "user1@glimmora.com",
-    role: "platform_engineering_lead",
-    status: "active",
-  },
-  {
-    name: "User 2",
-    email: "user2@glimmora.com",
-    role: "developer",
-    status: "active",
-  },
-  {
-    name: "User 3",
-    email: "user3@glimmora.com",
-    role: "qa_engineer",
-    status: "active",
-  },
-  {
-    name: "User 4",
-    email: "user4@glimmora.com",
-    role: "cto",
-    status: "active",
-  },
-  {
-    name: "User 5",
-    email: "user5@glimmora.com",
-    role: "product_lead",
-    status: "active",
-  },
-  {
-    name: "User 6",
-    email: "user6@glimmora.com",
-    role: "ai_prompt_owner",
-    status: "active",
-  },
-  {
-    name: "User 7",
-    email: "user7@glimmora.com",
-    role: "tenant_admin",
-    status: "active",
-  },
-];
+const teamMembers: TeamMember[] = [];
 
 // ---------------------------------------------------------------------------
 // Component

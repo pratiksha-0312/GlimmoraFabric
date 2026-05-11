@@ -74,54 +74,15 @@ interface Provider {
 /*  Initial Data                                                       */
 /* ------------------------------------------------------------------ */
 
-const initFlags: FeatureFlag[] = [
-  { id: 1, name: "ai_agent_orchestration", description: "Enable multi-step AI agent workflows", enabled: true, scope: "Global", lastModified: "2 days ago" },
-  { id: 2, name: "payment_auto_retry", description: "Auto-retry failed payments with fallback gateway", enabled: true, scope: "Global", lastModified: "5 days ago" },
-  { id: 3, name: "e_signature_v2", description: "New e-signature flow with DocuSign integration", enabled: false, scope: "Global", lastModified: "1 week ago" },
-  { id: 4, name: "workflow_visual_builder", description: "Drag-and-drop workflow builder UI", enabled: true, scope: "Global", lastModified: "3 days ago" },
-  { id: 5, name: "tenant_custom_domain", description: "Allow tenants to configure custom domains", enabled: false, scope: "Per-Tenant", lastModified: "2 weeks ago" },
-  { id: 6, name: "realtime_notifications", description: "WebSocket-based real-time notification delivery", enabled: true, scope: "Global", lastModified: "1 day ago" },
-  { id: 7, name: "audit_log_export_csv", description: "Export audit logs as CSV files", enabled: true, scope: "Global", lastModified: "4 days ago" },
-  { id: 8, name: "dark_mode_tenant_portal", description: "Dark mode support for tenant-facing portal", enabled: false, scope: "Per-Tenant", lastModified: "1 week ago" },
-];
+const initFlags: FeatureFlag[] = [];
 
-const initIntegrations: Integration[] = [
-  { id: 1, name: "Stripe", category: "Payment", status: "Connected", version: "v2024-03", environment: "Production", webhookUrl: "https://api.glimmora.io/hooks/stripe" },
-  { id: 2, name: "Razorpay", category: "Payment", status: "Connected", version: "v2", environment: "Production", webhookUrl: "https://api.glimmora.io/hooks/razorpay" },
-  { id: 3, name: "SendGrid", category: "Email", status: "Connected", version: "v3", environment: "Production", webhookUrl: "https://api.glimmora.io/hooks/sendgrid" },
-  { id: 4, name: "Twilio", category: "SMS", status: "Connected", version: "2010-04-01", environment: "Production", webhookUrl: "https://api.glimmora.io/hooks/twilio" },
-  { id: 5, name: "Firebase FCM", category: "Push", status: "Connected", version: "v1", environment: "Production", webhookUrl: "https://api.glimmora.io/hooks/fcm" },
-  { id: 6, name: "DocuSign", category: "E-Sign", status: "Not Connected", version: "-", environment: "-", webhookUrl: "" },
-  { id: 7, name: "Keycloak", category: "SSO/IdP", status: "Connected", version: "v22", environment: "Production", webhookUrl: "https://api.glimmora.io/hooks/keycloak" },
-  { id: 8, name: "AWS S3", category: "Storage", status: "Connected", version: "2006-03-01", environment: "Production", webhookUrl: "https://api.glimmora.io/hooks/s3" },
-];
+const initIntegrations: Integration[] = [];
 
-const initConfigs: ConfigItem[] = [
-  { id: 1, key: "MAX_TENANTS", value: "500", category: "Limits" },
-  { id: 2, key: "SESSION_TTL_SECONDS", value: "3600", category: "Auth" },
-  { id: 3, key: "MFA_ENFORCEMENT", value: "optional", category: "Auth" },
-  { id: 4, key: "RATE_LIMIT_DEFAULT", value: "1000/min", category: "Gateway" },
-  { id: 5, key: "AUDIT_RETENTION_DAYS", value: "365", category: "Compliance" },
-  { id: 6, key: "AI_MAX_TOKENS_PER_REQUEST", value: "4096", category: "AI" },
-  { id: 7, key: "WEBHOOK_TIMEOUT_MS", value: "5000", category: "Gateway" },
-  { id: 8, key: "FILE_UPLOAD_MAX_MB", value: "50", category: "Storage" },
-];
+const initConfigs: ConfigItem[] = [];
 
-const initRegions: Region[] = [
-  { id: 1, name: "US-East", status: "Active", tenants: 142, provider: "AWS", dataResidency: "Compliant" },
-  { id: 2, name: "US-West", status: "Active", tenants: 98, provider: "AWS", dataResidency: "Compliant" },
-  { id: 3, name: "EU-West", status: "Active", tenants: 76, provider: "AWS", dataResidency: "GDPR Compliant" },
-  { id: 4, name: "AP-South", status: "Inactive", tenants: 31, provider: "Azure", dataResidency: "Pending Review" },
-  { id: 5, name: "EU-Central", status: "Active", tenants: 53, provider: "Azure", dataResidency: "GDPR Compliant" },
-];
+const initRegions: Region[] = [];
 
-const initProviders: Provider[] = [
-  { id: 1, channel: "SMS", primary: "Twilio", fallback: "Vonage", status: "Active", region: "US-East" },
-  { id: 2, channel: "Email", primary: "SendGrid", fallback: "AWS SES", status: "Active", region: "US-East" },
-  { id: 3, channel: "Payment", primary: "Stripe", fallback: "Razorpay", status: "Active", region: "US-West" },
-  { id: 4, channel: "Push", primary: "Firebase FCM", fallback: "OneSignal", status: "Active", region: "EU-West" },
-  { id: 5, channel: "Storage", primary: "AWS S3", fallback: "Azure Blob", status: "Active", region: "EU-Central" },
-];
+const initProviders: Provider[] = [];
 
 const TABS = ["Feature Flags", "Integrations", "Platform Config", "Regions & Providers"] as const;
 type Tab = (typeof TABS)[number];

@@ -1109,7 +1109,7 @@ export function TenantsContent() {
         <StatCard icon={<Building2 className="h-5 w-5" />} label="Total Tenants" value={tenants.length} />
         <StatCard icon={<CheckCircle2 className="h-5 w-5" />} label="Active Tenants" value={activeTenants} />
         <StatCard icon={<Users className="h-5 w-5" />} label="Total Users" value={totalUsers} />
-        <StatCard icon={<Building2 className="h-5 w-5" />} label="Plans" value={3} detail="Starter / Pro / Enterprise" />
+        <StatCard icon={<Building2 className="h-5 w-5" />} label="Plans" value={0} detail="" />
       </div>
 
       {/* Search & Filter Bar */}

@@ -599,7 +599,7 @@ export function IdentityContent({ mode }: { mode: "super_admin" | "tenant_admin"
   const refreshUsers = useCallback(async () => {
     try {
       const { usersApi } = await import("@/lib/api");
-      const resp = await usersApi.list({ page: 1, page_size: 200 });
+      const resp = await usersApi.list({ page: 1, page_size: 100 });
       const list: PlatformUser[] = resp.users.map((u) => ({
         id: u.id,
         name: u.full_name || u.email,

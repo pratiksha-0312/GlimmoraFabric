@@ -34,12 +34,7 @@ interface Kpi {
   icon: typeof TrendingUp;
 }
 
-const KPI_DATA: Kpi[] = [
-  { label: "Total Revenue", value: "$482,500", change: 18.2, icon: DollarSign },
-  { label: "Active Users", value: "12,847", change: 7.4, icon: Users },
-  { label: "API Calls MTD", value: "1.24M", change: 24.1, icon: Activity },
-  { label: "Avg Response Time", value: "142ms", change: -12.3, icon: Clock },
-];
+const KPI_DATA: Kpi[] = [];
 
 /* Overview products */
 interface Product {
@@ -56,13 +51,7 @@ interface Product {
   trend: number[];
 }
 
-const PRODUCTS: Product[] = [
-  { name: "VerifAI", activeUsers: 4250, revenue: 185000, apiCalls: 482000, growth: 22.4, apiLimit: 600000, storageUsed: 72, storageLimit: 100, bandwidthUsed: 340, bandwidthLimit: 500, trend: [120, 135, 148, 160, 172, 185] },
-  { name: "Hospitality Cloud", activeUsers: 3120, revenue: 124000, apiCalls: 318000, growth: 14.1, apiLimit: 400000, storageUsed: 45, storageLimit: 80, bandwidthUsed: 210, bandwidthLimit: 400, trend: [88, 95, 102, 108, 115, 124] },
-  { name: "Finance Platform", activeUsers: 2840, revenue: 98000, apiCalls: 245000, growth: 8.7, apiLimit: 350000, storageUsed: 58, storageLimit: 80, bandwidthUsed: 180, bandwidthLimit: 300, trend: [72, 78, 82, 88, 92, 98] },
-  { name: "Diamond Grading", activeUsers: 1580, revenue: 52000, apiCalls: 124000, growth: 31.2, apiLimit: 200000, storageUsed: 28, storageLimit: 50, bandwidthUsed: 95, bandwidthLimit: 200, trend: [28, 34, 38, 42, 48, 52] },
-  { name: "Tax Engine", activeUsers: 1057, revenue: 23500, apiCalls: 71000, growth: -3.4, apiLimit: 150000, storageUsed: 12, storageLimit: 30, bandwidthUsed: 42, bandwidthLimit: 100, trend: [26, 25, 24, 24, 23, 23.5] },
-];
+const PRODUCTS: Product[] = [];
 
 /* Service Usage */
 interface Service {
@@ -72,13 +61,7 @@ interface Service {
   avgLatency: number;
 }
 
-const SERVICES: Service[] = [
-  { name: "Notification Hub", calls: 654000, uptime: 99.95, avgLatency: 82 },
-  { name: "Payment Orchestration", calls: 341000, uptime: 99.98, avgLatency: 128 },
-  { name: "Workflow Engine", calls: 278000, uptime: 99.92, avgLatency: 210 },
-  { name: "AI Platform", calls: 195000, uptime: 99.87, avgLatency: 480 },
-  { name: "Document Service", calls: 142000, uptime: 99.94, avgLatency: 67 },
-];
+const SERVICES: Service[] = [];
 
 /* Cost Allocation */
 type Plan = "Enterprise" | "Business" | "Starter";
@@ -90,13 +73,7 @@ interface Tenant {
   usagePct: number;
 }
 
-const TENANTS: Tenant[] = [
-  { name: "Acme Corp", plan: "Enterprise", usage: 148500, aiTokens: 12400000, usagePct: 74 },
-  { name: "TechVault", plan: "Business", usage: 87200, aiTokens: 8200000, usagePct: 62 },
-  { name: "GlobalFinance", plan: "Enterprise", usage: 124800, aiTokens: 18900000, usagePct: 88 },
-  { name: "DataShield", plan: "Starter", usage: 32400, aiTokens: 2100000, usagePct: 45 },
-  { name: "CloudBase", plan: "Business", usage: 64300, aiTokens: 5600000, usagePct: 56 },
-];
+const TENANTS: Tenant[] = [];
 
 const PLAN_COLORS: Record<Plan, string> = {
   Enterprise: "#0d9488",
