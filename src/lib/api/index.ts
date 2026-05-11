@@ -370,6 +370,9 @@ export type {
 export { smsMfaApi } from "./sms-mfa";
 export type { SmsOtpSendResult } from "./sms-mfa";
 
+export { emailMfaApi } from "./email-mfa";
+export type { EmailOtpSendResult } from "./email-mfa";
+
 export { apiTokensApi } from "./api-tokens";
 export type {
   TokenUsageLog,
