@@ -39,6 +39,10 @@ export interface CreateTenantInput {
   region?: string;
   features?: Record<string, unknown>;
   config?: Record<string, unknown>;
+  // Optional: when set, the backend also provisions a tenant_admin user with
+  // email=contact_email and links it via user_tenants.
+  admin_password?: string;
+  admin_full_name?: string;
 }
 
 export interface UpdateTenantInput {

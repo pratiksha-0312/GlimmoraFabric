@@ -205,9 +205,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Breadcrumb segments from pathname
   const breadcrumbs = useMemo(() => {
-    const segments = pathname.split("/").filter(Boolean).filter((s) => s !== "admin" && s !== "dashboard");
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const rawSegments = pathname.split("/").filter(Boolean);
+    const segments = rawSegments.filter((s) => s !== "admin" && s !== "dashboard" && !UUID_RE.test(s));
     return segments.map((seg, i) => {
-      const href = "/" + segments.slice(0, i + 1).join("/");
+      const idx = rawSegments.indexOf(seg);
+      const href = "/" + rawSegments.slice(0, idx + 1).join("/");
       const label = seg
         .replace(/-/g, " ")
         .replace(/\b\w/g, (c) => c.toUpperCase());
