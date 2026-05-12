@@ -239,6 +239,7 @@ function UserFormModal({
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Invalid email address";
     if (!isEdit) {
       if (!password.trim()) e.password = "Password is required";
+      else if (password.length < 8) e.password = "Password must be at least 8 characters";
       else if (password !== confirmPassword) e.confirmPassword = "Passwords do not match";
     }
 
@@ -677,16 +678,12 @@ export function IdentityContent({ mode }: { mode: "super_admin" | "tenant_admin"
   // Handlers
   // ---------------------------------------------------------------------------
 
-  const handleInvite = async (data: Omit<PlatformUser, "id" | "lastLogin" | "joinedDate">) => {
+  const handleInvite = async (data: Omit<PlatformUser, "id" | "lastLogin" | "joinedDate"> & { password?: string }) => {
     try {
       const { usersApi } = await import("@/lib/api");
-      // Backend's admin-create requires a password; the legacy invite UX
-      // doesn't capture one, so we generate a temporary placeholder. The
-      // real flow should use the invitation endpoint (`orgsApi.invite`)
-      // when this UI is connected to a tenant.
       await usersApi.create({
         email: data.email,
-        password: `Temp@${Math.random().toString(36).slice(2, 10)}A1!`,
+        password: data.password || `Temp@${Math.random().toString(36).slice(2, 10)}A1!`,
         full_name: data.name,
         role: data.role,
         is_active: data.status === "Active",
@@ -1036,7 +1033,7 @@ export function IdentityContent({ mode }: { mode: "super_admin" | "tenant_admin"
                                     </button>
                                     <button
                                       onClick={() => {
-                                        router.push(isSuperAdmin ? `/user/${u.id}/edit` : `/tenant-user/${u.id}/edit`);
+                                        setFormModal({ open: true, user: u });
                                         setOpenActionId(null);
                                       }}
                                       className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
