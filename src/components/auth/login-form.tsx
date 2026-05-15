@@ -55,7 +55,11 @@ export function LoginForm() {
   const handleSocialLogin = async (provider: string) => {
     setOauthLoading(provider);
     try {
-      const { authorization_url } = await oauthApi.startLogin(provider);
+      // Tell the backend to redirect the browser back to OUR frontend page
+      // after Google auth. That page exchanges the code for a token via the
+      // backend, installs the session, and routes to the dashboard.
+      const redirectUri = `${window.location.origin}/auth/callback/${provider}`;
+      const { authorization_url } = await oauthApi.startLogin(provider, redirectUri);
       window.location.href = authorization_url;
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Couldn't start social login.";
@@ -196,29 +200,33 @@ export function LoginForm() {
         Forgot Password?
       </Link>
 
-      {providers.some((p) => p.configured) && (
-        <>
-          <div className="my-6 flex w-full items-center gap-4">
-            <div className="h-px flex-1 bg-gray-700" />
-            <span className="text-xs text-gray-500 uppercase">Or</span>
-            <div className="h-px flex-1 bg-gray-700" />
-          </div>
+      <div className="my-6 flex w-full items-center gap-4">
+        <div className="h-px flex-1 bg-gray-700" />
+        <span className="text-xs text-gray-500 uppercase">Or</span>
+        <div className="h-px flex-1 bg-gray-700" />
+      </div>
 
-          <div className="w-full space-y-3">
-            {providers
-              .filter((p) => p.configured)
-              .map((p) => (
-                <SsoButton
-                  key={p.provider}
-                  provider={p.provider}
-                  loading={oauthLoading === p.provider}
-                  disabled={isSubmitting || oauthLoading !== null}
-                  onClick={() => handleSocialLogin(p.provider)}
-                />
-              ))}
-          </div>
-        </>
-      )}
+      <div className="w-full space-y-3">
+        <SsoButton
+          provider="google"
+          label="Continue with Google"
+          loading={oauthLoading === "google"}
+          disabled={isSubmitting || oauthLoading !== null}
+          onClick={() => handleSocialLogin("google")}
+        />
+
+        {providers
+          .filter((p) => p.configured && p.provider !== "google")
+          .map((p) => (
+            <SsoButton
+              key={p.provider}
+              provider={p.provider}
+              loading={oauthLoading === p.provider}
+              disabled={isSubmitting || oauthLoading !== null}
+              onClick={() => handleSocialLogin(p.provider)}
+            />
+          ))}
+      </div>
     </div>
   );
 }
@@ -227,21 +235,23 @@ export function LoginForm() {
 
 function SsoButton({
   provider,
+  label,
   loading,
   disabled,
   onClick,
 }: {
   provider: string;
+  label?: string;
   loading: boolean;
   disabled: boolean;
   onClick: () => void;
 }) {
-  const labels: Record<string, string> = {
-    google: "Login with Google",
-    microsoft: "Login with Microsoft",
-    github: "Login with GitHub",
+  const defaultLabels: Record<string, string> = {
+    google: "Continue with Google",
+    microsoft: "Continue with Microsoft",
+    github: "Continue with GitHub",
   };
-  const label = labels[provider] ?? `Login with ${provider}`;
+  const buttonLabel = label ?? defaultLabels[provider] ?? `Continue with ${provider}`;
 
   return (
     <button
@@ -255,7 +265,7 @@ function SsoButton({
       ) : (
         <ProviderIcon provider={provider} />
       )}
-      {label}
+      {buttonLabel}
     </button>
   );
 }
