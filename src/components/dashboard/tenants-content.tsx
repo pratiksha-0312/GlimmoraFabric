@@ -1718,7 +1718,11 @@ export function TenantsContent() {
                           <button onClick={() => setEditTenantId(tenant.id)} className="rounded-lg p-1.5 transition-colors hover:bg-black/5 dark:hover:bg-white/10" style={{ color: "var(--gf-text-secondary)" }} title="Edit">
                             <Pencil className="h-4 w-4" />
                           </button>
-                          {tenant.status === "Suspended" ? (
+                          {tenant.status === "Active" ? (
+                            <button onClick={() => setStatusModal({ tenant, action: "suspend" })} className="rounded-lg p-1.5 transition-colors hover:bg-amber-500/10" style={{ color: "#f59e0b" }} title="Suspend">
+                              <Pause className="h-4 w-4" />
+                            </button>
+                          ) : tenant.status === "Suspended" ? (
                             <button onClick={() => setStatusModal({ tenant, action: "activate" })} className="rounded-lg p-1.5 transition-colors hover:bg-green-500/10" style={{ color: "#22c55e" }} title="Activate">
                               <Play className="h-4 w-4" />
                             </button>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useCallback, useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
+import { plansApi, type Plan as ApiPlan } from "@/lib/api";
 import {
   Layers,
   Plus,
@@ -578,8 +579,57 @@ function sortPlans(list: Plan[], key: SortKey, dir: SortDir): Plan[] {
 // Main Component
 // ---------------------------------------------------------------------------
 
+function featuresToRecord(features: PlanFeature[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const f of features) {
+    if (!f.enabled) continue;
+    out[f.name] = f.limit && f.limit.trim() ? f.limit.trim() : true;
+  }
+  return out;
+}
+
+function featuresFromRecord(record: Record<string, unknown> | null | undefined): PlanFeature[] {
+  return DEFAULT_FEATURES.map((def) => {
+    const v = record?.[def.name];
+    if (v === undefined || v === null || v === false) return { ...def };
+    return { name: def.name, enabled: true, limit: typeof v === "string" ? v : (typeof v === "number" ? String(v) : "") };
+  });
+}
+
+function apiPlanToLocal(p: ApiPlan): Plan {
+  const cycle = String(p.billing_cycle).toLowerCase();
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.code,
+    price: p.price,
+    billingCycle: cycle === "yearly" ? "Annual" : "Monthly",
+    maxUsers: p.max_users ?? 0,
+    maxStorage: "",
+    maxApiCalls: "",
+    status: p.is_active ? "Active" : "Draft",
+    features: featuresFromRecord(p.features as Record<string, unknown>),
+    tenantsCount: 0,
+    description: p.description ?? "",
+    created: p.created_at
+      ? new Date(p.created_at).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+      : "",
+  };
+}
+
 export function PlansContent() {
   const [plans, setPlans] = useState<Plan[]>(INITIAL_PLANS);
+
+  const refreshPlans = useCallback(async () => {
+    try {
+      const resp = await plansApi.list({ page: 1, limit: 100, sort_by: "created_at", order: "desc" });
+      setPlans(resp.items.map(apiPlanToLocal));
+    } catch {
+      setPlans([]);
+    }
+  }, []);
+
+  useEffect(() => { refreshPlans(); }, [refreshPlans]);
 
   // Search & filter
   const [search, setSearch] = useState("");
@@ -620,37 +670,80 @@ export function PlansContent() {
   const avgPrice = plans.length ? Math.round(plans.reduce((s, p) => s + p.price, 0) / plans.length) : 0;
 
   // Handlers
-  const handleCreate = (data: Omit<Plan, "id" | "created" | "tenantsCount">) => {
-    const newPlan: Plan = {
-      ...data,
-      id: `p${Date.now()}`,
-      created: new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-      tenantsCount: 0,
-    };
-    setPlans((prev) => [newPlan, ...prev]);
-    setShowCreateModal(false);
-    toast.success(`Plan "${data.name}" created successfully ✓`);
+  const handleCreate = async (data: Omit<Plan, "id" | "created" | "tenantsCount">) => {
+    try {
+      await plansApi.create({
+        name: data.name,
+        code: data.slug,
+        description: data.description,
+        price: data.price,
+        billing_cycle: data.billingCycle === "Annual" ? "yearly" : "monthly",
+        features: featuresToRecord(data.features),
+        max_users: data.maxUsers,
+        is_active: data.status === "Active",
+      });
+      await refreshPlans();
+      setShowCreateModal(false);
+      toast.success(`Plan "${data.name}" created successfully ✓`);
+    } catch (err) {
+      toast.error("Failed to create plan", { description: err instanceof Error ? err.message : "Unknown error" });
+    }
   };
 
-  const handleEdit = (data: Omit<Plan, "id" | "created" | "tenantsCount">) => {
+  const handleEdit = async (data: Omit<Plan, "id" | "created" | "tenantsCount">) => {
     if (!editModal) return;
-    setPlans((prev) => prev.map((p) => (p.id === editModal.id ? { ...p, ...data } : p)));
-    setEditModal(null);
-    toast.success("Plan updated ✓");
+    try {
+      await plansApi.update(editModal.id, {
+        name: data.name,
+        code: data.slug,
+        description: data.description,
+        price: data.price,
+        billing_cycle: data.billingCycle === "Annual" ? "yearly" : "monthly",
+        features: featuresToRecord(data.features),
+        max_users: data.maxUsers,
+        is_active: data.status === "Active",
+      });
+      await refreshPlans();
+      setEditModal(null);
+      toast.success("Plan updated ✓");
+    } catch (err) {
+      toast.error("Failed to update plan", { description: err instanceof Error ? err.message : "Unknown error" });
+    }
   };
 
-  const handleDetailSave = (data: Partial<Plan>) => {
+  const handleDetailSave = async (data: Partial<Plan>) => {
     if (!viewPlan) return;
-    setPlans((prev) => prev.map((p) => (p.id === viewPlan.id ? { ...p, ...data } : p)));
-    setViewPlan((prev) => (prev ? { ...prev, ...data } : null));
+    try {
+      const merged = { ...viewPlan, ...data };
+      await plansApi.update(viewPlan.id, {
+        name: merged.name,
+        code: merged.slug,
+        description: merged.description,
+        price: merged.price,
+        billing_cycle: merged.billingCycle === "Annual" ? "yearly" : "monthly",
+        features: featuresToRecord(merged.features),
+        max_users: merged.maxUsers,
+        is_active: merged.status === "Active",
+      });
+      await refreshPlans();
+      setViewPlan((prev) => (prev ? { ...prev, ...data } : null));
+    } catch (err) {
+      toast.error("Failed to update plan", { description: err instanceof Error ? err.message : "Unknown error" });
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteModal) return;
     const name = deleteModal.name;
-    setPlans((prev) => prev.filter((p) => p.id !== deleteModal.id));
-    setDeleteModal(null);
-    toast.error("Plan deleted ✓", { description: name });
+    const id = deleteModal.id;
+    try {
+      await plansApi.remove(id);
+      await refreshPlans();
+      setDeleteModal(null);
+      toast.error("Plan deleted ✓", { description: name });
+    } catch (err) {
+      toast.error("Failed to delete plan", { description: err instanceof Error ? err.message : "Unknown error" });
+    }
   };
 
   const handleSort = (key: SortKey) => {

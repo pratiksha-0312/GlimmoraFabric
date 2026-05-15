@@ -34,6 +34,10 @@ export const authApi = {
     return apiClient.get<AuthUser>("/api/v1/auth/me");
   },
 
+  myTenants(): Promise<{ items: { tenant_id: string; role_in_tenant: string; name: string; code: string }[] }> {
+    return apiClient.get("/api/v1/auth/me/tenants", { tenantId: null });
+  },
+
   updateProfile(input: { full_name?: string }): Promise<AuthUser> {
     return apiClient.put<AuthUser>("/api/v1/auth/me", input);
   },

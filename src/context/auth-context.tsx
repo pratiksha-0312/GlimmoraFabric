@@ -161,6 +161,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenStorage.updateUser(profile);
       const next = fromBackend(profile);
       setUser(next);
+      try {
+        const { items } = await authApi.myTenants();
+        if (items?.[0]) tenantStorage.set(items[0].tenant_id, { remember });
+        else tenantStorage.clear();
+      } catch { /* non-fatal */ }
       return { user: next, mfaRequired: false };
     },
     [],
@@ -199,6 +204,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenStorage.updateUser(profile);
       const next = fromBackend(profile);
       setUser(next);
+      try {
+        const { items } = await authApi.myTenants();
+        if (items?.[0]) tenantStorage.set(items[0].tenant_id, { remember: input.remember ?? false });
+        else tenantStorage.clear();
+      } catch { /* non-fatal */ }
       return next;
     },
     [],

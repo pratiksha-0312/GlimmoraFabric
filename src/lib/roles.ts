@@ -153,7 +153,6 @@ export const ROLE_BADGE_CLASSES: Record<UserRole, string> = {
 export function normalizeRole(raw: string | null | undefined): UserRole {
   if (raw && raw in ROLE_LABELS) return raw as UserRole;
   // Common backend aliases
-  if (raw === "admin") return "super_admin";
   if (raw === "user" || raw === "member") return "tenant_member";
   return "developer";
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -53,33 +53,6 @@ interface DocumentDetail {
   auditTrail: AuditEntry[];
 }
 
-const SAMPLE_DOCS: Record<string, DocumentDetail> = {
-  "doc-001": {
-    id: "doc-001", name: "Invoice #INV-2026-0142", templateName: "Invoice Template", tenant: "Acme Corp", status: "signed", format: "pdf", size: "245 KB", createdBy: "Vanshika Keswani", createdAt: "2026-04-07T14:30:00Z",
-    signatures: [
-      { id: "sig-001", signerName: "John Smith", signerEmail: "john@acme.com", status: "signed", signedAt: "2026-04-07T16:00:00Z", ip: "192.168.1.10" },
-    ],
-    auditTrail: [
-      { action: "Document created", actor: "Vanshika Keswani", timestamp: "2026-04-07T14:30:00Z" },
-      { action: "Signature requested", actor: "Vanshika Keswani", timestamp: "2026-04-07T14:35:00Z" },
-      { action: "Signed by John Smith", actor: "John Smith", timestamp: "2026-04-07T16:00:00Z" },
-    ],
-  },
-  "doc-002": {
-    id: "doc-002", name: "NDA - Project Alpha", templateName: "NDA Agreement", tenant: "TechStart Inc", status: "pending_sign", format: "pdf", size: "180 KB", createdBy: "Pratiksha M.", createdAt: "2026-04-06T10:15:00Z",
-    signatures: [
-      { id: "sig-002", signerName: "Sarah Chen", signerEmail: "sarah@techstart.com", status: "signed", signedAt: "2026-04-06T14:00:00Z", ip: "10.0.0.5" },
-      { id: "sig-003", signerName: "Mike Johnson", signerEmail: "mike@techstart.com", status: "pending", signedAt: null, ip: null },
-    ],
-    auditTrail: [
-      { action: "Document created", actor: "Pratiksha M.", timestamp: "2026-04-06T10:15:00Z" },
-      { action: "Signature requested for Sarah Chen", actor: "Pratiksha M.", timestamp: "2026-04-06T10:20:00Z" },
-      { action: "Signature requested for Mike Johnson", actor: "Pratiksha M.", timestamp: "2026-04-06T10:20:00Z" },
-      { action: "Signed by Sarah Chen", actor: "Sarah Chen", timestamp: "2026-04-06T14:00:00Z" },
-    ],
-  },
-};
-
 const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle2; color: string; label: string; bg: string }> = {
   signed: { icon: CheckCircle2, color: "text-emerald-600 dark:text-emerald-400", label: "Signed", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   pending: { icon: Clock, color: "text-amber-600 dark:text-amber-400", label: "Pending", bg: "bg-amber-100 dark:bg-amber-900/30" },
@@ -97,29 +70,73 @@ export function DocumentPreviewPage() {
   const router = useRouter();
   const params = useParams();
   const docId = params.id as string;
-  const doc = SAMPLE_DOCS[docId] ?? {
-    id: docId, name: "Document", templateName: "Template", tenant: "Tenant", status: "generated", format: "pdf", size: "—", createdBy: "System", createdAt: new Date().toISOString(),
-    signatures: [], auditTrail: [{ action: "Document created", actor: "System", timestamp: new Date().toISOString() }],
-  };
+  const [doc, setDoc] = useState<DocumentDetail | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [downloading, setDownloading] = useState(false);
   const [activeTab, setActiveTab] = useState<"preview" | "signatures" | "audit">("preview");
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch(`/api/documents/${docId}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = (await resp.json()) as DocumentDetail;
+        if (!cancelled) setDoc(data);
+      } catch {
+        if (!cancelled) setDoc(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [docId]);
+
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    if (!doc) return;
     setDownloading(true);
-    setTimeout(() => {
-      const blob = new Blob([`Mock PDF content for ${doc.name}`], { type: "application/pdf" });
+    try {
+      const resp = await fetch(`/api/documents/${doc.id}/download`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
       const url = URL.createObjectURL(blob);
+      const disp = resp.headers.get("content-disposition") || "";
+      const filenameMatch = disp.match(/filename="?([^";]+)"?/i);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${doc.name}.pdf`;
+      a.download = filenameMatch?.[1] ?? doc.name;
       a.click();
       URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("download failed", err);
+    } finally {
       setDownloading(false);
-    }, 1000);
+    }
   };
+
+  if (loading) {
+    return (
+      <AuthGuard allowedRoles={["tenant_member"] as UserRole[]}>
+        <div className="flex items-center justify-center py-20" style={{ color: "var(--gf-text-muted)" }}>
+          <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading document...
+        </div>
+      </AuthGuard>
+    );
+  }
+
+  if (!doc) {
+    return (
+      <AuthGuard allowedRoles={["tenant_member"] as UserRole[]}>
+        <div className="text-center py-20" style={{ color: "var(--gf-text-muted)" }}>
+          Document not found.
+          <button onClick={() => router.push("/documents")} className="ml-2 underline" style={{ color: "var(--gf-accent)" }}>Back</button>
+        </div>
+      </AuthGuard>
+    );
+  }
 
   const docStatus = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG.generated;
   const DocStatusIcon = docStatus.icon;

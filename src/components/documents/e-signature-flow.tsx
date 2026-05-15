@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -40,16 +40,6 @@ interface SignatureRequest {
 
 const STEPS = ["Add Signers", "Configure", "Review & Send"];
 
-const DOC_NAMES: Record<string, string> = {
-  "doc-001": "Invoice #INV-2026-0142",
-  "doc-002": "NDA - Project Alpha",
-  "doc-003": "Training Certificate - React Advanced",
-  "doc-004": "Service Agreement - Q2 2026",
-  "doc-005": "Receipt #RCP-8834",
-  "doc-008": "Employment Offer - Senior Dev",
-  "doc-010": "Service Contract - Annual",
-};
-
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -58,7 +48,7 @@ export function ESignatureRequestFlow() {
   const router = useRouter();
   const params = useParams();
   const docId = params.id as string;
-  const docName = DOC_NAMES[docId] ?? "Document";
+  const [docName, setDocName] = useState("Document");
 
   const [step, setStep] = useState(0);
   const [data, setData] = useState<SignatureRequest>({
@@ -68,6 +58,22 @@ export function ESignatureRequestFlow() {
     reminderDays: "3",
   });
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!docId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch(`/api/documents/${docId}`);
+        if (!resp.ok) return;
+        const d = await resp.json();
+        if (!cancelled && d?.name) setDocName(d.name);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [docId]);
 
   const addSigner = () => {
     setData(prev => ({
@@ -93,8 +99,28 @@ export function ESignatureRequestFlow() {
     return true;
   };
 
-  const handleSend = () => {
-    setSent(true);
+  const handleSend = async () => {
+    setSending(true);
+    setError(null);
+    try {
+      // POST one /sign/request per signer (backend creates one signature row per call)
+      for (const s of data.signers) {
+        const resp = await fetch(`/api/documents/${docId}/sign/request`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ signerName: s.name, signerEmail: s.email }),
+        });
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => ({}));
+          throw new Error(body?.error || `HTTP ${resp.status}`);
+        }
+      }
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send signature requests");
+    } finally {
+      setSending(false);
+    }
   };
 
   if (sent) {
@@ -332,13 +358,17 @@ export function ESignatureRequestFlow() {
               Next <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
-            <button
-              onClick={handleSend}
-              className="inline-flex items-center gap-2 rounded-lg px-6 py-2 text-sm font-medium text-white transition-colors"
-              style={{ backgroundColor: "var(--gf-accent)" }}
-            >
-              <Send className="w-4 h-4" /> Send Signature Request
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                onClick={handleSend}
+                disabled={sending}
+                className="inline-flex items-center gap-2 rounded-lg px-6 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
+                style={{ backgroundColor: "var(--gf-accent)" }}
+              >
+                <Send className="w-4 h-4" /> {sending ? "Sending..." : "Send Signature Request"}
+              </button>
+              {error && <p className="text-xs text-red-500">{error}</p>}
+            </div>
           )}
         </div>
       </div>

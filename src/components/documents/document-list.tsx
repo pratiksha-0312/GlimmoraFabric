@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -47,23 +47,6 @@ interface Document {
 type SortField = "name" | "templateName" | "status" | "createdAt";
 type SortDir = "asc" | "desc";
 
-// ============================================================================
-// SAMPLE DATA
-// ============================================================================
-
-const SAMPLE_DOCUMENTS: Document[] = [
-  { id: "doc-001", name: "Invoice #INV-2026-0142", templateName: "Invoice Template", tenant: "Acme Corp", status: "signed", format: "pdf", size: "245 KB", createdBy: "Vanshika Keswani", createdAt: "2026-04-07T14:30:00Z", signedAt: "2026-04-07T16:00:00Z", signedBy: "John Smith" },
-  { id: "doc-002", name: "NDA - Project Alpha", templateName: "NDA Agreement", tenant: "TechStart Inc", status: "pending_sign", format: "pdf", size: "180 KB", createdBy: "Pratiksha M.", createdAt: "2026-04-06T10:15:00Z", signedAt: null, signedBy: null },
-  { id: "doc-003", name: "Training Certificate - React Advanced", templateName: "Certificate of Completion", tenant: "DevHub", status: "generated", format: "pdf", size: "120 KB", createdBy: "Vanshika Keswani", createdAt: "2026-04-05T16:45:00Z", signedAt: null, signedBy: null },
-  { id: "doc-004", name: "Service Agreement - Q2 2026", templateName: "Service Contract", tenant: "Acme Corp", status: "signed", format: "pdf", size: "310 KB", createdBy: "Pratiksha M.", createdAt: "2026-04-04T09:00:00Z", signedAt: "2026-04-04T15:30:00Z", signedBy: "Jane Doe" },
-  { id: "doc-005", name: "Receipt #RCP-8834", templateName: "Receipt Template", tenant: "CloudNine", status: "generated", format: "pdf", size: "95 KB", createdBy: "Vanshika Keswani", createdAt: "2026-04-03T11:20:00Z", signedAt: null, signedBy: null },
-  { id: "doc-006", name: "NDA - Partnership Deal", templateName: "NDA Agreement", tenant: "StartupXYZ", status: "expired", format: "pdf", size: "175 KB", createdBy: "Pratiksha M.", createdAt: "2026-03-15T08:00:00Z", signedAt: null, signedBy: null },
-  { id: "doc-007", name: "Invoice #INV-2026-0098", templateName: "Invoice Template", tenant: "DevHub", status: "signed", format: "pdf", size: "250 KB", createdBy: "Vanshika Keswani", createdAt: "2026-03-28T17:45:00Z", signedAt: "2026-03-29T09:00:00Z", signedBy: "Alex Kumar" },
-  { id: "doc-008", name: "Employment Offer - Senior Dev", templateName: "Employment Offer Letter", tenant: "TechStart Inc", status: "pending_sign", format: "pdf", size: "200 KB", createdBy: "Pratiksha M.", createdAt: "2026-04-08T10:00:00Z", signedAt: null, signedBy: null },
-  { id: "doc-009", name: "Monthly Report - March 2026", templateName: "Monthly Report", tenant: "Acme Corp", status: "generated", format: "pdf", size: "450 KB", createdBy: "Vanshika Keswani", createdAt: "2026-04-01T12:00:00Z", signedAt: null, signedBy: null },
-  { id: "doc-010", name: "Service Contract - Annual", templateName: "Service Contract", tenant: "CloudNine", status: "pending_sign", format: "pdf", size: "280 KB", createdBy: "Pratiksha M.", createdAt: "2026-04-09T08:00:00Z", signedAt: null, signedBy: null },
-];
-
 const STATUSES = ["generated", "pending_sign", "signed", "expired"] as const;
 
 const STATUS_STYLES: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
@@ -81,6 +64,8 @@ const PAGE_SIZE = 8;
 
 export function DocumentListPage() {
   const router = useRouter();
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
@@ -90,8 +75,24 @@ export function DocumentListPage() {
   const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
 
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const resp = await fetch("/api/documents");
+      if (!resp.ok) throw new Error("Failed to load");
+      const data = (await resp.json()) as Document[];
+      setDocuments(data);
+    } catch {
+      setDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
   const filtered = useMemo(() => {
-    let data = [...SAMPLE_DOCUMENTS];
+    let data = [...documents];
     if (search) {
       const q = search.toLowerCase();
       data = data.filter(d => d.name.toLowerCase().includes(q) || d.templateName.toLowerCase().includes(q) || d.tenant.toLowerCase().includes(q));
@@ -103,7 +104,7 @@ export function DocumentListPage() {
       return mul * String(a[sortField]).localeCompare(String(b[sortField]));
     });
     return data;
-  }, [search, statusFilter, sortField, sortDir]);
+  }, [documents, search, statusFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -118,20 +119,26 @@ export function DocumentListPage() {
     return sortDir === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />;
   };
 
-  const handleDownload = (doc: Document) => {
+  const handleDownload = async (doc: Document) => {
     setDownloading(doc.id);
-    // Simulate download
-    setTimeout(() => {
-      const blob = new Blob([`Mock PDF content for ${doc.name}`], { type: "application/pdf" });
+    setActionMenu(null);
+    try {
+      const resp = await fetch(`/api/documents/${doc.id}/download`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
       const url = URL.createObjectURL(blob);
+      const disp = resp.headers.get("content-disposition") || "";
+      const filenameMatch = disp.match(/filename="?([^";]+)"?/i);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${doc.name}.pdf`;
+      a.download = filenameMatch?.[1] ?? `${doc.name}`;
       a.click();
       URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("download failed", err);
+    } finally {
       setDownloading(null);
-    }, 1000);
-    setActionMenu(null);
+    }
   };
 
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
@@ -150,10 +157,10 @@ export function DocumentListPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Total Documents", value: SAMPLE_DOCUMENTS.length, icon: File },
-            { label: "Pending Signature", value: SAMPLE_DOCUMENTS.filter(d => d.status === "pending_sign").length, icon: AlertCircle },
-            { label: "Signed", value: SAMPLE_DOCUMENTS.filter(d => d.status === "signed").length, icon: CheckCircle2 },
-            { label: "Expired", value: SAMPLE_DOCUMENTS.filter(d => d.status === "expired").length, icon: XCircle },
+            { label: "Total Documents", value: documents.length, icon: File },
+            { label: "Pending Signature", value: documents.filter(d => d.status === "pending_sign").length, icon: AlertCircle },
+            { label: "Signed", value: documents.filter(d => d.status === "signed").length, icon: CheckCircle2 },
+            { label: "Expired", value: documents.filter(d => d.status === "expired").length, icon: XCircle },
           ].map(s => (
             <div key={s.label} className="rounded-xl border p-4" style={{ backgroundColor: "var(--gf-bg-surface)", borderColor: "var(--gf-border)" }}>
               <div className="flex items-center gap-2 mb-1">
@@ -220,7 +227,9 @@ export function DocumentListPage() {
               </tr>
             </thead>
             <tbody>
-              {paginated.length === 0 ? (
+              {loading ? (
+                <tr><td colSpan={6} className="px-4 py-12 text-center" style={{ color: "var(--gf-text-muted)" }}><Loader2 className="inline w-4 h-4 animate-spin mr-2" />Loading documents...</td></tr>
+              ) : paginated.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-12 text-center" style={{ color: "var(--gf-text-muted)" }}>No documents found.</td></tr>
               ) : paginated.map(doc => {
                 const st = STATUS_STYLES[doc.status];
