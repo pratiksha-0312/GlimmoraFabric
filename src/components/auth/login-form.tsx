@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -10,7 +10,9 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/context/auth-context";
-import { ApiError, oauthApi, type OAuthProvider } from "@/lib/api";
+import { ApiError, oauthApi } from "@/lib/api";
+
+const SSO_PROVIDERS = ["google", "microsoft", "github"] as const;
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email is required.").email("Please enter a valid email."),
@@ -23,7 +25,6 @@ export function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
   const [rememberMe, setRememberMe] = useState(false);
-  const [providers, setProviders] = useState<OAuthProvider[]>([]);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
   const {
@@ -34,23 +35,6 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
-
-  // Fetch the list of configured OAuth providers from the backend so we only
-  // surface buttons that are actually wired up server-side.
-  useEffect(() => {
-    let cancelled = false;
-    oauthApi
-      .listProviders()
-      .then((list) => {
-        if (!cancelled) setProviders(list);
-      })
-      .catch(() => {
-        // Silently ignore — show no SSO buttons if we can't reach the backend.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleSocialLogin = async (provider: string) => {
     setOauthLoading(provider);
@@ -207,25 +191,15 @@ export function LoginForm() {
       </div>
 
       <div className="w-full space-y-3">
-        <SsoButton
-          provider="google"
-          label="Continue with Google"
-          loading={oauthLoading === "google"}
-          disabled={isSubmitting || oauthLoading !== null}
-          onClick={() => handleSocialLogin("google")}
-        />
-
-        {providers
-          .filter((p) => p.configured && p.provider !== "google")
-          .map((p) => (
-            <SsoButton
-              key={p.provider}
-              provider={p.provider}
-              loading={oauthLoading === p.provider}
-              disabled={isSubmitting || oauthLoading !== null}
-              onClick={() => handleSocialLogin(p.provider)}
-            />
-          ))}
+        {SSO_PROVIDERS.map((provider) => (
+          <SsoButton
+            key={provider}
+            provider={provider}
+            loading={oauthLoading === provider}
+            disabled={isSubmitting || oauthLoading !== null}
+            onClick={() => handleSocialLogin(provider)}
+          />
+        ))}
       </div>
     </div>
   );
